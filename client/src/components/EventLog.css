@@ -1,0 +1,153 @@
+/* 样式已移至 Card.css，这里只保留日志相关的特定样式 */
+
+.game-card.event-log {
+  max-height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.game-card.event-log .card-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.game-card.event-log::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(212, 175, 55, 0.03) 2px,
+      rgba(212, 175, 55, 0.03) 4px
+    );
+  pointer-events: none;
+  opacity: 0.5;
+  z-index: 0;
+}
+
+.log-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  background: linear-gradient(135deg, rgba(20, 15, 35, 0.8) 0%, rgba(15, 10, 25, 0.8) 100%);
+  border: 2px solid rgba(212, 175, 55, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  position: relative;
+  z-index: 1;
+  box-shadow: 
+    inset 0 2px 10px rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(212, 175, 55, 0.1);
+}
+
+.log-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.log-content::-webkit-scrollbar-track {
+  background: rgba(20, 15, 35, 0.5);
+  border-radius: 4px;
+}
+
+.log-content::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #d4af37, #ffd700);
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+}
+
+.log-content::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #ffd700, #ffed4e);
+}
+
+.log-empty {
+  text-align: center;
+  color: rgba(232, 213, 183, 0.5);
+  padding: 40px 20px;
+  font-size: 16px;
+  font-style: italic;
+  position: relative;
+}
+
+.log-empty::before {
+  content: '✨';
+  display: block;
+  font-size: 32px;
+  margin-bottom: 10px;
+  opacity: 0.3;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.log-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.log-list li {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+  font-size: 15px;
+  color: #e8d5b7;
+  position: relative;
+  transition: all 0.3s ease;
+  border-left: 3px solid transparent;
+  margin-bottom: 4px;
+}
+
+.log-list li::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: #d4af37;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.log-list li:hover {
+  background: rgba(212, 175, 55, 0.1);
+  border-left-color: #d4af37;
+  padding-left: 20px;
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.2);
+}
+
+.log-list li:hover::before {
+  opacity: 1;
+}
+
+.log-list li:last-child {
+  border-bottom: none;
+}
+
+.log-list li:nth-child(even) {
+  background: rgba(212, 175, 55, 0.03);
+}
+
+.log-list li:nth-child(even):hover {
+  background: rgba(212, 175, 55, 0.15);
+}
+
+@media (max-width: 600px) {
+  .game-card.event-log {
+    max-height: 300px;
+  }
+  
+  .log-content {
+    padding: 10px;
+  }
+}

@@ -1,0 +1,176 @@
+/* 样式已移至 Card.css，这里只保留操作相关的特定样式 */
+
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.action-button {
+  position: relative;
+  padding: 16px 18px;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+  overflow: hidden;
+  letter-spacing: 0.5px;
+}
+
+.action-button::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+  transition: transform 0.6s;
+  transform: scale(0);
+}
+
+.action-button:hover::before {
+  transform: scale(1);
+}
+
+.heal-button {
+  background: linear-gradient(135deg, 
+    rgba(255, 107, 107, 0.8) 0%, 
+    rgba(255, 77, 77, 0.8) 50%, 
+    rgba(220, 20, 60, 0.8) 100%);
+  color: #fff;
+  box-shadow: 
+    0 8px 20px rgba(255, 77, 77, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.heal-button:hover:not(:disabled) {
+  box-shadow: 
+    0 12px 30px rgba(255, 77, 77, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transform: translateY(-4px);
+}
+
+.tuna-on {
+  background: linear-gradient(135deg, 
+    rgba(79, 172, 254, 0.8) 0%, 
+    rgba(0, 242, 254, 0.8) 50%, 
+    rgba(67, 233, 123, 0.8) 100%);
+  color: #fff;
+  box-shadow: 
+    0 8px 20px rgba(79, 172, 254, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.tuna-on:hover:not(:disabled) {
+  box-shadow: 
+    0 12px 30px rgba(79, 172, 254, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transform: translateY(-4px);
+}
+
+.tuna-off {
+  background: linear-gradient(135deg, 
+    rgba(67, 233, 123, 0.8) 0%, 
+    rgba(56, 249, 215, 0.8) 50%, 
+    rgba(79, 172, 254, 0.8) 100%);
+  color: #fff;
+  box-shadow: 
+    0 8px 20px rgba(67, 233, 123, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.tuna-off:hover:not(:disabled) {
+  box-shadow: 
+    0 12px 30px rgba(67, 233, 123, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transform: translateY(-4px);
+}
+
+.action-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
+
+.action-button:disabled::before {
+  display: none;
+}
+
+.button-hint {
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0.95;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  margin-top: 2px;
+}
+
+.action-message {
+  margin-top: 16px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  border: 2px solid;
+  animation: slideIn 0.3s ease-out;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.action-message::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.2), 
+    transparent);
+  animation: shimmerMessage 2s ease-in-out infinite;
+}
+
+@keyframes shimmerMessage {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+.action-message.success {
+  background: linear-gradient(135deg, rgba(40, 167, 69, 0.3) 0%, rgba(25, 135, 84, 0.3) 100%);
+  color: #90ee90;
+  border-color: rgba(40, 167, 69, 0.5);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.action-message.error {
+  background: linear-gradient(135deg, rgba(220, 53, 69, 0.3) 0%, rgba(178, 34, 34, 0.3) 100%);
+  color: #ff6b6b;
+  border-color: rgba(220, 53, 69, 0.5);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+}
+
+@media (max-width: 600px) {
+  .actions-grid {
+    grid-template-columns: 1fr;
+  }
+}
