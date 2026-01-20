@@ -1,16 +1,16 @@
 "use strict";
 
-const { advanceDayIfNeeded } = require("./actions");
+const { ensureDailyReset } = require("./actions");
 
 /**
- * 游戏主循环，每个 tick 执行一次
- * 目前只推进游戏时间
+ * 游戏主循环（保留接口以兼容）
+ * 目前仅执行自然日重置
  * @param {Object} state - 游戏状态对象
  */
 function tick(state) {
   if (!state.alive) return;
 
-  advanceDayIfNeeded(state);
+  ensureDailyReset(state);
 }
 
 module.exports = { tick };

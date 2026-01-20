@@ -2,6 +2,13 @@
 
 const { TICKS_PER_DAY } = require("../config");
 
+function getDateString(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 /**
  * 创建默认的游戏状态对象
  * @returns {Object} 包含所有默认值的游戏状态对象
@@ -21,11 +28,9 @@ function defaultState() {
     luck: 10,
     herbs: 0,
 
-    days: 0,
-
     daily: {
-      ticksPerDay: TICKS_PER_DAY,
-      tickInDay: 0,
+      remainingTicks: TICKS_PER_DAY,
+      lastResetDate: getDateString(),
       beastCount: 0,
       fortuneCount: 0
     },

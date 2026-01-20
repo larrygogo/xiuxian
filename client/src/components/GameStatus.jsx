@@ -3,16 +3,20 @@ import './GameStatus.css';
 import { Card } from './Card';
 import { stageName, needQi } from '../utils/gameUtils';
 
-export function GameStatus({ state, onRename }) {
+export function GameStatus({ state, onRename, onHeal }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [healLoading, setHealLoading] = useState(false);
+  const [healMessage, setHealMessage] = useState('');
+  const [collapsed, setCollapsed] = useState(true);
 
   if (!state) return null;
 
   const stage = stageName(state);
   const requiredQi = needQi(state);
+  const remainingTicks = state.daily?.remainingTicks ?? 0;
 
   const handleEditClick = () => {
     setEditName(state.name);
@@ -66,9 +70,72 @@ export function GameStatus({ state, onRename }) {
     }
   };
 
+  const handleHeal = async () => {
+    if (!onHeal) return;
+    setHealLoading(true);
+    setHealMessage('');
+    const result = await onHeal();
+    setHealLoading(false);
+    if (result.success) {
+      setHealMessage('疗伤成功');
+      setTimeout(() => setHealMessage(''), 2500);
+    } else {
+      setHealMessage(result.error || '疗伤失败');
+    }
+  };
+
+  const statusLabel = state.isTuna ? '闭关修炼' : '自由游历';
+
   return (
-    <Card title="修士状态">
-      <div className="status-grid">
+    <Card className="detail-card">
+      <div className="detail-header">
+        <div className="detail-title">修士详情</div>
+        <button
+          type="button"
+          className="detail-toggle"
+          onClick={() => setCollapsed((prev) => !prev)}
+        >
+          {collapsed ? '展开' : '收起'}
+        </button>
+      </div>
+
+      {collapsed ? (
+        <div className="summary-grid">
+          <div className="status-item">
+            <span className="label">生命</span>
+            <div className="value-row">
+              <span className="value">{state.hp} / {state.maxHp}</span>
+              <button
+                onClick={handleHeal}
+                disabled={healLoading || !state.alive || state.hp >= state.maxHp || state.qi < 15}
+                className="heal-inline-button"
+                title="消耗灵气恢复生命"
+              >
+                疗伤
+              </button>
+            </div>
+            {healMessage && (
+              <span className={`heal-message ${healMessage.includes('失败') ? 'error' : 'success'}`}>
+                {healMessage}
+              </span>
+            )}
+          </div>
+          <div className="status-item">
+            <span className="label">灵草</span>
+            <span className="value">{state.herbs}</span>
+          </div>
+          <div className="status-item">
+            <span className="label">气运</span>
+            <span className="value">{state.luck}</span>
+          </div>
+          <div className="status-item">
+            <span className="label">状态</span>
+            <span className="value">{statusLabel}</span>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="status-grid">
         <div className="status-item name-item">
           <span className="label">姓名</span>
           {isEditing ? (
@@ -124,7 +191,22 @@ export function GameStatus({ state, onRename }) {
         </div>
         <div className="status-item">
           <span className="label">生命</span>
-          <span className="value">{state.hp} / {state.maxHp}</span>
+          <div className="value-row">
+            <span className="value">{state.hp} / {state.maxHp}</span>
+            <button
+              onClick={handleHeal}
+              disabled={healLoading || !state.alive || state.hp >= state.maxHp || state.qi < 15}
+              className="heal-inline-button"
+              title="消耗灵气恢复生命"
+            >
+              疗伤
+            </button>
+          </div>
+          {healMessage && (
+            <span className={`heal-message ${healMessage.includes('失败') ? 'error' : 'success'}`}>
+              {healMessage}
+            </span>
+          )}
         </div>
         <div className="status-item">
           <span className="label">气运</span>
@@ -135,12 +217,12 @@ export function GameStatus({ state, onRename }) {
           <span className="value">{state.herbs}</span>
         </div>
         <div className="status-item">
-          <span className="label">天数</span>
-          <span className="value">第 {state.days} 天</span>
+          <span className="label">今日剩余</span>
+          <span className="value">{remainingTicks} 次</span>
         </div>
         <div className="status-item">
           <span className="label">状态</span>
-          <span className="value">{state.isTuna ? '吐纳中' : '自由游历'}</span>
+          <span className="value">{statusLabel}</span>
         </div>
       </div>
       <div className="progress-bar">
@@ -152,6 +234,8 @@ export function GameStatus({ state, onRename }) {
           灵气进度: {state.qi} / {requiredQi}
         </span>
       </div>
+        </>
+      )}
     </Card>
   );
 }

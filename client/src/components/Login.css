@@ -5,16 +5,14 @@
 }
 
 .login-card {
-  background: linear-gradient(135deg, rgba(30, 20, 50, 0.95) 0%, rgba(20, 15, 35, 0.95) 100%);
-  border: 3px solid rgba(212, 175, 55, 0.5);
+  background: linear-gradient(135deg, var(--ink-paper) 0%, var(--ink-paper-deep) 100%);
+  border: 1.5px solid var(--ink-border);
   border-radius: 20px;
   padding: 48px 40px;
   box-shadow: 
-    0 20px 60px rgba(0, 0, 0, 0.6),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 0 40px rgba(212, 175, 55, 0.3);
+    0 18px 50px var(--ink-shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
   position: relative;
-  backdrop-filter: blur(10px);
   overflow: hidden;
 }
 
@@ -25,41 +23,25 @@
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, transparent 70%);
-  animation: rotate 20s linear infinite;
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.05) 0%, transparent 70%);
   pointer-events: none;
 }
 
-@keyframes rotate {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
 .login-card::after {
-  content: '⚛';
+  content: '';
   position: absolute;
   top: 20px;
   right: 20px;
-  font-size: 40px;
-  opacity: 0.2;
-  animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+  opacity: 0;
 }
 
 .login-card h1 {
   text-align: center;
   margin-bottom: 36px;
-  background: linear-gradient(135deg, #d4af37 0%, #ffd700 50%, #d4af37 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--ink-text);
   font-size: 36px;
   font-weight: 700;
-  text-shadow: 0 0 30px rgba(212, 175, 55, 0.5);
+  text-shadow: none;
   letter-spacing: 3px;
   position: relative;
   z-index: 1;
@@ -75,35 +57,35 @@
   display: block;
   margin-bottom: 10px;
   font-weight: 600;
-  color: #d4af37;
+  color: var(--ink-text-muted);
   font-size: 16px;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  text-shadow: none;
 }
 
 .error-message {
-  background: linear-gradient(135deg, rgba(139, 0, 0, 0.3) 0%, rgba(178, 34, 34, 0.3) 100%);
-  color: #ff6b6b;
+  background: #f3e6e6;
+  color: var(--ink-error);
   padding: 12px 16px;
   border-radius: 8px;
   margin-bottom: 20px;
   font-size: 14px;
-  border: 1px solid rgba(255, 107, 107, 0.3);
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(122, 47, 47, 0.35);
+  text-shadow: none;
   position: relative;
   z-index: 1;
 }
 
 .submit-button {
   width: 100%;
-  background: linear-gradient(135deg, #d4af37 0%, #ffd700 50%, #d4af37 100%);
-  color: #1a0a2e;
+  background: var(--ink-paper);
+  color: var(--ink-text);
   font-weight: 700;
   padding: 16px;
   margin-bottom: 24px;
-  border: 2px solid rgba(212, 175, 55, 0.5);
+  border: 1.5px solid var(--ink-border);
   box-shadow: 
-    0 8px 20px rgba(212, 175, 55, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    0 8px 20px var(--ink-shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
   font-size: 18px;
   letter-spacing: 2px;
   position: relative;
@@ -119,7 +101,7 @@
   width: 0;
   height: 0;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.06);
   transform: translate(-50%, -50%);
   transition: width 0.6s, height 0.6s;
 }
@@ -132,20 +114,20 @@
 .submit-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.5) 0%, rgba(255, 215, 0, 0.5) 100%);
+  background: var(--ink-paper-deep);
 }
 
 .submit-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%);
+  background: var(--ink-paper-deep);
   box-shadow: 
-    0 12px 30px rgba(212, 175, 55, 0.6),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    0 12px 30px var(--ink-shadow-strong),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
   transform: translateY(-2px);
 }
 
 .switch-mode {
   text-align: center;
-  color: #e8d5b7;
+  color: var(--ink-text-muted);
   font-size: 15px;
   position: relative;
   z-index: 1;
@@ -153,7 +135,7 @@
 
 .link-button {
   background: none;
-  color: #d4af37;
+  color: var(--ink-text);
   text-decoration: none;
   padding: 0;
   margin-left: 8px;
@@ -172,7 +154,7 @@
   left: 0;
   width: 0;
   height: 2px;
-  background: linear-gradient(90deg, #d4af37, #ffd700);
+  background: linear-gradient(90deg, var(--ink-text), var(--ink-border-strong));
   transition: width 0.3s ease;
 }
 
@@ -183,6 +165,6 @@
 .link-button:hover {
   transform: none;
   box-shadow: none;
-  color: #ffd700;
-  text-shadow: 0 0 10px rgba(212, 175, 55, 0.6);
+  color: var(--ink-text);
+  text-shadow: none;
 }

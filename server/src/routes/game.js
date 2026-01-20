@@ -7,7 +7,10 @@ const {
   getUserGameState,
   updateUserGameState
 } = require("../services/gameService");
-const { heal } = require("../systems/actions");
+const { heal, cultivateTick, ensureDailyReset } = require("../systems/actions");
+const { exploreTick } = require("../systems/events");
+const { stepUpAsMuchAsPossible } = require("../systems/progression");
+const { STEP_UP_LIMIT_PER_TICK } = require("../config");
 const { logLine } = require("../services/logger");
 
 const router = express.Router();
@@ -29,6 +32,11 @@ router.get("/state", async (req, res) => {
       // 这里需要传入一个回调函数，但在这个场景下我们不需要实时推送
       // 实际的状态更新会通过 WebSocket 推送
       state = await initializeUserGame(userId, null);
+    }
+
+    const didReset = ensureDailyReset(state);
+    if (didReset) {
+      await updateUserGameState(userId, state);
     }
 
     res.json({ state });
@@ -105,6 +113,47 @@ router.post("/actions/toggle-tuna", async (req, res) => {
   } catch (error) {
     console.error("切换吐纳状态错误:", error);
     res.status(500).json({ error: "切换吐纳状态失败" });
+  }
+});
+
+/**
+ * 手动行动（消耗一次每日次数）
+ * POST /api/game/actions/tick
+ */
+router.post("/actions/tick", async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const state = getUserGameState(userId);
+
+    if (!state) {
+      return res.status(404).json({ error: "游戏状态未找到" });
+    }
+
+    if (!state.alive) {
+      return res.status(400).json({ error: "你已死亡，无法行动" });
+    }
+
+    ensureDailyReset(state);
+
+    if (state.daily.remainingTicks <= 0) {
+      return res.status(400).json({ error: "今日行动次数已用尽" });
+    }
+
+    state.daily.remainingTicks -= 1;
+
+    if (state.isTuna) {
+      cultivateTick(state);
+    } else {
+      exploreTick(state);
+    }
+
+    stepUpAsMuchAsPossible(state, STEP_UP_LIMIT_PER_TICK);
+    await updateUserGameState(userId, state);
+
+    res.json({ message: "行动完成", state });
+  } catch (error) {
+    console.error("行动错误:", error);
+    res.status(500).json({ error: "行动失败" });
   }
 });
 

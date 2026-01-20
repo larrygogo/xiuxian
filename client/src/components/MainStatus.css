@@ -1,0 +1,204 @@
+.main-status-card {
+  position: relative;
+  overflow: hidden;
+  animation: mainBreath 6s ease-in-out infinite;
+}
+
+.game-card.main-status-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('../assets/ink-texture.svg');
+  background-size: cover;
+  background-position: center;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.game-card.main-status-card::after {
+  content: '';
+  position: absolute;
+  inset: -10% 0 0 0;
+  background-image: url('../assets/mist-overlay.svg');
+  background-size: cover;
+  background-position: center;
+  opacity: 0.6;
+  animation: mistFloat 18s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.main-status-card .env-orb {
+  position: absolute;
+  top: 8%;
+  right: 6%;
+  width: 260px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.08) 0%, rgba(0, 0, 0, 0) 70%);
+  opacity: 0.35;
+  filter: blur(6px);
+  animation: envDrift 40s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.main-status-card .env-orb.orb-2 {
+  top: 26%;
+  right: -6%;
+  width: 220px;
+  height: 150px;
+  opacity: 0.28;
+  animation-duration: 55s;
+}
+
+.main-status-card .env-orb.orb-3 {
+  top: 2%;
+  right: 18%;
+  width: 140px;
+  height: 100px;
+  opacity: 0.22;
+  animation-duration: 48s;
+}
+
+@keyframes envDrift {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(80px); }
+}
+
+@keyframes mistFloat {
+  0%, 100% {
+    transform: translateX(0) translateY(0);
+  }
+  50% {
+    transform: translateX(-18px) translateY(6px);
+  }
+}
+
+.main-status {
+  position: relative;
+  z-index: 1;
+  padding: 6px 6px 2px;
+}
+
+.main-status-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.main-status-name {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--ink-text);
+  letter-spacing: 2px;
+}
+
+.main-status-realm {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink-text-muted);
+}
+
+.main-status-activity {
+  margin: 18px 0 10px;
+}
+
+.main-status-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink-text);
+  letter-spacing: 1px;
+}
+
+.main-status-subtitle {
+  font-size: 12px;
+  color: var(--ink-text-muted);
+  margin-top: 6px;
+  opacity: 0.6;
+  animation: subtitleBreath 7s ease-in-out infinite;
+  letter-spacing: 0.4px;
+}
+
+@keyframes subtitleBreath {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.main-status-meta {
+  font-size: 13px;
+  color: var(--ink-text-muted);
+  margin-bottom: 14px;
+}
+
+.main-status-timers {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--ink-text-muted);
+  margin-bottom: 12px;
+}
+
+.main-status-progress {
+  position: relative;
+  height: 28px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1.5px solid var(--ink-border);
+  overflow: hidden;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.main-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6b6358 0%, #3f3a33 50%, #6b6358 100%);
+  background-size: 200% 100%;
+  animation: mainProgressShine 3s linear infinite;
+  box-shadow: 0 0 12px var(--ink-wash);
+}
+
+.main-progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-paper);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  letter-spacing: 0.3px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+@keyframes mainProgressShine {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 200% 0%; }
+}
+
+@keyframes mainBreath {
+  0%, 100% {
+    box-shadow: 0 18px 40px var(--ink-shadow);
+    transform: translateY(0);
+  }
+  50% {
+    box-shadow: 0 22px 48px var(--ink-shadow-strong);
+    transform: translateY(-2px);
+  }
+}
+
+@media (max-width: 600px) {
+  .main-status-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .main-status-name {
+    font-size: 24px;
+  }
+
+  .main-status-title {
+    font-size: 18px;
+  }
+}

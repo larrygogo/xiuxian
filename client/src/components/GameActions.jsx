@@ -2,20 +2,25 @@ import { useState } from 'react';
 import './GameActions.css';
 import { Card } from './Card';
 
-export function GameActions({ state, onHeal, onToggleTuna }) {
+export function GameActions({ state, onTick, onToggleTuna }) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
-  const handleHeal = async () => {
+  const remainingTicks = state?.daily?.remainingTicks ?? 0;
+  const primaryLabel = state?.isTuna ? '运转周天' : '探索一次';
+  const secondaryLabel = state?.isTuna ? '出关' : '进入闭关';
+  const secondaryHint = state?.isTuna ? '结束闭关，恢复游历' : '专注修炼，暂停游历';
+
+  const handleTick = async () => {
     setLoading(true);
     setMessage('');
-    const result = await onHeal();
+    const result = await onTick();
     setLoading(false);
     if (result.success) {
-      setMessage('疗伤成功！');
+      setMessage(result.message || '行动完成');
       setTimeout(() => setMessage(''), 3000);
     } else {
-      setMessage(result.error || '疗伤失败');
+      setMessage(result.error || '行动失败');
     }
   };
 
@@ -38,21 +43,23 @@ export function GameActions({ state, onHeal, onToggleTuna }) {
     <Card title="操作">
       <div className="actions-grid">
         <button
-          onClick={handleHeal}
-          disabled={loading || state.hp >= state.maxHp || state.qi < 15}
-          className="action-button heal-button"
+          onClick={handleTick}
+          disabled={loading || !state.alive || remainingTicks <= 0}
+          className="action-button tick-button"
         >
-          疗伤
-          <span className="button-hint">消耗灵气恢复生命</span>
+          {primaryLabel}
+          <span className="button-hint">
+            今日剩余 {remainingTicks} 次
+          </span>
         </button>
         <button
           onClick={handleToggleTuna}
           disabled={loading}
           className={`action-button ${state.isTuna ? 'tuna-on' : 'tuna-off'}`}
         >
-          {state.isTuna ? '退出吐纳' : '进入吐纳'}
+          {secondaryLabel}
           <span className="button-hint">
-            {state.isTuna ? '恢复自由游历' : '专注修炼，无法探索'}
+            {secondaryHint}
           </span>
         </button>
       </div>

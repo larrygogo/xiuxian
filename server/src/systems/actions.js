@@ -4,19 +4,53 @@ const { BASE_QI_PER_TICK, TICKS_PER_DAY } = require("../config");
 const { logLine } = require("../services/logger");
 
 /**
- * 推进游戏天数（如果需要）
- * 当 tickInDay 达到 TICKS_PER_DAY 时，天数+1并重置每日计数
+ * 获取当前自然日字符串（YYYY-MM-DD）
+ * @param {Date} date
+ * @returns {string}
+ */
+function getDateString(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * 按自然日重置每日次数与计数
  * @param {Object} s - 游戏状态对象
  */
-function advanceDayIfNeeded(s) {
-  s.daily.tickInDay += 1;
-  if (s.daily.tickInDay >= (s.daily.ticksPerDay || TICKS_PER_DAY)) {
-    s.daily.tickInDay = 0;
-    s.days += 1;
+function ensureDailyReset(s) {
+  let didReset = false;
+  if (!s.daily || typeof s.daily !== "object") {
+    s.daily = {
+      remainingTicks: TICKS_PER_DAY,
+      lastResetDate: getDateString(),
+      beastCount: 0,
+      fortuneCount: 0
+    };
+    return true;
+  }
+
+  const today = getDateString();
+  if (typeof s.daily.remainingTicks !== "number") {
+    s.daily.remainingTicks = TICKS_PER_DAY;
+    didReset = true;
+  }
+  if (typeof s.daily.lastResetDate !== "string") {
+    s.daily.lastResetDate = today;
+    didReset = true;
+  }
+
+  if (s.daily.lastResetDate !== today) {
+    s.daily.remainingTicks = TICKS_PER_DAY;
+    s.daily.lastResetDate = today;
     s.daily.beastCount = 0;
     s.daily.fortuneCount = 0;
-    logLine(`新的一天开始（第 ${s.days} 天游历）。`, s);
+    logLine("新的一天开始，今日次数已重置。", s);
+    didReset = true;
   }
+
+  return didReset;
 }
 
 /**
@@ -76,7 +110,7 @@ function cultivateTick(s) {
 }
 
 module.exports = {
-  advanceDayIfNeeded,
+  ensureDailyReset,
   heal,
   cultivateTick
 };

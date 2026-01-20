@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { gameAPI } from '../services/api';
 import { connectSocket, disconnectSocket, getSocket } from '../services/socket';
 
-export function useGameState() {
+export function useGameState(userId) {
   const [state, setState] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -15,6 +15,7 @@ export function useGameState() {
       setError(null);
     } catch (err) {
       setError(err.response?.data?.error || '获取游戏状态失败');
+      setState(null); // 获取失败时清除状态
     } finally {
       setLoading(false);
     }
@@ -22,12 +23,24 @@ export function useGameState() {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (!token) {
+    if (!token || !userId) {
+      // 没有 token 或 userId，清除状态并断开连接
+      setState(null);
       setLoading(false);
+      setError(null);
+      disconnectSocket();
       return;
     }
 
-    // 初始加载
+    // 清除旧状态，准备加载新用户的数据
+    setState(null);
+    setLoading(true);
+    setError(null);
+
+    // 断开旧的 WebSocket 连接
+    disconnectSocket();
+
+    // 获取游戏状态
     fetchState();
 
     // 连接 WebSocket
@@ -55,7 +68,7 @@ export function useGameState() {
       console.error('WebSocket 初始化失败:', err);
       // WebSocket 失败不影响 REST API 使用
     }
-  }, [fetchState]);
+  }, [userId, fetchState]);
 
   const heal = async () => {
     try {
@@ -66,6 +79,19 @@ export function useGameState() {
       return {
         success: false,
         error: err.response?.data?.error || '疗伤失败',
+      };
+    }
+  };
+
+  const tick = async () => {
+    try {
+      const response = await gameAPI.tick();
+      setState(response.data.state);
+      return { success: true, message: response.data.message };
+    } catch (err) {
+      return {
+        success: false,
+        error: err.response?.data?.error || '行动失败',
       };
     }
   };
@@ -109,5 +135,5 @@ export function useGameState() {
     }
   };
 
-  return { state, loading, error, heal, toggleTuna, createCharacter, renameCharacter, refresh: fetchState };
+  return { state, loading, error, heal, tick, toggleTuna, createCharacter, renameCharacter, refresh: fetchState };
 }

@@ -47,6 +47,7 @@ export const authAPI = {
 export const gameAPI = {
   getState: () => api.get('/api/game/state'),
   heal: () => api.post('/api/game/actions/heal'),
+  tick: () => api.post('/api/game/actions/tick'),
   toggleTuna: (enabled) => api.post('/api/game/actions/toggle-tuna', { enabled }),
   createCharacter: (name) => api.post('/api/game/character/create', { name }),
   renameCharacter: (name) => api.post('/api/game/character/rename', { name }),

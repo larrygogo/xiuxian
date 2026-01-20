@@ -1,7 +1,7 @@
 /* 样式已移至 Card.css，这里只保留日志相关的特定样式 */
 
 .game-card.event-log {
-  max-height: 400px;
+  max-height: 170px;
   display: flex;
   flex-direction: column;
 }
@@ -26,8 +26,8 @@
       0deg,
       transparent,
       transparent 2px,
-      rgba(212, 175, 55, 0.03) 2px,
-      rgba(212, 175, 55, 0.03) 4px
+      rgba(0, 0, 0, 0.02) 2px,
+      rgba(0, 0, 0, 0.02) 4px
     );
   pointer-events: none;
   opacity: 0.5;
@@ -39,15 +39,13 @@
   overflow-y: auto;
   overflow-x: hidden;
   min-height: 0;
-  background: linear-gradient(135deg, rgba(20, 15, 35, 0.8) 0%, rgba(15, 10, 25, 0.8) 100%);
-  border: 2px solid rgba(212, 175, 55, 0.2);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1.5px solid var(--ink-border);
   border-radius: 8px;
   padding: 12px;
   position: relative;
   z-index: 1;
-  box-shadow: 
-    inset 0 2px 10px rgba(0, 0, 0, 0.5),
-    0 0 20px rgba(212, 175, 55, 0.1);
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.08);
 }
 
 .log-content::-webkit-scrollbar {
@@ -55,41 +53,35 @@
 }
 
 .log-content::-webkit-scrollbar-track {
-  background: rgba(20, 15, 35, 0.5);
+  background: rgba(0, 0, 0, 0.06);
   border-radius: 4px;
 }
 
 .log-content::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #d4af37, #ffd700);
+  background: linear-gradient(135deg, #8f8578, #5f574c);
   border-radius: 4px;
-  box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+  box-shadow: none;
 }
 
 .log-content::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #ffd700, #ffed4e);
+  background: linear-gradient(135deg, #6f675c, #4b453d);
 }
 
 .log-empty {
   text-align: center;
-  color: rgba(232, 213, 183, 0.5);
+  color: var(--ink-text-muted);
   padding: 40px 20px;
-  font-size: 16px;
+  font-size: 14px;
   font-style: italic;
   position: relative;
 }
 
 .log-empty::before {
-  content: '✨';
+  content: '·';
   display: block;
   font-size: 32px;
   margin-bottom: 10px;
-  opacity: 0.3;
-  animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+  opacity: 0.2;
 }
 
 .log-list {
@@ -100,30 +92,46 @@
 
 .log-list li {
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(212, 175, 55, 0.15);
-  font-size: 15px;
-  color: #e8d5b7;
+  border-bottom: 1px solid var(--ink-border);
+  font-size: 13px;
+  color: rgba(47, 43, 37, 0.55);
   position: relative;
   transition: all 0.3s ease;
   border-left: 3px solid transparent;
   margin-bottom: 4px;
 }
 
+.log-list li.is-new {
+  animation: logFadeIn 0.6s ease-out;
+  color: rgba(47, 43, 37, 0.85);
+}
+
+@keyframes logFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .log-list li::before {
-  content: '▸';
+  content: '·';
   position: absolute;
   left: 0;
-  color: #d4af37;
+  color: var(--ink-text-muted);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
 
 .log-list li:hover {
-  background: rgba(212, 175, 55, 0.1);
-  border-left-color: #d4af37;
+  background: rgba(0, 0, 0, 0.04);
+  border-left-color: var(--ink-border-strong);
   padding-left: 20px;
   transform: translateX(4px);
-  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.2);
+  box-shadow: 0 2px 8px var(--ink-wash);
 }
 
 .log-list li:hover::before {
@@ -135,16 +143,16 @@
 }
 
 .log-list li:nth-child(even) {
-  background: rgba(212, 175, 55, 0.03);
+  background: rgba(0, 0, 0, 0.02);
 }
 
 .log-list li:nth-child(even):hover {
-  background: rgba(212, 175, 55, 0.15);
+  background: rgba(0, 0, 0, 0.05);
 }
 
 @media (max-width: 600px) {
   .game-card.event-log {
-    max-height: 300px;
+    max-height: 150px;
   }
   
   .log-content {

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="mist" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="rgba(255,255,255,0)"/>
+      <stop offset="0.5" stop-color="rgba(255,255,255,0.25)"/>
+      <stop offset="1" stop-color="rgba(255,255,255,0)"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#mist)"/>
+  <g fill="rgba(255,255,255,0.2)">
+    <path d="M0 520 C200 460, 420 560, 640 520 C820 490, 980 560, 1200 520 L1200 800 L0 800 Z"/>
+    <path d="M0 260 C180 220, 380 300, 600 260 C820 230, 980 300, 1200 260 L1200 420 L0 420 Z"/>
+  </g>
+</svg>

@@ -4,15 +4,10 @@ const { getDatabase } = require("../db/init");
 const { defaultState } = require("../state/defaultState");
 const { migrateState } = require("../state/migrate");
 const { applyOfflineProgress } = require("../systems/offline");
-const { tick } = require("../systems/engine");
-const { cultivateTick } = require("../systems/actions");
-const { exploreTick } = require("../systems/events");
-const { stepUpAsMuchAsPossible } = require("../systems/progression");
-const { TICK_MS, STEP_UP_LIMIT_PER_TICK } = require("../config");
+const { ensureDailyReset } = require("../systems/actions");
 
-// 存储每个用户的游戏状态和定时器
+// 存储每个用户的游戏状态
 const userGameStates = new Map();
-const userTimers = new Map();
 
 /**
  * 从数据库加载游戏状态
@@ -55,6 +50,9 @@ async function loadGameState(userId) {
     if (offlineMs > 0) {
       applyOfflineProgress(migrated, offlineMs);
     }
+
+    // 按自然日校正每日次数
+    ensureDailyReset(migrated);
 
     return migrated;
   } catch (e) {
@@ -114,7 +112,7 @@ function setUserStateCallback(userId, callback) {
 }
 
 /**
- * 初始化用户的游戏状态（加载并启动tick）
+ * 初始化用户的游戏状态（加载并设置回调）
  * @param {number} userId - 用户ID
  * @param {Function} onStateChange - 状态变化回调（可选）
  * @returns {Promise<Object>} 游戏状态对象
@@ -127,51 +125,6 @@ async function initializeUserGame(userId, onStateChange) {
   if (onStateChange) {
     setUserStateCallback(userId, onStateChange);
   }
-
-  // 如果定时器已存在，先清除
-  if (userTimers.has(userId)) {
-    clearInterval(userTimers.get(userId));
-  }
-
-  // 启动游戏tick定时器
-  const timer = setInterval(async () => {
-    const currentState = userGameStates.get(userId);
-    if (!currentState || !currentState.alive) {
-      return;
-    }
-
-    // 执行游戏tick
-    tick(currentState);
-
-    // 根据状态执行修炼或探索
-    if (currentState.isTuna) {
-      cultivateTick(currentState);
-    } else {
-      exploreTick(currentState);
-    }
-
-    // 自动进境
-    stepUpAsMuchAsPossible(currentState, STEP_UP_LIMIT_PER_TICK);
-
-    // 更新状态
-    currentState.lastTs = Date.now();
-    userGameStates.set(userId, currentState);
-
-    // 保存到数据库（异步）
-    try {
-      await saveGameState(userId, currentState);
-    } catch (err) {
-      console.error(`保存用户 ${userId} 游戏状态失败:`, err);
-    }
-
-    // 通知状态变化
-    const callback = userStateCallbacks.get(userId);
-    if (callback) {
-      callback(currentState);
-    }
-  }, TICK_MS);
-
-  userTimers.set(userId, timer);
 
   // 立即保存一次
   await saveGameState(userId, state);
@@ -211,11 +164,6 @@ async function updateUserGameState(userId, state) {
  * @param {number} userId - 用户ID
  */
 function cleanupUserGame(userId) {
-  const timer = userTimers.get(userId);
-  if (timer) {
-    clearInterval(timer);
-    userTimers.delete(userId);
-  }
   userGameStates.delete(userId);
   userStateCallbacks.delete(userId);
 }

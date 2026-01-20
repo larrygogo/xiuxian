@@ -19,8 +19,8 @@
 .creation-decoration {
   position: absolute;
   font-size: 60px;
-  opacity: 0.15;
-  animation: floatDecoration 6s ease-in-out infinite;
+  opacity: 0.08;
+  animation: floatDecoration 8s ease-in-out infinite;
 }
 
 .decoration-1 {
@@ -67,8 +67,8 @@
 .creation-icon {
   font-size: 48px;
   margin-bottom: 16px;
-  animation: pulseIcon 2s ease-in-out infinite;
-  filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.6));
+  animation: pulseIcon 3s ease-in-out infinite;
+  filter: none;
 }
 
 @keyframes pulseIcon {
@@ -83,13 +83,11 @@
 }
 
 .creation-description {
-  color: #d4af37;
+  color: var(--ink-text-muted);
   font-size: 16px;
   line-height: 1.8;
   text-align: center;
-  text-shadow: 
-    0 0 15px rgba(212, 175, 55, 0.5),
-    0 2px 10px rgba(0, 0, 0, 0.5);
+  text-shadow: none;
   letter-spacing: 1px;
   font-weight: 500;
   padding: 0 10px;
@@ -110,11 +108,9 @@
   gap: 8px;
   margin-bottom: 12px;
   font-weight: 700;
-  color: #d4af37;
+  color: var(--ink-text);
   font-size: 17px;
-  text-shadow: 
-    0 0 10px rgba(212, 175, 55, 0.6),
-    0 2px 10px rgba(0, 0, 0, 0.5);
+  text-shadow: none;
   letter-spacing: 1px;
 }
 
@@ -136,38 +132,33 @@
 .creation-form .form-group input {
   font-family: 'Noto Serif SC', 'Microsoft YaHei', serif;
   padding: 14px 18px;
-  border: 2px solid rgba(212, 175, 55, 0.4);
+  border: 1.5px solid var(--ink-border);
   border-radius: 10px;
   font-size: 17px;
   font-weight: 600;
   width: 100%;
-  background: linear-gradient(135deg, rgba(20, 15, 35, 0.8) 0%, rgba(30, 20, 50, 0.8) 100%);
-  color: #ffd700;
+  background: rgba(255, 255, 255, 0.75);
+  color: var(--ink-text);
   transition: all 0.3s ease;
   position: relative;
   z-index: 1;
-  box-shadow: 
-    inset 0 2px 10px rgba(0, 0, 0, 0.3),
-    0 0 20px rgba(212, 175, 55, 0.1);
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.06);
 }
 
 .creation-form .form-group input::placeholder {
-  color: rgba(255, 215, 0, 0.4);
+  color: rgba(47, 43, 37, 0.45);
   font-weight: 400;
 }
 
 .creation-form .form-group input:focus {
   outline: none;
-  border-color: #ffd700;
-  box-shadow: 
-    0 0 25px rgba(212, 175, 55, 0.6),
-    inset 0 2px 10px rgba(0, 0, 0, 0.3);
-  background: linear-gradient(135deg, rgba(20, 15, 35, 0.95) 0%, rgba(30, 20, 50, 0.95) 100%);
-  transform: translateY(-1px);
+  border-color: var(--ink-border-strong);
+  box-shadow: 0 0 12px var(--ink-wash-strong);
+  background: rgba(255, 255, 255, 0.85);
 }
 
 .creation-form .form-group input:focus + .input-glow {
-  opacity: 1;
+  opacity: 0;
 }
 
 .input-glow {
@@ -176,12 +167,12 @@
   left: -2px;
   right: -2px;
   bottom: -2px;
-  background: linear-gradient(135deg, #d4af37, #ffd700, #d4af37);
+  background: transparent;
   border-radius: 12px;
   opacity: 0;
   transition: opacity 0.3s ease;
   z-index: -1;
-  filter: blur(8px);
+  filter: none;
 }
 
 .creation-form .form-group input:disabled {
@@ -191,39 +182,31 @@
 
 .input-hint {
   font-size: 12px;
-  color: rgba(232, 213, 183, 0.6);
+  color: var(--ink-text-muted);
   text-align: center;
   margin-top: 6px;
   font-style: italic;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  text-shadow: none;
 }
 
 .create-button {
   width: 100%;
-  background: linear-gradient(135deg, #d4af37 0%, #ffd700 30%, #ffed4e 50%, #ffd700 70%, #d4af37 100%);
-  background-size: 200% 100%;
-  color: #1a0a2e;
+  background: var(--ink-paper);
+  color: var(--ink-text);
   font-weight: 700;
   padding: 18px 24px;
-  border: 2px solid rgba(212, 175, 55, 0.6);
+  border: 1.5px solid var(--ink-border);
   border-radius: 12px;
   box-shadow: 
-    0 10px 30px rgba(212, 175, 55, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    0 0 40px rgba(212, 175, 55, 0.3);
+    0 10px 24px var(--ink-shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
   font-size: 19px;
   letter-spacing: 3px;
   position: relative;
   z-index: 1;
   overflow: hidden;
   transition: all 0.4s ease;
-  animation: buttonShine 3s ease-in-out infinite;
   margin-top: 8px;
-}
-
-@keyframes buttonShine {
-  0%, 100% { background-position: 0% 0%; }
-  50% { background-position: 100% 0%; }
 }
 
 .button-text {
@@ -238,7 +221,7 @@
 .button-icon,
 .loading-spinner {
   font-size: 20px;
-  animation: iconSpin 2s linear infinite;
+  animation: iconSpin 2.5s linear infinite;
 }
 
 .loading-spinner {
@@ -256,20 +239,14 @@
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+  background: transparent;
   opacity: 0;
   transition: opacity 0.6s ease;
   pointer-events: none;
 }
 
 .create-button:hover:not(:disabled) .button-glow {
-  opacity: 1;
-  animation: glowPulse 1.5s ease-in-out infinite;
-}
-
-@keyframes glowPulse {
-  0%, 100% { transform: scale(1); opacity: 0.3; }
-  50% { transform: scale(1.1); opacity: 0.5; }
+  opacity: 0;
 }
 
 .create-button::after {
@@ -280,7 +257,7 @@
   width: 0;
   height: 0;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.06);
   transform: translate(-50%, -50%);
   transition: width 0.6s, height 0.6s;
 }
@@ -293,49 +270,35 @@
 .create-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.4) 0%, rgba(255, 215, 0, 0.4) 100%);
-  animation: none;
+  background: var(--ink-paper-deep);
 }
 
 .create-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 30%, #fff 50%, #ffed4e 70%, #ffd700 100%);
+  background: var(--ink-paper-deep);
   box-shadow: 
-    0 15px 40px rgba(212, 175, 55, 0.7),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    0 0 60px rgba(212, 175, 55, 0.5);
-  transform: translateY(-3px);
-  border-color: rgba(212, 175, 55, 0.8);
+    0 15px 36px var(--ink-shadow-strong),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  transform: translateY(-2px);
+  border-color: var(--ink-border-strong);
 }
 
 .create-button:active:not(:disabled) {
-  transform: translateY(-1px);
+  transform: translateY(0);
   box-shadow: 
-    0 8px 20px rgba(212, 175, 55, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    0 6px 16px var(--ink-shadow);
 }
 
 .error-message {
-  background: linear-gradient(135deg, rgba(139, 0, 0, 0.4) 0%, rgba(178, 34, 34, 0.4) 100%);
-  color: #ff6b6b;
+  background: #f3e6e6;
+  color: var(--ink-error);
   padding: 14px 18px;
   border-radius: 10px;
   margin-bottom: 20px;
   font-size: 14px;
   font-weight: 600;
-  border: 2px solid rgba(255, 107, 107, 0.4);
-  text-shadow: 
-    0 0 10px rgba(255, 107, 107, 0.5),
-    0 2px 10px rgba(0, 0, 0, 0.5);
+  border: 1.5px solid rgba(122, 47, 47, 0.35);
+  text-shadow: none;
   position: relative;
   z-index: 1;
-  box-shadow: 
-    0 4px 15px rgba(139, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  animation: errorShake 0.5s ease-in-out;
-}
-
-@keyframes errorShake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
+  box-shadow: 0 4px 15px var(--ink-shadow);
 }

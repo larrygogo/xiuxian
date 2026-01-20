@@ -1,8 +1,8 @@
-import { useState } from 'react';
 import { useAuth } from './hooks/useAuth';
 import { useGameState } from './hooks/useGameState';
 import { Login } from './components/Login';
 import { CharacterCreation } from './components/CharacterCreation';
+import { MainStatus } from './components/MainStatus';
 import { GameStatus } from './components/GameStatus';
 import { GameActions } from './components/GameActions';
 import { EventLog } from './components/EventLog';
@@ -10,7 +10,7 @@ import './App.css';
 
 function App() {
   const { user, loading: authLoading, login, register, logout } = useAuth();
-  const { state, loading: gameLoading, error, heal, toggleTuna, createCharacter, renameCharacter, refresh } = useGameState();
+  const { state, loading: gameLoading, error, heal, tick, toggleTuna, createCharacter, renameCharacter, refresh } = useGameState(user?.id);
 
   if (authLoading) {
     return (
@@ -59,8 +59,10 @@ function App() {
           }} />
         ) : (
           <>
+            <MainStatus state={state} />
             <GameStatus 
               state={state} 
+              onHeal={heal}
               onRename={async (name) => {
                 const result = await renameCharacter(name);
                 if (result.success) {
@@ -69,7 +71,7 @@ function App() {
                 return result;
               }}
             />
-            <GameActions state={state} onHeal={heal} onToggleTuna={toggleTuna} />
+            <GameActions state={state} onTick={tick} onToggleTuna={toggleTuna} />
             <EventLog state={state} />
           </>
         )}
