@@ -1,4 +1,3 @@
-import { useEffect, useMemo, useState } from 'react';
 import './MainStatus.css';
 import { Card } from './Card';
 import { stageName, needQi } from '../utils/gameUtils';
@@ -6,32 +5,10 @@ import { stageName, needQi } from '../utils/gameUtils';
 export function MainStatus({ state }) {
   if (!state) return null;
 
-  const TICK_MS = 5000;
   const stage = stageName(state);
   const requiredQi = needQi(state);
   const statusTitle = state.isTuna ? '闭关修炼中' : '云游四方中';
   const statusSubtitle = state.isTuna ? '心神内守 · 吐纳周天' : '心神外放 · 感知天地';
-  const [now, setNow] = useState(Date.now());
-
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const timers = useMemo(() => {
-    const lastTs = typeof state.lastTs === 'number' ? state.lastTs : Date.now();
-    const elapsedMs = Math.max(0, now - lastTs);
-    const countdownMs = TICK_MS - (elapsedMs % TICK_MS);
-    return { elapsedMs, countdownMs };
-  }, [now, state.lastTs]);
-
-  const formatDuration = (ms) => {
-    const totalSeconds = Math.floor(ms / 1000);
-    const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
-    const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
-    const seconds = String(totalSeconds % 60).padStart(2, '0');
-    return `${hours}:${minutes}:${seconds}`;
-  };
 
   return (
     <Card className="main-status-card">
@@ -49,10 +26,6 @@ export function MainStatus({ state }) {
         </div>
         <div className="main-status-meta">
           尚余生命 {state.hp} / {state.maxHp}
-        </div>
-        <div className="main-status-timers">
-          <div>已持续 {formatDuration(timers.elapsedMs)}</div>
-          <div>下次结算 {formatDuration(timers.countdownMs)}</div>
         </div>
         <div className="main-status-progress">
           <div
