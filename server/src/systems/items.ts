@@ -1,12 +1,12 @@
 import { logLine } from "../services/logger";
 import { generateRandomItem } from "../services/itemService";
 import { refreshDerivedStats } from "./battle";
-import type { GameState } from "../types/game";
+import type { GameState, CombatStats } from "../types/game";
 import type { Item, Equipment, Consumable, Material, EquipmentSlot } from "../types/item";
 import { isEquipment, isConsumable, isMaterial } from "../types/item";
 
-// 背包最大容量
-const MAX_INVENTORY_SIZE = 100;
+// 背包固定大小（20个位置）
+const INVENTORY_SIZE = 20;
 
 /**
  * 添加物品到背包
@@ -14,17 +14,19 @@ const MAX_INVENTORY_SIZE = 100;
  */
 export function addItemToInventory(state: GameState, item: Item): boolean {
   if (!state.inventory) {
-    state.inventory = [];
+    state.inventory = Array(INVENTORY_SIZE).fill(null);
   }
 
-  if (state.inventory.length >= MAX_INVENTORY_SIZE) {
-    return false;
+  // 确保 inventory 数组长度为 INVENTORY_SIZE
+  while (state.inventory.length < INVENTORY_SIZE) {
+    state.inventory.push(null);
   }
+  state.inventory = state.inventory.slice(0, INVENTORY_SIZE);
 
   // 如果是可堆叠物品，尝试合并到现有堆叠
   if (isConsumable(item) || isMaterial(item)) {
     const existingItem = state.inventory.find(
-      invItem => invItem.templateId === item.templateId && invItem.quality === item.quality
+      invItem => invItem !== null && invItem.templateId === item.templateId && invItem.quality === item.quality
     );
 
     if (existingItem) {
@@ -46,8 +48,13 @@ export function addItemToInventory(state: GameState, item: Item): boolean {
     }
   }
 
-  // 无法堆叠或新物品，直接添加
-  state.inventory.push(item);
+  // 无法堆叠或新物品，找到第一个空位置添加
+  const emptyIndex = state.inventory.findIndex(slot => slot === null);
+  if (emptyIndex === -1) {
+    return false; // 背包已满
+  }
+
+  state.inventory[emptyIndex] = item;
   logLine(`获得 ${item.name}。`, state);
   return true;
 }
@@ -57,17 +64,17 @@ export function addItemToInventory(state: GameState, item: Item): boolean {
  */
 export function removeItemFromInventory(state: GameState, itemId: string): Item | null {
   if (!state.inventory) {
-    state.inventory = [];
+    state.inventory = Array(INVENTORY_SIZE).fill(null);
     return null;
   }
 
-  const index = state.inventory.findIndex(item => item.id === itemId);
+  const index = state.inventory.findIndex(item => item !== null && item.id === itemId);
   if (index === -1) {
     return null;
   }
 
   const item = state.inventory[index];
-  state.inventory.splice(index, 1);
+  state.inventory[index] = null;
   return item;
 }
 
@@ -77,13 +84,13 @@ export function removeItemFromInventory(state: GameState, itemId: string): Item 
  */
 export function equipItem(state: GameState, itemId: string): boolean {
   if (!state.inventory) {
-    state.inventory = [];
+    state.inventory = Array(INVENTORY_SIZE).fill(null);
   }
   if (!state.equipment) {
     state.equipment = {};
   }
 
-  const item = state.inventory.find(i => i.id === itemId);
+  const item = state.inventory.find(i => i !== null && i.id === itemId);
   if (!item || !isEquipment(item)) {
     return false;
   }
@@ -93,12 +100,13 @@ export function equipItem(state: GameState, itemId: string): boolean {
   // 如果槽位已有装备，先卸下
   const oldEquipment = state.equipment[slot];
   if (oldEquipment) {
-    // 尝试将旧装备放回背包
-    if (state.inventory.length >= MAX_INVENTORY_SIZE) {
+    // 尝试将旧装备放回背包（找到第一个空位置）
+    const emptyIndex = state.inventory.findIndex(slot => slot === null);
+    if (emptyIndex === -1) {
       // 背包已满，无法卸下旧装备
       return false;
     }
-    state.inventory.push(oldEquipment);
+    state.inventory[emptyIndex] = oldEquipment;
     logLine(`卸下 ${oldEquipment.name}。`, state);
   }
 
@@ -121,7 +129,7 @@ export function unequipItem(state: GameState, slot: EquipmentSlot): boolean {
     state.equipment = {};
   }
   if (!state.inventory) {
-    state.inventory = [];
+    state.inventory = Array(INVENTORY_SIZE).fill(null);
   }
 
   const equipment = state.equipment[slot];
@@ -129,14 +137,16 @@ export function unequipItem(state: GameState, slot: EquipmentSlot): boolean {
     return false;
   }
 
-  // 检查背包是否已满
-  if (state.inventory.length >= MAX_INVENTORY_SIZE) {
+  // 找到第一个空位置
+  const emptyIndex = state.inventory.findIndex(slot => slot === null);
+  if (emptyIndex === -1) {
+    // 背包已满
     return false;
   }
 
   // 从装备槽移除并放回背包
   delete state.equipment[slot];
-  state.inventory.push(equipment);
+  state.inventory[emptyIndex] = equipment;
   logLine(`卸下 ${equipment.name}。`, state);
 
   // 刷新属性
@@ -150,11 +160,11 @@ export function unequipItem(state: GameState, slot: EquipmentSlot): boolean {
  */
 export function useConsumable(state: GameState, itemId: string): boolean {
   if (!state.inventory) {
-    state.inventory = [];
+    state.inventory = Array(INVENTORY_SIZE).fill(null);
     return false;
   }
 
-  const item = state.inventory.find(i => i.id === itemId);
+  const item = state.inventory.find(i => i !== null && i.id === itemId);
   if (!item || !isConsumable(item)) {
     return false;
   }
@@ -244,21 +254,30 @@ export function getEquipmentStats(state: GameState): {
 
     // 累加战斗属性
     if (equipment.combatStats) {
+      // 处理元素抗性（扩展属性，不在标准 CombatStats 中）
+      type ExtendedCombatStats = Partial<CombatStats> & {
+        elementRes?: { fire?: number; water?: number; lightning?: number };
+      };
+      const equipmentCombatStats = equipment.combatStats as ExtendedCombatStats;
+      
+      if (equipmentCombatStats.elementRes) {
+        if (!(combatStats as any).elementRes) {
+          (combatStats as any).elementRes = { fire: 0, water: 0, lightning: 0 };
+        }
+        const elementRes = (combatStats as any).elementRes as { fire: number; water: number; lightning: number };
+        elementRes.fire += equipmentCombatStats.elementRes.fire || 0;
+        elementRes.water += equipmentCombatStats.elementRes.water || 0;
+        elementRes.lightning += equipmentCombatStats.elementRes.lightning || 0;
+      }
+
+      // 处理其他标准战斗属性
       for (const [key, value] of Object.entries(equipment.combatStats)) {
-        const statKey = key as keyof typeof combatStats;
-        if (statKey === "elementRes") {
-          // 元素抗性需要特殊处理（对象合并）
-          if (!combatStats.elementRes) {
-            combatStats.elementRes = { fire: 0, water: 0, lightning: 0 };
-          }
-          if (equipment.combatStats.elementRes) {
-            combatStats.elementRes.fire += equipment.combatStats.elementRes.fire || 0;
-            combatStats.elementRes.water += equipment.combatStats.elementRes.water || 0;
-            combatStats.elementRes.lightning += equipment.combatStats.elementRes.lightning || 0;
-          }
-        } else if (typeof value === "number") {
-          // 确保 value 是数字类型（elementRes 已在上面处理，这里 statKey 不可能是 elementRes）
-          const currentValue = combatStats[statKey];
+        // 跳过 elementRes，已在上面处理
+        if (key === "elementRes") continue;
+        
+        if (typeof value === "number") {
+          const statKey = key as keyof typeof combatStats;
+          const currentValue = (combatStats as any)[statKey];
           if (typeof currentValue === "number") {
             (combatStats as any)[statKey] = currentValue + value;
           } else {
@@ -270,4 +289,56 @@ export function getEquipmentStats(state: GameState): {
   }
 
   return { baseStats, combatStats };
+}
+
+/**
+ * 重新排序背包物品
+ * itemIds 数组长度为20，null表示空位置，字符串表示物品ID
+ */
+export function reorderItems(state: GameState, itemIds: (string | null)[]): boolean {
+  if (!state.inventory) {
+    state.inventory = Array(INVENTORY_SIZE).fill(null);
+  }
+
+  // 确保 itemIds 长度为 INVENTORY_SIZE
+  const normalizedItemIds = [...itemIds];
+  while (normalizedItemIds.length < INVENTORY_SIZE) {
+    normalizedItemIds.push(null);
+  }
+  normalizedItemIds.splice(INVENTORY_SIZE);
+
+  // 创建物品ID到物品的映射
+  const itemsMap = new Map<string, Item>();
+  state.inventory.forEach(item => {
+    if (item !== null) {
+      itemsMap.set(item.id, item);
+    }
+  });
+
+  // 按照新的顺序重新排列物品
+  const newInventory: (Item | null)[] = [];
+  for (const itemId of normalizedItemIds) {
+    if (itemId === null) {
+      newInventory.push(null);
+    } else {
+      const item = itemsMap.get(itemId);
+      if (item) {
+        newInventory.push(item);
+        itemsMap.delete(itemId);
+      } else {
+        newInventory.push(null);
+      }
+    }
+  }
+
+  // 添加任何未在itemIds中的物品到末尾的空位置（以防万一）
+  itemsMap.forEach(item => {
+    const emptyIndex = newInventory.findIndex(slot => slot === null);
+    if (emptyIndex !== -1) {
+      newInventory[emptyIndex] = item;
+    }
+  });
+
+  state.inventory = newInventory;
+  return true;
 }

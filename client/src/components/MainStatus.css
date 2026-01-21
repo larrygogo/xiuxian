@@ -131,13 +131,45 @@
 
 .main-progress-text {
   margin-top: 8px;
-  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   font-size: 11px;
   font-weight: 700;
   color: var(--ink-text-muted);
   letter-spacing: 0.3px;
-  pointer-events: none;
   white-space: nowrap;
+}
+
+.level-up-button {
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-text);
+  background: linear-gradient(135deg, var(--ink-paper) 0%, var(--ink-paper-deep) 100%);
+  border: 1px solid var(--ink-border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Noto Serif SC', 'Microsoft YaHei', serif;
+  white-space: nowrap;
+}
+
+.level-up-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--ink-paper-deep) 0%, var(--ink-paper-edge) 100%);
+  border-color: var(--ink-border-strong);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px var(--ink-shadow);
+}
+
+.level-up-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.level-up-button:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 @keyframes mainProgressShine {

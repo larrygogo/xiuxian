@@ -24,7 +24,21 @@
 }
 
 .item-card.equipped {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.2) 100%);
+  background: transparent !important;
+  border: 2px solid var(--ink-border) !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 64px !important;
+  height: 64px !important;
+  box-sizing: border-box !important;
+}
+
+.item-card.equipped:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border-color: var(--ink-border) !important;
 }
 
 .item-icon {

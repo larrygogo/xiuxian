@@ -25,12 +25,6 @@ export const LEVEL_SCALE_STEP = 0.015;
 // 挂机“天”的概念（用于事件限流/刷新）
 export const TICKS_PER_DAY = 120;
 
-// 离线收益折扣（推荐 0.2~0.5）
-export const OFFLINE_FACTOR = 0.35;
-
-// 每日离线收益上限（按自然日）
-export const OFFLINE_DAILY_QI_LIMIT = 1000;
-export const OFFLINE_DAILY_HERB_LIMIT = 20;
 
 // 探索事件素材
 export const BEASTS = ["山魈", "血狼", "妖蛇", "腐尸", "黑熊精"] as const;

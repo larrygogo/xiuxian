@@ -1,12 +1,14 @@
 import { getDatabase, saveDatabase } from "../db/init";
 import { defaultState } from "../state/defaultState";
 import { migrateState } from "../state/migrate";
-import { applyOfflineProgress } from "../systems/offline";
 import { ensureDailyReset } from "../systems/actions";
 import type { GameState, GameStateCallback } from "../types/game";
 
 // 存储每个用户的游戏状态（内存缓存）
 const userGameStates = new Map<number, GameState>();
+
+// 存储每个用户的操作锁（防止并发操作）
+const userOperationLocks = new Map<number, Promise<void>>();
 
 /**
  * 从数据库加载游戏状态
@@ -41,18 +43,11 @@ async function loadGameState(userId: number): Promise<GameState> {
 
     candidate.lastTs = result.last_ts || Date.now();
 
-    // 计算离线收益，避免用户离线损失
-    const now = Date.now();
-    const offlineMs = now - (candidate.lastTs || now);
-    if (offlineMs > 0) {
-      applyOfflineProgress(candidate, offlineMs);
-    }
-
     // 每日次数按自然日校正
     ensureDailyReset(candidate);
 
-    // 标记为已结算，避免重复离线结算
-    candidate.lastTs = now;
+    // 更新最后时间戳
+    candidate.lastTs = Date.now();
 
     return candidate;
   } catch (e) {
@@ -146,6 +141,30 @@ export async function updateUserGameState(userId: number, state: GameState): Pro
   if (callback) {
     callback(state);
   }
+}
+
+/**
+ * 获取或创建用户操作锁（防止并发操作）
+ */
+export async function acquireUserLock(userId: number, operation: () => Promise<void>): Promise<void> {
+  // 如果已有正在进行的操作，等待其完成
+  const existingLock = userOperationLocks.get(userId);
+  if (existingLock) {
+    await existingLock;
+  }
+
+  // 创建新的锁
+  const lockPromise = (async () => {
+    try {
+      await operation();
+    } finally {
+      // 操作完成后移除锁
+      userOperationLocks.delete(userId);
+    }
+  })();
+
+  userOperationLocks.set(userId, lockPromise);
+  return lockPromise;
 }
 
 /**

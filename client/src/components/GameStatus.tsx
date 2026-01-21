@@ -128,14 +128,6 @@ export function GameStatus({ state, onRename, onHeal }: GameStatusProps) {
             )}
           </div>
           <div className="status-item">
-            <span className="label">灵草</span>
-            <span className="value">{state.herbs}</span>
-          </div>
-          <div className="status-item">
-            <span className="label">气运</span>
-            <span className="value">{state.luck}</span>
-          </div>
-          <div className="status-item">
             <span className="label">状态</span>
             <span className="value">{statusLabel}</span>
           </div>
@@ -214,14 +206,6 @@ export function GameStatus({ state, onRename, onHeal }: GameStatusProps) {
               {healMessage}
             </span>
           )}
-        </div>
-        <div className="status-item">
-          <span className="label">气运</span>
-          <span className="value">{state.luck}</span>
-        </div>
-        <div className="status-item">
-          <span className="label">灵草</span>
-          <span className="value">{state.herbs}</span>
         </div>
         <div className="status-item">
           <span className="label">今日剩余</span>

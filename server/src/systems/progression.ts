@@ -37,7 +37,7 @@ export function isMaxed(state: GameState): boolean {
  * 执行一次进境（如果条件满足）
  * 按照 阶段 -> 层数 -> 大境界 的顺序推进
  */
-function stepUpOnce(state: GameState): boolean {
+export function stepUpOnce(state: GameState): boolean {
   if (isMaxed(state)) return false;
 
   const req = needQi(state);
@@ -77,8 +77,7 @@ function applyGrowth(state: GameState, type: GrowthType): void {
     agi: 10,
     vit: 10,
     int: 10,
-    spi: 10,
-    luk: state.luck ?? 10
+    spi: 10
   };
 
   const growth = {
@@ -86,8 +85,7 @@ function applyGrowth(state: GameState, type: GrowthType): void {
     agi: 1,
     vit: 1,
     int: 1,
-    spi: 1,
-    luk: Math.random() < 0.2 ? 1 : 0
+    spi: 1
   };
 
   // 破境额外奖励
@@ -98,10 +96,8 @@ function applyGrowth(state: GameState, type: GrowthType): void {
   base.vit += growth.vit;
   base.int += growth.int;
   base.spi += growth.spi;
-  base.luk += growth.luk;
 
   state.baseStats = base;
-  state.luck = base.luk;
 
   // 同步刷新战斗属性与上限
   refreshDerivedStats(state);

@@ -5,11 +5,6 @@
     "description": "经过提炼的精制铁块，是锻造装备的重要材料。"
   },
   {
-    "templateId": "material_herb",
-    "name": "灵草",
-    "description": "蕴含灵气的草药，可用于炼制丹药或提升修为。"
-  },
-  {
     "templateId": "material_crystal",
     "name": "灵石",
     "description": "凝聚天地灵气的晶石，是修仙者修炼和交易的珍贵资源。"

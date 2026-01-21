@@ -3,15 +3,16 @@ import { authenticateToken } from "../middleware/auth";
 import {
   getUserGameState,
   initializeUserGame,
-  updateUserGameState
+  updateUserGameState,
+  acquireUserLock
 } from "../services/gameService";
 import { toClientState } from "../services/stateView";
 import { cultivateTick, ensureDailyReset, heal } from "../systems/actions";
 import { exploreTick } from "../systems/events";
-import { stepUpAsMuchAsPossible } from "../systems/progression";
+import { stepUpAsMuchAsPossible, stepUpOnce, needQi } from "../systems/progression";
 import { STEP_UP_LIMIT_PER_TICK } from "../config";
 import { logLine } from "../services/logger";
-import { equipItem, unequipItem, useConsumable } from "../systems/items";
+import { equipItem, unequipItem, useConsumable, reorderItems } from "../systems/items";
 import { getItemTemplates } from "../services/itemService";
 import { refreshDerivedStats } from "../systems/battle";
 import type { EquipmentSlot } from "../types/item";
@@ -136,39 +137,55 @@ router.post("/actions/tick", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "未提供认证令牌" });
     }
 
-    const state = getUserGameState(userId);
-    if (!state) {
-      return res.status(404).json({ error: "游戏状态未找到" });
-    }
+    // 使用锁机制防止并发请求
+    let responseSent = false;
+    await acquireUserLock(userId, async () => {
+      if (responseSent) return;
 
-    if (!state.alive) {
-      return res.status(400).json({ error: "你已死亡，无法行动" });
-    }
+      const state = getUserGameState(userId);
+      if (!state) {
+        responseSent = true;
+        res.status(404).json({ error: "游戏状态未找到" });
+        return;
+      }
 
-    ensureDailyReset(state);
+      if (!state.alive) {
+        responseSent = true;
+        res.status(400).json({ error: "你已死亡，无法行动" });
+        return;
+      }
 
-    if (state.daily.remainingTicks <= 0) {
-      return res.status(400).json({ error: "今日行动次数已用尽" });
-    }
+      ensureDailyReset(state);
 
-    // 消耗一次行动次数
-    state.daily.remainingTicks -= 1;
+      // 检查剩余次数（必须在消耗之前检查）
+      if (state.daily.remainingTicks <= 0) {
+        responseSent = true;
+        res.status(400).json({ error: "今日行动次数已用尽" });
+        return;
+      }
 
-    // 根据吐纳状态选择修炼或探索
-    if (state.isTuna) {
-      cultivateTick(state);
-    } else {
-      exploreTick(state);
-    }
+      // 消耗一次行动次数（在检查通过后立即消耗，避免并发问题）
+      state.daily.remainingTicks -= 1;
 
-    // 尝试自动进境，避免积压灵气
-    stepUpAsMuchAsPossible(state, STEP_UP_LIMIT_PER_TICK);
-    await updateUserGameState(userId, state);
+      // 根据吐纳状态选择修炼或探索
+      if (state.isTuna) {
+        cultivateTick(state);
+      } else {
+        exploreTick(state);
+      }
 
-    res.json({ message: "行动完成", state: toClientState(state) });
+      // 尝试自动进境，避免积压灵气
+      stepUpAsMuchAsPossible(state, STEP_UP_LIMIT_PER_TICK);
+      await updateUserGameState(userId, state);
+
+      responseSent = true;
+      res.json({ message: "行动完成", state: toClientState(state) });
+    });
   } catch (error) {
     console.error("行动错误:", error);
-    res.status(500).json({ error: "行动失败" });
+    if (!res.headersSent) {
+      res.status(500).json({ error: "行动失败" });
+    }
   }
 });
 
@@ -370,6 +387,77 @@ router.get("/items/templates", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("获取物品模板错误:", error);
     res.status(500).json({ error: "获取物品模板失败" });
+  }
+});
+
+/**
+ * 重新排序背包物品
+ * POST /api/game/items/reorder
+ */
+router.post("/items/reorder", async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "未提供认证令牌" });
+    }
+
+    const { itemIds } = req.body as { itemIds?: (string | null)[] };
+    if (!itemIds || !Array.isArray(itemIds)) {
+      return res.status(400).json({ error: "物品ID列表不能为空" });
+    }
+
+    const state = getUserGameState(userId);
+    if (!state) {
+      return res.status(404).json({ error: "游戏状态未找到" });
+    }
+
+    const success = reorderItems(state, itemIds);
+    if (!success) {
+      return res.status(400).json({ error: "重排序失败" });
+    }
+
+    await updateUserGameState(userId, state);
+    res.json({ message: "重排序成功", state: toClientState(state) });
+  } catch (error) {
+    console.error("重排序物品错误:", error);
+    res.status(500).json({ error: "重排序物品失败" });
+  }
+});
+
+/**
+ * 升级（进境一次）
+ * POST /api/game/actions/levelup
+ */
+router.post("/actions/levelup", async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "未提供认证令牌" });
+    }
+
+    const state = getUserGameState(userId);
+    if (!state) {
+      return res.status(404).json({ error: "游戏状态未找到" });
+    }
+
+    if (!state.alive) {
+      return res.status(400).json({ error: "你已死亡，无法升级" });
+    }
+
+    const success = stepUpOnce(state);
+    if (!success) {
+      const req = needQi(state);
+      if (state.qi < req) {
+        return res.status(400).json({ error: `灵气不足，需要 ${req} 点灵气才能升级` });
+      }
+      return res.status(400).json({ error: "已达到最高境界，无法继续升级" });
+    }
+
+    await updateUserGameState(userId, state);
+    res.json({ message: "升级成功", state: toClientState(state) });
+  } catch (error) {
+    console.error("升级错误:", error);
+    res.status(500).json({ error: "升级失败" });
   }
 });
 

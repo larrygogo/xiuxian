@@ -13,28 +13,17 @@ export interface BaseStats {
   vit: number;
   int: number;
   spi: number;
-  luk: number;
 }
 
 export interface CombatStats {
-  atk?: number | null;
-  matk?: number | null;
-  def?: number | null;
-  mdef?: number | null;
-  spd?: number | null;
   hit?: number | null;
-  eva?: number | null;
-  crit?: number | null;
-  critDmg?: number | null;
-  critRes?: number | null;
-  ccHit?: number | null;
-  ccRes?: number | null;
-  statusPower?: number | null;
-  statusRes?: number | null;
-  hpRegen?: number | null;
-  mpRegen?: number | null;
-  dropRate?: number | null;
-  procRate?: number | null;
+  pdmg?: number | null;
+  pdef?: number | null;
+  spd?: number | null;
+  mdmg?: number | null;
+  mdef?: number | null;
+  maxHp?: number | null;
+  maxMp?: number | null;
 }
 
 import type { Item, EquipmentSlots } from './item';
@@ -47,15 +36,14 @@ export interface GameState {
   mp?: number | null;
   maxMp?: number | null;
   qi: number;
-  herbs: number;
-  luck: number;
+  lingshi?: number;
   isTuna: boolean;
   alive: boolean;
   daily?: DailyState;
   baseStats?: BaseStats;
   combatStats?: CombatStats;
   eventLog?: string[];
-  inventory?: Item[];
+  inventory?: (Item | null)[]; // 固定20个位置，null表示空位置
   equipment?: EquipmentSlots;
 }
 

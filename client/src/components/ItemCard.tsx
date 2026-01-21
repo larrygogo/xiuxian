@@ -11,6 +11,8 @@ interface ItemCardProps {
   onUnequip?: (slot: string) => void;
   isEquipped?: boolean;
   slot?: string;
+  onClick?: (e?: React.MouseEvent) => void;
+  onRightClick?: (e?: React.MouseEvent) => void;
 }
 
 // 获取物品图标字符（基于类型）
@@ -33,17 +35,40 @@ function getItemIcon(item: Item): string {
   return '💎';
 }
 
-export function ItemCard({ item, onEquip, onUse, onUnequip, isEquipped, slot }: ItemCardProps) {
+export function ItemCard({ item, onEquip, onUse, onUnequip, isEquipped, slot, onClick, onRightClick }: ItemCardProps) {
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const qualityColor = QUALITY_COLORS[item.quality];
   const qualityName = QUALITY_NAMES[item.quality];
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
+    console.log('ItemCard handleClick 被调用, item:', item.name, 'onClick存在:', !!onClick);
+    e.stopPropagation();
+    if (onClick) {
+      console.log('调用 onClick');
+      onClick(e);
+      return;
+    }
+    // 如果没有onClick，使用默认行为
+    if (isEquipment(item) && onEquip) {
+      onEquip(item.id);
+    } else if (isConsumable(item) && onUse) {
+      onUse(item.id);
+    }
+  };
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    console.log('ItemCard handleContextMenu 被调用, item:', item.name, 'onRightClick存在:', !!onRightClick);
+    e.preventDefault();
+    e.stopPropagation();
+    if (onRightClick) {
+      console.log('调用 onRightClick');
+      onRightClick(e);
+      return;
+    }
+    // 如果没有onRightClick，使用默认行为（用于装备栏）
     if (isEquipped && onUnequip && slot) {
       onUnequip(slot);
-    } else if (isEquipment(item) && onEquip) {
-      onEquip(item.id);
     } else if (isConsumable(item) && onUse) {
       onUse(item.id);
     }
@@ -100,8 +125,7 @@ export function ItemCard({ item, onEquip, onUse, onUnequip, isEquipped, slot }: 
             agi: '身法',
             vit: '体魄',
             int: '灵识',
-            spi: '心境',
-            luk: '气运'
+            spi: '根骨'
           };
           stats.push(`${statNames[key] || key} +${value}`);
         }
@@ -110,25 +134,17 @@ export function ItemCard({ item, onEquip, onUse, onUnequip, isEquipped, slot }: 
 
     if (equipment.combatStats) {
       Object.entries(equipment.combatStats).forEach(([key, value]) => {
-        if (key === 'elementRes' || !value || value <= 0) return;
+        // 跳过无效值
+        if (!value || value <= 0) return;
         const statNames: Record<string, string> = {
-          atk: '物攻',
-          def: '物防',
-          matk: '法攻',
-          mdef: '法防',
-          spd: '速度',
           hit: '命中',
-          eva: '闪避',
-          crit: '暴击',
-          critDmg: '暴伤',
+          pdmg: '物伤',
+          pdef: '物防',
+          spd: '速度',
+          mdmg: '法伤',
+          mdef: '法防',
           maxHp: '生命上限',
-          maxMp: '法力上限',
-          dropRate: '掉落率',
-          procRate: '触发率',
-          hpRegen: '生命回复',
-          mpRegen: '法力回复',
-          armorPen: '破甲',
-          dr: '减伤'
+          maxMp: '法力上限'
         };
         stats.push(`${statNames[key] || key} +${value}`);
       });
@@ -195,8 +211,9 @@ export function ItemCard({ item, onEquip, onUse, onUnequip, isEquipped, slot }: 
     <>
       <div
         className={`item-card ${isEquipped ? 'equipped' : ''}`}
-        style={{ borderColor: qualityColor }}
+        style={isEquipped ? {} : { borderColor: qualityColor }}
         onClick={handleClick}
+        onContextMenu={handleContextMenu}
         onMouseEnter={handleMouseEnter}
         onMouseMove={handleMouseMove}
         onMouseLeave={() => setShowTooltip(false)}
@@ -205,7 +222,6 @@ export function ItemCard({ item, onEquip, onUse, onUnequip, isEquipped, slot }: 
         {isConsumable(item) && item.stackSize > 1 && (
           <div className="item-stack">x{item.stackSize}</div>
         )}
-        {isEquipped && <div className="item-equipped-badge">✓</div>}
       </div>
       {typeof document !== 'undefined' && createPortal(tooltipContent, document.body)}
     </>

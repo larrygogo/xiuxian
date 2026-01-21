@@ -13,11 +13,8 @@ const api = axios.create({
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem('token');
-    if (token) {
-      config.headers = {
-        ...config.headers,
-        Authorization: `Bearer ${token}`,
-      };
+    if (token && config.headers) {
+      config.headers.set('Authorization', `Bearer ${token}`);
     }
     return config;
   },
@@ -52,12 +49,14 @@ export const gameAPI = {
   heal: () => api.post('/api/game/actions/heal'),
   tick: () => api.post('/api/game/actions/tick'),
   toggleTuna: (enabled: boolean) => api.post('/api/game/actions/toggle-tuna', { enabled }),
+  levelUp: () => api.post('/api/game/actions/levelup'),
   createCharacter: (name: string) => api.post('/api/game/character/create', { name }),
   renameCharacter: (name: string) => api.post('/api/game/character/rename', { name }),
   equipItem: (itemId: string) => api.post('/api/game/items/equip', { itemId }),
   unequipItem: (slot: string) => api.post('/api/game/items/unequip', { slot }),
   useItem: (itemId: string) => api.post('/api/game/items/use', { itemId }),
   getItemTemplates: () => api.get('/api/game/items/templates'),
+  reorderItems: (itemIds: (string | null)[]) => api.post('/api/game/items/reorder', { itemIds }),
 };
 
 export default api;

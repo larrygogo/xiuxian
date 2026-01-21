@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import './MainStatus.css';
 import { stageName, needQi } from '../utils/gameUtils';
-import type { GameState } from '../types/game';
+import type { GameState, ActionResult } from '../types/game';
 
 interface MainStatusProps {
   state: GameState | null;
+  onLevelUp?: () => Promise<ActionResult>;
 }
 
 interface StatItem {
@@ -13,18 +15,20 @@ interface StatItem {
   suffix?: string;
 }
 
-export function MainStatus({ state }: MainStatusProps) {
+export function MainStatus({ state, onLevelUp }: MainStatusProps) {
+  const [levelUpLoading, setLevelUpLoading] = useState(false);
+
   if (!state) return null;
 
   const stage = stageName(state);
   const requiredQi = needQi(state);
+  const canLevelUp = state.qi >= requiredQi;
   const baseStats = state.baseStats ?? {
     str: 0,
     agi: 0,
     vit: 0,
     int: 0,
-    spi: 0,
-    luk: state.luck ?? 0
+    spi: 0
   };
   const combatStats = state.combatStats ?? {};
 
@@ -33,31 +37,18 @@ export function MainStatus({ state }: MainStatusProps) {
     { key: 'agi', label: '身法', value: baseStats.agi },
     { key: 'vit', label: '体魄', value: baseStats.vit },
     { key: 'int', label: '灵识', value: baseStats.int },
-    { key: 'spi', label: '心境', value: baseStats.spi },
-    { key: 'luk', label: '气运', value: baseStats.luk }
+    { key: 'spi', label: '根骨', value: baseStats.spi }
   ];
 
   const combatStatItems: StatItem[] = [
     { key: 'hp', label: '生命', value: `${state.hp} / ${state.maxHp}` },
     { key: 'mp', label: '法力', value: `${state.mp ?? 0} / ${state.maxMp ?? 0}` },
-    { key: 'atk', label: '物攻', value: combatStats.atk },
-    { key: 'matk', label: '法攻', value: combatStats.matk },
-    { key: 'def', label: '物防', value: combatStats.def },
-    { key: 'mdef', label: '法防', value: combatStats.mdef },
-    { key: 'spd', label: '速度', value: combatStats.spd },
     { key: 'hit', label: '命中', value: combatStats.hit },
-    { key: 'eva', label: '闪避', value: combatStats.eva },
-    { key: 'crit', label: '暴击率', value: combatStats.crit, suffix: '%' },
-    { key: 'critDmg', label: '暴击伤害', value: combatStats.critDmg, suffix: 'x' },
-    { key: 'critRes', label: '暴击抗性', value: combatStats.critRes, suffix: '%' },
-    { key: 'ccHit', label: '控制命中', value: combatStats.ccHit, suffix: '%' },
-    { key: 'ccRes', label: '控制抗性', value: combatStats.ccRes, suffix: '%' },
-    { key: 'statusPower', label: '异常触发', value: combatStats.statusPower, suffix: '%' },
-    { key: 'statusRes', label: '异常抗性', value: combatStats.statusRes, suffix: '%' },
-    { key: 'hpRegen', label: '生命回复', value: combatStats.hpRegen },
-    { key: 'mpRegen', label: '法力回复', value: combatStats.mpRegen },
-    { key: 'dropRate', label: '掉落加成', value: combatStats.dropRate, suffix: '%' },
-    { key: 'procRate', label: '触发加成', value: combatStats.procRate, suffix: '%' }
+    { key: 'pdmg', label: '物伤', value: combatStats.pdmg },
+    { key: 'pdef', label: '物防', value: combatStats.pdef },
+    { key: 'spd', label: '速度', value: combatStats.spd },
+    { key: 'mdmg', label: '法伤', value: combatStats.mdmg },
+    { key: 'mdef', label: '法防', value: combatStats.mdef }
   ];
 
   const formatStat = (item: StatItem) => {
@@ -66,6 +57,27 @@ export function MainStatus({ state }: MainStatusProps) {
       return item.suffix ? `${fixed}${item.suffix}` : fixed;
     }
     return item.value ?? '-';
+  };
+
+  const handleLevelUp = async () => {
+    if (!canLevelUp || levelUpLoading) return;
+    
+    setLevelUpLoading(true);
+    try {
+      if (onLevelUp) {
+        const result = await onLevelUp();
+        if (!result.success && result.error) {
+          alert(result.error);
+        }
+      } else {
+        // 降级方案：直接调用 API
+        await gameAPI.levelUp();
+      }
+    } catch (error: any) {
+      alert(error.response?.data?.error || '升级失败');
+    } finally {
+      setLevelUpLoading(false);
+    }
   };
 
   return (
@@ -107,6 +119,14 @@ export function MainStatus({ state }: MainStatusProps) {
         </div>
         <div className="main-progress-text">
           灵气进度: {state.qi} / {requiredQi}
+          <button
+            className="level-up-button"
+            onClick={handleLevelUp}
+            disabled={!canLevelUp || levelUpLoading}
+            title={canLevelUp ? '点击升级' : `需要 ${requiredQi} 点灵气才能升级`}
+          >
+            {levelUpLoading ? '升级中...' : '升级'}
+          </button>
         </div>
       </div>
     </div>

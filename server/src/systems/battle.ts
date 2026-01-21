@@ -1,4 +1,4 @@
-import { BATTLE_CONFIG, LEVEL_SCALE_STEP } from "../config";
+import { BATTLE_CONFIG } from "../config";
 import { logLine } from "../services/logger";
 import type { BaseStats, CombatStats, GameState } from "../types/game";
 import type { BattleResult, Combatant } from "../types/battle";
@@ -15,95 +15,97 @@ function randInt(min: number, max: number): number {
 }
 
 // 确保基础属性存在，缺失则用默认值补齐
-function ensureBaseStats(baseStats: Partial<BaseStats> | undefined, fallbackLuck: number | undefined): BaseStats {
+function ensureBaseStats(baseStats: Partial<BaseStats> | undefined): BaseStats {
   return {
     str: 10,
     agi: 10,
     vit: 10,
     int: 10,
     spi: 10,
-    luk: fallbackLuck ?? 10,
     ...baseStats
   };
 }
 
 /**
- * 根据基础属性与等级计算战斗衍生属性
+ * 根据玩家分配的基础属性，计算战斗用的派生属性
+ *
+ * 设计思想：
+ * 1. 不使用等级系数，成长完全来自“每级 5 点自由加点”
+ * 2. 每个基础属性职责单一、收益线性、可预期
+ * 3. 面板数值简单，复杂性放到战斗判定阶段
  */
-function computeDerivedStats(base: BaseStats, level: number): CombatStats {
-  const lvl = Math.max(1, level);
-  const levelScale = 1 + (lvl - 1) * LEVEL_SCALE_STEP;
+function computeDerivedStats(base: BaseStats): CombatStats {
+  // ---------- 0) 基础校验：避免 NaN/负数污染面板 ----------
+  const str = Number.isFinite(base.str) ? Math.max(0, base.str) : 0;
+  const int = Number.isFinite(base.int) ? Math.max(0, base.int) : 0;
+  const vit = Number.isFinite(base.vit) ? Math.max(0, base.vit) : 0;
+  const spi = Number.isFinite(base.spi) ? Math.max(0, base.spi) : 0;
+  const agi = Number.isFinite(base.agi) ? Math.max(0, base.agi) : 0;
 
-  // 攻击与防御
-  const atk = base.str * 2.5 * levelScale;
-  const def = base.vit * 2.0 * levelScale;
-  const matk = base.int * 2.5 * levelScale;
-  const mdef = base.spi * 2.0 * levelScale;
-  const spd = base.agi * 1.8 * levelScale;
+  // ---------- 1) 可调参数：集中管理，方便后续平衡 ----------
+  const C = {
+    // 命中：给一个基础底盘，避免低点数“打不着”
+    HIT_BASE: 80,
+    HIT_FROM_AGI: 0.6,
+    HIT_FROM_STR: 0.4,
 
-  // 命中/闪避/暴击相关
-  const hit = 60 + base.int * 1.2 + base.agi * 0.6;
-  const eva = 40 + base.agi * 1.1 + base.spi * 0.6;
-  const crit = 5 + base.agi * 0.35 + base.luk * 0.45;
-  const critRes = 2 + base.spi * 0.3 + base.vit * 0.2;
-  const critDmg = 1.5 + base.luk * 0.01;
+    // 物伤：主吃 str，少量吃 agi（不抢主权）
+    PDMG_FROM_STR: 2.8,
+    PDMG_FROM_AGI: 0.3,
 
-  // 控制与异常状态
-  const ccHit = 5 + base.int * 0.4 + base.spi * 0.4;
-  const ccRes = 5 + base.vit * 0.4 + base.spi * 0.4;
-  const statusPower = 5 + base.luk * 0.5 + base.str * 0.2;
-  const statusRes = 5 + base.vit * 0.4 + base.spi * 0.4;
+    // 防御：主吃 spi，少量吃 vit（体魄提供“抗打底子”）
+    PDEF_FROM_SPI: 2.2,
+    PDEF_FROM_VIT: 0.6,
+    MDEF_FROM_SPI: 2.2,
+    MDEF_FROM_VIT: 0.6,
 
-  // 生命/法力上限与回复
-  const maxHp = 60 + base.vit * 4 + (lvl - 1) * 2.5;
-  const maxMp = 40 + base.int * 3 + base.spi * 2 + (lvl - 1) * 1.5;
-  const hpRegen = Math.max(1, Math.floor(base.vit * 0.1));
-  const mpRegen = Math.max(1, Math.floor(base.spi * 0.12));
+    // 速度：敏捷决定出手顺序，给固定底盘避免“0敏必慢”
+    SPD_BASE: 50,
+    SPD_FROM_AGI: 2.0,
 
-  // 其它属性
-  const armorPen = base.str * 0.3;
-  const dropRate = base.luk * 0.002;
-  const procRate = base.luk * 0.002;
+    // 法伤：主吃 int，少量吃 spi（根骨稳，法门顺）
+    MDMG_FROM_INT: 2.8,
+    MDMG_FROM_SPI: 0.3
+  } as const;
 
+  // ---------- 2) 面板计算（线性、可读、梦幻风） ----------
+  const hit = C.HIT_BASE + agi * C.HIT_FROM_AGI + str * C.HIT_FROM_STR;
+
+  const pdmg = str * C.PDMG_FROM_STR + agi * C.PDMG_FROM_AGI;
+  const pdef = spi * C.PDEF_FROM_SPI + vit * C.PDEF_FROM_VIT;
+
+  const spd = C.SPD_BASE + agi * C.SPD_FROM_AGI;
+
+  const mdmg = int * C.MDMG_FROM_INT + spi * C.MDMG_FROM_SPI;
+  const mdef = spi * C.MDEF_FROM_SPI + vit * C.MDEF_FROM_VIT;
+
+  // 最大生命值和最大法力值
+  const maxHp = 60 + vit * 6;
+  const maxMp = 40 + int * 5;
+
+  // ---------- 3) 取整策略 ----------
+  // 建议面板展示用整数，便于玩家理解与对比。
+  // 若你希望保留小数做更细腻的平衡，可改为不取整或仅在 UI 层取整。
   return {
-    atk,
-    def,
-    matk,
-    mdef,
-    spd,
-    hit,
-    eva,
-    crit,
-    critRes,
-    critDmg,
-    ccHit,
-    ccRes,
-    statusPower,
-    statusRes,
-    maxHp,
-    maxMp,
-    hpRegen,
-    mpRegen,
-    armorPen,
-    dr: 0,
-    elementRes: {
-      fire: 0,
-      water: 0,
-      lightning: 0
-    },
-    dropRate,
-    procRate
+    hit: Math.floor(hit),
+    pdmg: Math.floor(pdmg),
+    pdef: Math.floor(pdef),
+    spd: Math.floor(spd),
+    mdmg: Math.floor(mdmg),
+    mdef: Math.floor(mdef),
+    maxHp: Math.floor(maxHp),
+    maxMp: Math.floor(maxMp)
   };
 }
+
 
 /**
  * 刷新战斗属性，并同步生命/法力上限
  * 现在会考虑装备提供的属性加成
  */
 export function refreshDerivedStats(state: GameState): CombatStats {
-  const base = ensureBaseStats(state.baseStats, state.luck);
+  const base = ensureBaseStats(state.baseStats);
   state.baseStats = base;
-  state.luck = base.luk;
 
   // 获取装备提供的属性加成
   const equipmentStats = getEquipmentStats(state);
@@ -114,22 +116,15 @@ export function refreshDerivedStats(state: GameState): CombatStats {
     agi: base.agi + (equipmentStats.baseStats.agi || 0),
     vit: base.vit + (equipmentStats.baseStats.vit || 0),
     int: base.int + (equipmentStats.baseStats.int || 0),
-    spi: base.spi + (equipmentStats.baseStats.spi || 0),
-    luk: base.luk + (equipmentStats.baseStats.luk || 0)
+    spi: base.spi + (equipmentStats.baseStats.spi || 0)
   };
 
-  const derived = computeDerivedStats(effectiveBase, state.level);
+  const derived = computeDerivedStats(effectiveBase);
 
   // 叠加装备提供的战斗属性加成
   const finalCombatStats: CombatStats = {
     ...derived,
-    ...equipmentStats.combatStats,
-    // 特殊处理元素抗性（需要合并对象）
-    elementRes: {
-      fire: (derived.elementRes?.fire || 0) + (equipmentStats.combatStats.elementRes?.fire || 0),
-      water: (derived.elementRes?.water || 0) + (equipmentStats.combatStats.elementRes?.water || 0),
-      lightning: (derived.elementRes?.lightning || 0) + (equipmentStats.combatStats.elementRes?.lightning || 0)
-    }
+    ...equipmentStats.combatStats
   };
 
   // 合并已有的战斗属性，避免丢失自定义字段
@@ -150,27 +145,20 @@ export function refreshDerivedStats(state: GameState): CombatStats {
 }
 
 function getHitChance(attacker: Combatant, defender: Combatant): number {
-  const diff = attacker.stats.hit - defender.stats.eva;
-  const chance = BATTLE_CONFIG.baseHit + diff * BATTLE_CONFIG.hitScale;
+  // 简化命中判定：基于攻击者的命中值
+  const hitValue = attacker.stats.hit;
+  const chance = BATTLE_CONFIG.baseHit + hitValue * BATTLE_CONFIG.hitScale;
   return clamp(chance, BATTLE_CONFIG.minHit, BATTLE_CONFIG.maxHit);
 }
 
 function getCritChance(attacker: Combatant, defender: Combatant): number {
-  const diff = attacker.stats.crit - defender.stats.critRes;
-  const chance = BATTLE_CONFIG.baseCrit + diff * BATTLE_CONFIG.critScale;
-  return clamp(chance, BATTLE_CONFIG.minCrit, BATTLE_CONFIG.maxCrit);
+  // 固定暴击率为 5%（隐藏属性）
+  return 0.05;
 }
 
 function getCcChance(attacker: Combatant, defender: Combatant): number {
-  const diff = attacker.stats.ccHit - defender.stats.ccRes;
-  const chance = BATTLE_CONFIG.baseCc + diff * BATTLE_CONFIG.ccScale;
-  return clamp(chance, BATTLE_CONFIG.minCc, BATTLE_CONFIG.maxCc);
-}
-
-function getStatusChance(attacker: Combatant, defender: Combatant): number {
-  const diff = attacker.stats.statusPower - defender.stats.statusRes;
-  const chance = BATTLE_CONFIG.baseStatus + diff * BATTLE_CONFIG.statusScale;
-  return clamp(chance, BATTLE_CONFIG.minStatus, BATTLE_CONFIG.maxStatus);
+  // 控制判定已移除，返回 0
+  return 0;
 }
 
 function getDamageReduction(defense: number): number {
@@ -203,17 +191,17 @@ function resolveAttack(attacker: Combatant, defender: Combatant, state: GameStat
   }
 
   const isMagic = attacker.attackType === "magic";
-  const baseAtk = isMagic ? attacker.stats.matk : attacker.stats.atk;
-  const baseDef = isMagic ? defender.stats.mdef : defender.stats.def;
+  const baseAtk = isMagic ? attacker.stats.mdmg : attacker.stats.pdmg;
+  const baseDef = isMagic ? defender.stats.mdef : defender.stats.pdef;
   const dr = getDamageReduction(baseDef);
   let dmg = Math.max(1, Math.floor(baseAtk * (1 - dr)));
 
-  // 暴击判定
+  // 暴击判定（固定 5% 概率，2 倍伤害）
   const critChance = getCritChance(attacker, defender);
   let isCrit = false;
   if (Math.random() < critChance) {
     isCrit = true;
-    dmg = Math.floor(dmg * attacker.stats.critDmg);
+    dmg = Math.floor(dmg * 2.0);
   }
 
   defender.hp = Math.max(0, defender.hp - dmg);
@@ -227,17 +215,6 @@ function resolveAttack(attacker: Combatant, defender: Combatant, state: GameStat
   if (Math.random() < ccChance) {
     defender.effects.stun = 1;
     logLine(`${defender.name}被控制，无法行动。`, state);
-  }
-
-  // 异常状态判定（流血）
-  const statusChance = getStatusChance(attacker, defender);
-  if (Math.random() < statusChance) {
-    const dotDmg = Math.max(1, Math.floor(dmg * BATTLE_CONFIG.dotRatio));
-    defender.effects.bleed = {
-      turns: BATTLE_CONFIG.dotTurns,
-      dmg: dotDmg
-    };
-    logLine(`${defender.name}流血，将持续受到伤害。`, state);
   }
 }
 
@@ -258,8 +235,6 @@ function takeTurn(actor: Combatant, target: Combatant, state: GameState): void {
     return;
   }
 
-  // 回合内被动回蓝
-  actor.mp = Math.min(actor.maxMp, actor.mp + actor.stats.mpRegen);
   resolveAttack(actor, target, state);
 }
 
@@ -268,7 +243,7 @@ function takeTurn(actor: Combatant, target: Combatant, state: GameState): void {
  */
 function makeCombatantFromState(state: GameState): Combatant {
   const derived = refreshDerivedStats(state);
-  const attackType = derived.matk > derived.atk ? "magic" : "physical";
+  const attackType = derived.mdmg > derived.pdmg ? "magic" : "physical";
   return {
     name: "你",
     hp: state.hp,
@@ -292,8 +267,7 @@ function makeBeastBaseStats(level: number): BaseStats {
     agi: base + randInt(0, 3),
     vit: base + randInt(0, 3),
     int: base + randInt(0, 3),
-    spi: base + randInt(0, 3),
-    luk: base + randInt(0, 2)
+    spi: base + randInt(0, 3)
   };
 }
 
@@ -302,8 +276,8 @@ function makeBeastBaseStats(level: number): BaseStats {
  */
 function makeCombatantFromBeast(beastName: string, level: number): Combatant {
   const baseStats = makeBeastBaseStats(level);
-  const derived = computeDerivedStats(baseStats, level);
-  const attackType = derived.matk > derived.atk ? "magic" : "physical";
+  const derived = computeDerivedStats(baseStats);
+  const attackType = derived.mdmg > derived.pdmg ? "magic" : "physical";
   return {
     name: beastName,
     hp: Math.floor(derived.maxHp * 0.9),

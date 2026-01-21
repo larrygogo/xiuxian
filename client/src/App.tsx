@@ -8,7 +8,7 @@ import { GameActions } from './components/GameActions';
 import { EventLog } from './components/EventLog';
 import { ControlModal } from './components/ControlModal';
 import { Inventory } from './components/Inventory';
-import { Equipment } from './components/Equipment';
+import bagIcon from './assets/bag-icon.png';
 import './App.css';
 import { needQi } from './utils/gameUtils';
 import { ModalManager } from './utils/modalManager';
@@ -16,7 +16,7 @@ import type { Panel, PanelType } from './types/panel';
 
 function App() {
   const { user, loading: authLoading, login, register, logout } = useAuth();
-  const { state, loading: gameLoading, error, tick, toggleTuna, createCharacter, equipItem, unequipItem, useItem, refresh } = useGameState(user?.id);
+  const { state, loading: gameLoading, error, tick, toggleTuna, createCharacter, equipItem, unequipItem, useItem, levelUp, refresh } = useGameState(user?.id);
   const [openPanels, setOpenPanels] = useState<Panel[]>([]);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const modalManagerRef = useRef(new ModalManager());
@@ -182,17 +182,17 @@ function App() {
               <div className="control-zone">
                 <div className="control-title">控制区域</div>
                 <div className="control-buttons">
-                  <button type="button" onClick={() => handleOpenPanel('bag')}>
-                    背包
+                  <button type="button" onClick={() => handleOpenPanel('bag')} className="control-button-with-icon">
+                    <img src={bagIcon} alt="背包" className="control-icon" />
+                    <span>背包</span>
                   </button>
-                  <button type="button" onClick={() => handleOpenPanel('equipment')}>
-                    装备
+                  <button type="button" onClick={() => handleOpenPanel('stats')} className="control-button-with-icon">
+                    <span className="control-icon-placeholder">👤</span>
+                    <span>人物属性</span>
                   </button>
-                  <button type="button" onClick={() => handleOpenPanel('stats')}>
-                    人物属性
-                  </button>
-                  <button type="button" onClick={() => handleOpenPanel('settings')}>
-                    设置
+                  <button type="button" onClick={() => handleOpenPanel('settings')} className="control-button-with-icon">
+                    <span className="control-icon-placeholder">⚙️</span>
+                    <span>设置</span>
                   </button>
                 </div>
               </div>
@@ -216,11 +216,9 @@ function App() {
             size={panel.type === 'bag' ? 'large' : 'normal'}
           >
             {panel.type === 'bag' ? (
-              <Inventory items={state?.inventory || []} onEquip={equipItem} onUse={useItem} onUpdate={refresh} />
-            ) : panel.type === 'equipment' ? (
-              <Equipment equipment={state?.equipment || {}} onUnequip={unequipItem} onUpdate={refresh} />
+              <Inventory items={state?.inventory || Array(20).fill(null)} lingshi={state?.lingshi} equipment={state?.equipment} onEquip={equipItem} onUse={useItem} onUnequip={unequipItem} onUpdate={refresh} />
             ) : panel.type === 'stats' ? (
-              <MainStatus state={state} />
+              <MainStatus state={state} onLevelUp={levelUp} />
             ) : panel.type === 'settings' ? (
               <div className="settings-panel">
                 <p>功能开发中，占位展示。</p>

@@ -27,21 +27,30 @@ export function migrateState(state: unknown): GameState | null {
   s.level = 1;
 
   if (typeof s.qi !== "number") s.qi = 0;
+  if (typeof s.lingshi !== "number") s.lingshi = 0;
   if (typeof s.hp !== "number") s.hp = 100;
   if (typeof s.maxHp !== "number") s.maxHp = 100;
   if (typeof s.mp !== "number") s.mp = 50;
   if (typeof s.maxMp !== "number") s.maxMp = 50;
-  if (typeof s.luck !== "number") s.luck = 10;
-  if (typeof s.herbs !== "number") s.herbs = 0;
 
   if (typeof s.alive !== "boolean") s.alive = true;
   if (typeof s.lastTs !== "number") s.lastTs = Date.now();
 
-  // 吐纳状态与离线收益记录
-  if (typeof s.isTuna !== "boolean") s.isTuna = false;
-  if (typeof s.lastOfflineRewardDate !== "string" && s.lastOfflineRewardDate !== null) {
-    s.lastOfflineRewardDate = null;
+  // 修复已死亡的玩家：应用新的死亡惩罚逻辑
+  if (s.alive === false) {
+    // 战斗死亡惩罚：保留1HP，清空MP，扣除3%灵气和10%灵石
+    const qiLoss = Math.floor((s.qi || 0) * 0.03);
+    const lingshiLoss = Math.floor((s.lingshi || 0) * 0.1);
+    
+    s.hp = 1;
+    s.mp = 0;
+    s.qi = Math.max(0, (s.qi || 0) - qiLoss);
+    s.lingshi = Math.max(0, (s.lingshi || 0) - lingshiLoss);
+    s.alive = true;
   }
+
+  // 吐纳状态
+  if (typeof s.isTuna !== "boolean") s.isTuna = false;
 
   // 事件日志兜底
   if (!Array.isArray(s.eventLog)) {
@@ -65,7 +74,18 @@ export function migrateState(state: unknown): GameState | null {
 
   // 物品系统兜底
   if (!Array.isArray(s.inventory)) {
-    s.inventory = [];
+    s.inventory = Array(20).fill(null);
+  } else {
+    // 迁移旧的 Item[] 格式到新的 (Item | null)[] 格式（固定20个位置）
+    const oldInventory = s.inventory as Item[];
+    const newInventory: (Item | null)[] = Array(20).fill(null);
+    // 将旧数组中的物品按顺序放入新数组的前20个位置
+    for (let i = 0; i < Math.min(oldInventory.length, 20); i++) {
+      if (oldInventory[i] !== null && oldInventory[i] !== undefined) {
+        newInventory[i] = oldInventory[i];
+      }
+    }
+    s.inventory = newInventory;
   }
   if (!s.equipment || typeof s.equipment !== "object") {
     s.equipment = {};
@@ -93,7 +113,9 @@ function updateItemDescriptions(state: GameState): void {
     // 更新背包中的物品
     if (Array.isArray(state.inventory)) {
       for (const item of state.inventory) {
-        updateItemDescription(item, templates);
+        if (item !== null) {
+          updateItemDescription(item, templates);
+        }
       }
     }
     

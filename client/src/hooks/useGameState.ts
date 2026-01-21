@@ -201,6 +201,21 @@ export function useGameState(userId: string | null | undefined) {
     }
   };
 
+  const levelUp = async (): Promise<ActionResult> => {
+    try {
+      const response = await gameAPI.levelUp();
+      const data = response.data as GameStateResponse;
+      setState(data.state);
+      return { success: true, message: data.message };
+    } catch (err: unknown) {
+      const message = (err as AxiosError<ApiError>).response?.data?.error || '升级失败';
+      return {
+        success: false,
+        error: message,
+      };
+    }
+  };
+
   return { 
     state, 
     loading, 
@@ -213,6 +228,7 @@ export function useGameState(userId: string | null | undefined) {
     equipItem,
     unequipItem,
     useItem,
+    levelUp,
     refresh: fetchState 
   };
 }

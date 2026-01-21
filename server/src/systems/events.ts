@@ -14,24 +14,13 @@ function randInt(min: number, max: number): number {
 
 /**
  * 执行一次探索
- * 根据气运值调整事件概率，随机触发好/中性/坏事件
+ * 随机触发好/中性/坏事件
  */
 export function exploreTick(state: GameState): void {
-  // luck 越高，收益略增；同时保持下限/上限
-  const luckBias = state.luck * 0.002;
-  let good = 0.4 + luckBias;
-  let neutral = 0.3;
-  let bad = 0.3 - luckBias;
-
-  // 将概率限制在合理范围内，避免极端值
-  good = Math.max(0.25, Math.min(0.65, good));
-  bad = Math.max(0.1, Math.min(0.45, bad));
-
-  // 归一化，保证三者总和为 1
-  const total = good + neutral + bad;
-  good /= total;
-  neutral /= total;
-  bad /= total;
+  // 固定概率：40% 好事件，30% 中性事件，30% 坏事件
+  const good = 0.4;
+  const neutral = 0.3;
+  const bad = 0.3;
 
   const r = Math.random();
   if (r < good) return goodEvent(state);
@@ -41,7 +30,7 @@ export function exploreTick(state: GameState): void {
 
 /**
  * 处理好事件
- * 可能触发奇遇机缘（获得大量灵气）或采集灵草
+ * 可能触发奇遇机缘（获得大量灵气）或掉落物品
  */
 function goodEvent(state: GameState): void {
   // 大机缘限流：每天最多 2 次
@@ -51,13 +40,6 @@ function goodEvent(state: GameState): void {
     state.qi += gain;
     logLine(`奇遇机缘：灵气 +${gain}。`, state);
     return;
-  }
-
-  // 普通采集灵草
-  const herbs = randInt(0, 2) + (Math.random() < 0.25 ? 1 : 0);
-  if (herbs > 0) {
-    state.herbs += herbs;
-    logLine(`采到灵草 x${herbs}（当前 ${state.herbs}）。`, state);
   }
 
   // 小概率掉落物品（10%）
@@ -104,8 +86,16 @@ function badEvent(state: GameState): void {
 
   // 战败或平局，根据当前血量决定是否死亡
   if (state.hp <= 0) {
-    state.alive = false;
-    logLine("你倒在荒野之中，身死道消。", state);
+    // 战斗死亡惩罚：保留1HP，清空MP，扣除3%灵气和10%灵石
+    const qiLoss = Math.floor(state.qi * 0.03);
+    const lingshiLoss = Math.floor(state.lingshi * 0.1);
+    
+    state.hp = 1;
+    state.mp = 0;
+    state.qi = Math.max(0, state.qi - qiLoss);
+    state.lingshi = Math.max(0, state.lingshi - lingshiLoss);
+    
+    logLine(`你倒在荒野之中，身受重伤。保留1点生命，法力耗尽，灵气 -${qiLoss}，灵石 -${lingshiLoss}。`, state);
     return;
   }
 

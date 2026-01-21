@@ -190,6 +190,28 @@
   transform: translateY(-2px);
 }
 
+.control-button-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+
+.control-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.control-icon-placeholder {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  font-size: 20px;
+  line-height: 24px;
+  text-align: center;
+}
+
 
 .settings-panel {
   display: flex;

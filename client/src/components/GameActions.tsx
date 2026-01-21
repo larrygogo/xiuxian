@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import './GameActions.css';
 import { Card } from './Card';
 import type { ActionResult, GameState } from '../types/game';
@@ -12,6 +12,7 @@ interface GameActionsProps {
 export function GameActions({ state, onTick, onToggleTuna }: GameActionsProps) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const isProcessingRef = useRef(false);
 
   const remainingTicks = state?.daily?.remainingTicks ?? 0;
   const primaryLabel = state?.isTuna ? '运转周天' : '探索一次';
@@ -19,12 +20,23 @@ export function GameActions({ state, onTick, onToggleTuna }: GameActionsProps) {
   const secondaryHint = state?.isTuna ? '结束闭关，恢复游历' : '专注修炼，暂停游历';
 
   const handleTick = async () => {
+    // 使用 ref 防止重复点击（比 state 更快）
+    if (isProcessingRef.current) {
+      return;
+    }
+    
+    isProcessingRef.current = true;
     setLoading(true);
     setMessage('');
-    const result = await onTick();
-    setLoading(false);
-    if (!result.success) {
-      setMessage(result.error || '行动失败');
+    
+    try {
+      const result = await onTick();
+      if (!result.success) {
+        setMessage(result.error || '行动失败');
+      }
+    } finally {
+      setLoading(false);
+      isProcessingRef.current = false;
     }
   };
 
