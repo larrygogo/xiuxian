@@ -1,0 +1,33 @@
+[
+  {
+    "templateId": "potion_hp_001",
+    "name": "回血丹",
+    "description": "用灵草炼制而成的丹药，服用后能够快速恢复生命值。",
+    "effect": {
+      "type": "heal",
+      "value": 50
+    },
+    "maxStack": 99
+  },
+  {
+    "templateId": "potion_mp_001",
+    "name": "回灵丹",
+    "description": "蕴含灵气的丹药，能够快速恢复法力值。",
+    "effect": {
+      "type": "mana",
+      "value": 30
+    },
+    "maxStack": 99
+  },
+  {
+    "templateId": "potion_buff_001",
+    "name": "强体丹",
+    "description": "能够临时增强体魄的丹药，持续一段时间提升防御能力。",
+    "effect": {
+      "type": "buff",
+      "value": 10,
+      "duration": 5
+    },
+    "maxStack": 20
+  }
+]

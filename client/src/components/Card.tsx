@@ -1,0 +1,19 @@
+import type { ReactNode } from 'react';
+import './Card.css';
+
+interface CardProps {
+  title?: string;
+  children: ReactNode;
+  className?: string;
+}
+
+export function Card({ title, children, className = '' }: CardProps) {
+  return (
+    <div className={`game-card ${className}`}>
+      {title && <h2 className="card-title">{title}</h2>}
+      <div className="card-content">
+        {children}
+      </div>
+    </div>
+  );
+}

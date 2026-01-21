@@ -1,0 +1,86 @@
+{
+  "weapons": [
+    {
+      "templateId": "sword_001",
+      "name": "青钢剑",
+      "description": "以青钢锻造的利剑，剑身轻盈，适合快速攻击。",
+      "slot": "weapon",
+      "baseStatTypes": ["str", "agi"],
+      "combatStatTypes": ["atk", "crit"],
+      "baseValueRange": [2, 5],
+      "combatValueRange": [5, 12]
+    },
+    {
+      "templateId": "sword_002",
+      "name": "玄铁剑",
+      "description": "由玄铁打造的重剑，剑身厚重，具有强大的破甲能力。",
+      "slot": "weapon",
+      "baseStatTypes": ["str"],
+      "combatStatTypes": ["atk", "armorPen"],
+      "baseValueRange": [3, 6],
+      "combatValueRange": [8, 15]
+    },
+    {
+      "templateId": "staff_001",
+      "name": "灵木法杖",
+      "description": "用灵木制成的法杖，能够增强法术威力和法力回复。",
+      "slot": "weapon",
+      "baseStatTypes": ["int", "spi"],
+      "combatStatTypes": ["matk", "mpRegen"],
+      "baseValueRange": [2, 5],
+      "combatValueRange": [5, 12]
+    }
+  ],
+  "armor": [
+    {
+      "templateId": "helmet_001",
+      "name": "布帽",
+      "description": "普通的布制帽子，提供基础的头部防护。",
+      "slot": "helmet",
+      "baseStatTypes": ["vit"],
+      "combatStatTypes": ["def", "maxHp"],
+      "baseValueRange": [1, 3],
+      "combatValueRange": [3, 8]
+    },
+    {
+      "templateId": "armor_001",
+      "name": "布衣",
+      "description": "简单的布制衣服，能够提供基本的身体防护。",
+      "slot": "armor",
+      "baseStatTypes": ["vit"],
+      "combatStatTypes": ["def", "maxHp"],
+      "baseValueRange": [2, 5],
+      "combatValueRange": [5, 12]
+    },
+    {
+      "templateId": "leggings_001",
+      "name": "布裤",
+      "description": "轻便的布制裤子，不影响行动灵活性。",
+      "slot": "leggings",
+      "baseStatTypes": ["agi", "vit"],
+      "combatStatTypes": ["def", "eva"],
+      "baseValueRange": [1, 3],
+      "combatValueRange": [3, 8]
+    },
+    {
+      "templateId": "boots_001",
+      "name": "布鞋",
+      "description": "舒适的布鞋，能够提升移动速度和闪避能力。",
+      "slot": "boots",
+      "baseStatTypes": ["agi"],
+      "combatStatTypes": ["spd", "eva"],
+      "baseValueRange": [1, 3],
+      "combatValueRange": [3, 8]
+    },
+    {
+      "templateId": "accessory_001",
+      "name": "护身符",
+      "description": "蕴含灵气的护身符，能够提升气运和掉落概率。",
+      "slot": "accessory",
+      "baseStatTypes": ["luk", "spi"],
+      "combatStatTypes": ["critDmg", "dropRate"],
+      "baseValueRange": [1, 3],
+      "combatValueRange": [2, 6]
+    }
+  ]
+}

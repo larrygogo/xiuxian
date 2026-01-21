@@ -150,6 +150,44 @@
   background: rgba(0, 0, 0, 0.05);
 }
 
+.game-card.system-chat {
+  max-height: 220px;
+}
+
+.game-card.system-chat .card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.game-card.system-chat .card-title::after {
+  content: '系统';
+  font-size: 12px;
+  color: var(--ink-text-muted);
+  border: 1px solid var(--ink-border);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.game-card.system-chat .log-content {
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.game-card.system-chat .log-list li {
+  border: none;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  padding: 10px 12px;
+  color: rgba(47, 43, 37, 0.8);
+}
+
+.game-card.system-chat .log-list li:hover {
+  transform: none;
+  padding-left: 12px;
+  border-left-color: transparent;
+}
+
 @media (max-width: 600px) {
   .game-card.event-log {
     max-height: 150px;

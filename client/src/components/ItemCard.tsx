@@ -1,0 +1,213 @@
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import type { Item, Equipment, Consumable } from '../types/item';
+import { isEquipment, isConsumable, QUALITY_NAMES, QUALITY_COLORS, SLOT_NAMES } from '../types/item';
+import './ItemCard.css';
+
+interface ItemCardProps {
+  item: Item;
+  onEquip?: (itemId: string) => void;
+  onUse?: (itemId: string) => void;
+  onUnequip?: (slot: string) => void;
+  isEquipped?: boolean;
+  slot?: string;
+}
+
+// 获取物品图标字符（基于类型）
+function getItemIcon(item: Item): string {
+  if (isEquipment(item)) {
+    const slot = item.slot;
+    const icons: Record<string, string> = {
+      weapon: '⚔️',
+      helmet: '⛑️',
+      armor: '🛡️',
+      leggings: '👖',
+      boots: '👢',
+      accessory: '💍'
+    };
+    return icons[slot] || '📦';
+  }
+  if (isConsumable(item)) {
+    return '🧪';
+  }
+  return '💎';
+}
+
+export function ItemCard({ item, onEquip, onUse, onUnequip, isEquipped, slot }: ItemCardProps) {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const qualityColor = QUALITY_COLORS[item.quality];
+  const qualityName = QUALITY_NAMES[item.quality];
+
+  const handleClick = () => {
+    if (isEquipped && onUnequip && slot) {
+      onUnequip(slot);
+    } else if (isEquipment(item) && onEquip) {
+      onEquip(item.id);
+    } else if (isConsumable(item) && onUse) {
+      onUse(item.id);
+    }
+  };
+
+  const handleMouseEnter = (e: React.MouseEvent) => {
+    setShowTooltip(true);
+    updateTooltipPosition(e);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (showTooltip) {
+      updateTooltipPosition(e);
+    }
+  };
+
+  const updateTooltipPosition = (e: React.MouseEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const tooltipWidth = 250; // 预估工具提示宽度
+    const tooltipHeight = 200; // 预估工具提示高度
+    const spacing = 10;
+    
+    let x = rect.right + spacing;
+    let y = rect.top;
+    
+    // 如果右侧空间不足，显示在左侧
+    if (x + tooltipWidth > window.innerWidth) {
+      x = rect.left - tooltipWidth - spacing;
+    }
+    
+    // 如果下方空间不足，向上调整
+    if (y + tooltipHeight > window.innerHeight) {
+      y = window.innerHeight - tooltipHeight - spacing;
+    }
+    
+    // 确保不超出左边界和上边界
+    x = Math.max(spacing, x);
+    y = Math.max(spacing, y);
+    
+    setTooltipPosition({ x, y });
+  };
+
+  const renderStats = () => {
+    if (!isEquipment(item)) return null;
+
+    const equipment = item as Equipment;
+    const stats: string[] = [];
+
+    if (equipment.baseStats) {
+      Object.entries(equipment.baseStats).forEach(([key, value]) => {
+        if (value && value > 0) {
+          const statNames: Record<string, string> = {
+            str: '力道',
+            agi: '身法',
+            vit: '体魄',
+            int: '灵识',
+            spi: '心境',
+            luk: '气运'
+          };
+          stats.push(`${statNames[key] || key} +${value}`);
+        }
+      });
+    }
+
+    if (equipment.combatStats) {
+      Object.entries(equipment.combatStats).forEach(([key, value]) => {
+        if (key === 'elementRes' || !value || value <= 0) return;
+        const statNames: Record<string, string> = {
+          atk: '物攻',
+          def: '物防',
+          matk: '法攻',
+          mdef: '法防',
+          spd: '速度',
+          hit: '命中',
+          eva: '闪避',
+          crit: '暴击',
+          critDmg: '暴伤',
+          maxHp: '生命上限',
+          maxMp: '法力上限',
+          dropRate: '掉落率',
+          procRate: '触发率',
+          hpRegen: '生命回复',
+          mpRegen: '法力回复',
+          armorPen: '破甲',
+          dr: '减伤'
+        };
+        stats.push(`${statNames[key] || key} +${value}`);
+      });
+    }
+
+    return stats.length > 0 ? (
+      <div className="item-stats">
+        {stats.map((stat, idx) => (
+          <div key={idx} className="item-stat">{stat}</div>
+        ))}
+      </div>
+    ) : null;
+  };
+
+  const renderEffect = () => {
+    if (!isConsumable(item)) return null;
+
+    const consumable = item as Consumable;
+    const effect = consumable.effect;
+
+    if (effect.type === 'heal' && effect.value) {
+      return <div className="item-effect">恢复生命 +{effect.value}</div>;
+    }
+    if (effect.type === 'mana' && effect.value) {
+      return <div className="item-effect">恢复法力 +{effect.value}</div>;
+    }
+    if (effect.type === 'buff') {
+      return <div className="item-effect">临时增益效果</div>;
+    }
+
+    return null;
+  };
+
+  const tooltipContent = showTooltip ? (
+    <div
+      className="item-tooltip"
+      style={{
+        left: `${tooltipPosition.x}px`,
+        top: `${tooltipPosition.y}px`
+      }}
+    >
+      <div className="tooltip-header">
+        <span className="tooltip-name" style={{ color: qualityColor }}>
+          {item.name}
+        </span>
+        <span className="tooltip-quality">{qualityName}</span>
+      </div>
+      <div className="tooltip-level">等级 {item.level}</div>
+      {isEquipment(item) && (
+        <div className="tooltip-slot">槽位: {SLOT_NAMES[item.slot]}</div>
+      )}
+      {isConsumable(item) && item.stackSize > 1 && (
+        <div className="tooltip-stack">堆叠: {item.stackSize}</div>
+      )}
+      {renderStats()}
+      {renderEffect()}
+      {item.description && (
+        <div className="tooltip-description">{item.description}</div>
+      )}
+    </div>
+  ) : null;
+
+  return (
+    <>
+      <div
+        className={`item-card ${isEquipped ? 'equipped' : ''}`}
+        style={{ borderColor: qualityColor }}
+        onClick={handleClick}
+        onMouseEnter={handleMouseEnter}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setShowTooltip(false)}
+      >
+        <div className="item-icon">{getItemIcon(item)}</div>
+        {isConsumable(item) && item.stackSize > 1 && (
+          <div className="item-stack">x{item.stackSize}</div>
+        )}
+        {isEquipped && <div className="item-equipped-badge">✓</div>}
+      </div>
+      {typeof document !== 'undefined' && createPortal(tooltipContent, document.body)}
+    </>
+  );
+}
