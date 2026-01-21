@@ -119,21 +119,6 @@ export function useGameState(userId: string | null | undefined) {
     }
   };
 
-  const toggleTuna = async (enabled: boolean): Promise<ActionResult> => {
-    try {
-      const response = await gameAPI.toggleTuna(enabled);
-      const data = response.data as GameStateResponse;
-      setState(data.state);
-      return { success: true, message: data.message };
-    } catch (err: unknown) {
-      const message = (err as AxiosError<ApiError>).response?.data?.error || '切换状态失败';
-      return {
-        success: false,
-        error: message,
-      };
-    }
-  };
-
   const createCharacter = async (name: string): Promise<ActionResult> => {
     try {
       const response = await gameAPI.createCharacter(name);
@@ -245,7 +230,6 @@ export function useGameState(userId: string | null | undefined) {
     error, 
     heal, 
     tick, 
-    toggleTuna, 
     createCharacter, 
     renameCharacter, 
     equipItem,

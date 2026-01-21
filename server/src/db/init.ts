@@ -50,6 +50,27 @@ export async function initDatabase(): Promise<SqlJsDatabase> {
     )
   `);
 
+  // 检查并添加 is_admin 字段（兼容现有数据库）
+  try {
+    const tableInfo = db.exec("PRAGMA table_info(users)");
+    const columns = tableInfo[0]?.values || [];
+    const hasIsAdmin = columns.some((col: any[]) => col[1] === "is_admin");
+    
+    if (!hasIsAdmin) {
+      db.run("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0");
+      console.log("已添加 is_admin 字段到 users 表");
+    }
+  } catch (err) {
+    // 如果检查失败，尝试直接添加（忽略已存在的错误）
+    try {
+      db.run("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0");
+      console.log("已添加 is_admin 字段到 users 表");
+    } catch (alterErr) {
+      // 字段可能已存在，忽略错误
+      console.log("is_admin 字段可能已存在，跳过添加");
+    }
+  }
+
   // 游戏状态表
   db.run(`
     CREATE TABLE IF NOT EXISTS game_states (

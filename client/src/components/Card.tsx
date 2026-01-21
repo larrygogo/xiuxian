@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import './Card.css';
+import styles from './Card.module.css';
 
 interface CardProps {
   title?: string;
@@ -9,9 +9,9 @@ interface CardProps {
 
 export function Card({ title, children, className = '' }: CardProps) {
   return (
-    <div className={`game-card ${className}`}>
-      {title && <h2 className="card-title">{title}</h2>}
-      <div className="card-content">
+    <div className={`${styles['game-card']} ${className}`}>
+      {title && <h2 className={styles['card-title']}>{title}</h2>}
+      <div className={styles['card-content']}>
         {children}
       </div>
     </div>

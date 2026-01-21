@@ -13,13 +13,37 @@ export const SAVE_FILE = "save.json";
 export const TICK_MS = 5000;
 
 // 等级体系
+/**
+ * 最大等级
+ */
 export const LEVEL_MAX = 100;
+/**
+ * 升级所需灵气
+ */
 export const QI_NEED_BASE = 30;
+/**
+ * 升级所需灵气步长
+ */
 export const QI_NEED_STEP = 6;
+/**
+ * 每次吐纳获得灵气基础值
+ */
 export const QI_PER_TICK_BASE = 1;
+/**
+ * 每次吐纳获得灵气步长
+ */
 export const QI_PER_TICK_STEP = 0.05;
+/**
+ * 走火入魔基础概率
+ */
 export const MISHAP_BASE = 0.008;
+/**
+ * 走火入魔概率步长
+ */
 export const MISHAP_STEP = 0.00004;
+/**
+ * 等级提升所需灵气步长
+ */
 export const LEVEL_SCALE_STEP = 0.015;
 
 // 挂机“天”的概念（用于事件限流/刷新）

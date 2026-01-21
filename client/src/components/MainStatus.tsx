@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import './MainStatus.css';
+import styles from './MainStatus.module.css';
 import { stageName, needQi } from '../utils/gameUtils';
+import { gameAPI } from '../services/api';
 import type { GameState, ActionResult } from '../types/game';
 
 interface MainStatusProps {
@@ -29,6 +30,7 @@ type StatKey = keyof StatAllocationPayload;
 export function MainStatus({ state, onLevelUp, onAllocateStats }: MainStatusProps) {
   const [levelUpLoading, setLevelUpLoading] = useState(false);
   const [allocationLoading, setAllocationLoading] = useState(false);
+  const [copyButtonText, setCopyButtonText] = useState('📋');
   const [pendingAllocations, setPendingAllocations] = useState<StatAllocationPayload>({
     str: 0,
     agi: 0,
@@ -141,23 +143,74 @@ export function MainStatus({ state, onLevelUp, onAllocateStats }: MainStatusProp
     }
   };
 
+  const handleCopyCharacterId = async () => {
+    if (!state.characterId) return;
+    
+    try {
+      await navigator.clipboard.writeText(state.characterId.toString());
+      setCopyButtonText('✓');
+      setTimeout(() => {
+        setCopyButtonText('📋');
+      }, 2000);
+    } catch (err) {
+      console.error('复制失败:', err);
+      // 降级方案：使用传统方法
+      const textArea = document.createElement('textarea');
+      textArea.value = state.characterId.toString();
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        setCopyButtonText('✓');
+        setTimeout(() => {
+          setCopyButtonText('📋');
+        }, 2000);
+      } catch (e) {
+        console.error('降级复制也失败:', e);
+        setCopyButtonText('✗');
+        setTimeout(() => {
+          setCopyButtonText('📋');
+        }, 2000);
+      }
+      document.body.removeChild(textArea);
+    }
+  };
+
   return (
-    <div className="main-status-card">
-      <div className="main-status">
-        <div className="main-status-top">
-          <div className="main-status-name">{state.name}</div>
-          <div className="main-status-realm">{stage}</div>
+    <div className={styles['main-status-card']}>
+      <div className={styles['main-status']}>
+        <div className={styles['main-status-top']}>
+          <div className={styles['main-status-name-section']}>
+            <div className={styles['main-status-name']}>{state.name}</div>
+            {state.characterId && (
+              <div className={styles['main-status-character-id']}>
+                <span className={styles['character-id-label']}>角色ID:</span>
+                <span className={styles['character-id-value']}>{state.characterId}</span>
+                <button
+                  type="button"
+                  className={styles['copy-character-id-button']}
+                  onClick={handleCopyCharacterId}
+                  title="复制角色ID"
+                >
+                  {copyButtonText}
+                </button>
+              </div>
+            )}
+          </div>
+          <div className={styles['main-status-realm']}>{stage}</div>
         </div>
-        <div className="main-status-stats">
-          <div className="stats-group">
-            <div className="stats-title">基础属性</div>
-            <div className="stats-allocation">
-              <div className="stats-allocation-info">
-                待分配点数: <span className="stats-allocation-value">{remainingPoints}</span>
+        <div className={styles['main-status-stats']}>
+          <div className={styles['stats-group']}>
+            <div className={styles['stats-title']}>基础属性</div>
+            <div className={styles['stats-allocation']}>
+              <div className={styles['stats-allocation-info']}>
+                待分配点数: <span className={styles['stats-allocation-value']}>{remainingPoints}</span>
               </div>
               <button
                 type="button"
-                className="stats-allocation-button"
+                className={styles['stats-allocation-button']}
                 onClick={handleAllocateStats}
                 disabled={!onAllocateStats || allocationLoading || pendingTotal <= 0}
                 title={pendingTotal > 0 ? '确认分配' : '暂无可提交点数'}
@@ -165,22 +218,22 @@ export function MainStatus({ state, onLevelUp, onAllocateStats }: MainStatusProp
                 {allocationLoading ? '提交中...' : '确认分配'}
               </button>
             </div>
-            <div className="stats-list">
+            <div className={styles['stats-list']}>
               {baseStatItems.map((item) => (
-                <div key={item.key} className="stats-row">
-                  <span className="stats-label">{item.label}</span>
-                  <div className="stats-value-box">
-                    <span className="stats-value">
+                <div key={item.key} className={styles['stats-row']}>
+                  <span className={styles['stats-label']}>{item.label}</span>
+                  <div className={styles['stats-value-box']}>
+                    <span className={styles['stats-value']}>
                       {formatStat({
                         ...item,
                         value: typeof item.value === 'number' ? item.value + pendingAllocations[item.key as StatKey] : item.value
                       })}
                     </span>
                   </div>
-                  <div className="stats-inline-controls">
+                  <div className={styles['stats-inline-controls']}>
                     <button
                       type="button"
-                      className="stats-control-button"
+                      className={styles['stats-control-button']}
                       onClick={() => adjustAllocation(item.key as StatKey, -1)}
                       disabled={pendingAllocations[item.key as StatKey] <= 0 || allocationLoading}
                       aria-label={`减少${item.label}`}
@@ -189,7 +242,7 @@ export function MainStatus({ state, onLevelUp, onAllocateStats }: MainStatusProp
                     </button>
                     <button
                       type="button"
-                      className="stats-control-button"
+                      className={styles['stats-control-button']}
                       onClick={() => adjustAllocation(item.key as StatKey, 1)}
                       disabled={remainingPoints <= 0 || allocationLoading}
                       aria-label={`增加${item.label}`}
@@ -201,30 +254,30 @@ export function MainStatus({ state, onLevelUp, onAllocateStats }: MainStatusProp
               ))}
             </div>
           </div>
-          <div className="stats-group">
-            <div className="stats-title">战斗属性</div>
-            <div className="stats-grid stats-grid-combat">
+          <div className={styles['stats-group']}>
+            <div className={styles['stats-title']}>战斗属性</div>
+            <div className={`${styles['stats-grid']} ${styles['stats-grid-combat']}`}>
               {combatStatItems.map((item) => (
-                <div key={item.key} className="stats-item">
-                  <span className="stats-label">{item.label}</span>
-                  <div className="stats-value-box">
-                    <span className="stats-value">{formatStat(item)}</span>
+                <div key={item.key} className={styles['stats-item']}>
+                  <span className={styles['stats-label']}>{item.label}</span>
+                  <div className={styles['stats-value-box']}>
+                    <span className={styles['stats-value']}>{formatStat(item)}</span>
                   </div>
                 </div>
               ))}
             </div>
           </div>
         </div>
-        <div className="main-status-progress">
+        <div className={styles['main-status-progress']}>
           <div
-            className="main-progress-fill"
+            className={styles['main-progress-fill']}
             style={{ width: `${Math.min(100, (state.qi / requiredQi) * 100)}%` }}
           />
         </div>
-        <div className="main-progress-text">
+        <div className={styles['main-progress-text']}>
           灵气进度: {state.qi} / {requiredQi}
           <button
-            className="level-up-button"
+            className={styles['level-up-button']}
             onClick={handleLevelUp}
             disabled={!canLevelUp || levelUpLoading}
             title={canLevelUp ? '点击升级' : `需要 ${requiredQi} 点灵气才能升级`}

@@ -16,11 +16,11 @@ export async function createUser(username: string, password: string): Promise<Us
     insertStmt.step();
     insertStmt.free();
 
-    // 查询刚创建的用户 ID
-    const selectStmt = db.prepare("SELECT id FROM users WHERE username = ?");
+    // 查询刚创建的用户 ID 和 is_admin
+    const selectStmt = db.prepare("SELECT id, is_admin FROM users WHERE username = ?");
     selectStmt.bind([username]);
     selectStmt.step();
-    const result = selectStmt.getAsObject() as { id?: number };
+    const result = selectStmt.getAsObject() as { id?: number; is_admin?: number };
     selectStmt.free();
 
     if (!result || !result.id) {
@@ -30,7 +30,7 @@ export async function createUser(username: string, password: string): Promise<Us
     // 持久化数据库到文件
     saveDatabase(db);
 
-    return { id: result.id, username };
+    return { id: result.id, username, isAdmin: Boolean(result.is_admin) };
   } catch (err) {
     if (err instanceof Error && err.message.includes("UNIQUE")) {
       // 唯一约束冲突，说明用户名已存在
@@ -49,7 +49,7 @@ export async function verifyUser(username: string, password: string): Promise<Us
   const db = await getDatabase();
 
   try {
-    const stmt = db.prepare("SELECT id, username, password_hash FROM users WHERE username = ?");
+    const stmt = db.prepare("SELECT id, username, password_hash, is_admin FROM users WHERE username = ?");
     stmt.bind([username]);
 
     // 没有找到记录直接返回 null
@@ -58,7 +58,7 @@ export async function verifyUser(username: string, password: string): Promise<Us
       return null;
     }
 
-    const result = stmt.getAsObject() as { id?: number; username?: string; password_hash?: string };
+    const result = stmt.getAsObject() as { id?: number; username?: string; password_hash?: string; is_admin?: number };
     stmt.free();
 
     if (!result || !result.id || !result.password_hash || !result.username) {
@@ -68,7 +68,7 @@ export async function verifyUser(username: string, password: string): Promise<Us
     const isValid = await bcrypt.compare(password, result.password_hash);
     if (!isValid) return null;
 
-    return { id: result.id, username: result.username };
+    return { id: result.id, username: result.username, isAdmin: Boolean(result.is_admin) };
   } catch (err) {
     console.error("验证用户失败:", err);
     return null;
@@ -82,7 +82,7 @@ export async function getUserById(userId: number): Promise<User | null> {
   const db = await getDatabase();
 
   try {
-    const stmt = db.prepare("SELECT id, username FROM users WHERE id = ?");
+    const stmt = db.prepare("SELECT id, username, is_admin FROM users WHERE id = ?");
     stmt.bind([userId]);
 
     if (!stmt.step()) {
@@ -90,14 +90,14 @@ export async function getUserById(userId: number): Promise<User | null> {
       return null;
     }
 
-    const result = stmt.getAsObject() as { id?: number; username?: string };
+    const result = stmt.getAsObject() as { id?: number; username?: string; is_admin?: number };
     stmt.free();
 
     if (!result || !result.id || !result.username) {
       return null;
     }
 
-    return { id: result.id, username: result.username };
+    return { id: result.id, username: result.username, isAdmin: Boolean(result.is_admin) };
   } catch (err) {
     console.error("获取用户失败:", err);
     return null;

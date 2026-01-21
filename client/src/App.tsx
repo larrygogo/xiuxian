@@ -8,15 +8,16 @@ import { GameActions } from './components/GameActions';
 import { EventLog } from './components/EventLog';
 import { ControlModal } from './components/ControlModal';
 import { Inventory } from './components/Inventory';
+import { AdminGiveItem } from './components/AdminGiveItem';
 import bagIcon from './assets/bag-icon.png';
-import './App.css';
+import styles from './App.module.css';
 import { needQi } from './utils/gameUtils';
 import { ModalManager } from './utils/modalManager';
 import type { Panel, PanelType } from './types/panel';
 
 function App() {
   const { user, loading: authLoading, login, register, logout } = useAuth();
-  const { state, loading: gameLoading, error, tick, toggleTuna, createCharacter, equipItem, unequipItem, useItem, levelUp, allocateStats, refresh } = useGameState(user?.id);
+  const { state, loading: gameLoading, error, tick, createCharacter, equipItem, unequipItem, useItem, levelUp, allocateStats, refresh } = useGameState(user?.id);
   const [openPanels, setOpenPanels] = useState<Panel[]>([]);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const modalManagerRef = useRef(new ModalManager());
@@ -109,12 +110,13 @@ function App() {
     equipment: '装备',
     stats: '人物属性',
     settings: '设置',
+    admin: '管理员',
   };
 
   if (authLoading) {
     return (
-      <div className="game-frame">
-        <div className="app-loading">
+      <div className={styles['game-frame']}>
+        <div className={styles['app-loading']}>
           <div>加载中...</div>
         </div>
       </div>
@@ -123,8 +125,8 @@ function App() {
 
   if (!user) {
     return (
-      <div className="game-frame">
-        <div className="app-container">
+      <div className={styles['game-frame']}>
+        <div className={styles['app-container']}>
           <Login onLogin={login} onRegister={register} />
         </div>
       </div>
@@ -132,41 +134,41 @@ function App() {
   }
 
   return (
-    <div className="game-frame">
-      <div className="app-container">
-        <div className="top-left-status">
-          <div className="avatar-placeholder" aria-hidden="true" />
-          <div className="header-bars">
-            <div className="header-bar">
-              <span className="bar-label">生命</span>
-              <div className="bar-track">
-                <div className="bar-fill bar-hp" style={{ width: `${hpPercent}%` }} />
+    <div className={styles['game-frame']}>
+      <div className={styles['app-container']}>
+        <div className={styles['top-left-status']}>
+          <div className={styles['avatar-placeholder']} aria-hidden="true" />
+          <div className={styles['header-bars']}>
+            <div className={styles['header-bar']}>
+              <span className={styles['bar-label']}>生命</span>
+              <div className={styles['bar-track']}>
+                <div className={`${styles['bar-fill']} ${styles['bar-hp']}`} style={{ width: `${hpPercent}%` }} />
               </div>
             </div>
-            <div className="header-bar">
-              <span className="bar-label">法力</span>
-              <div className="bar-track">
-                <div className="bar-fill bar-mp" style={{ width: `${mpPercent}%` }} />
+            <div className={styles['header-bar']}>
+              <span className={styles['bar-label']}>法力</span>
+              <div className={styles['bar-track']}>
+                <div className={`${styles['bar-fill']} ${styles['bar-mp']}`} style={{ width: `${mpPercent}%` }} />
               </div>
             </div>
-            <div className="header-bar">
-              <span className="bar-label">灵气</span>
-              <div className="bar-track">
-                <div className="bar-fill bar-qi" style={{ width: `${qiPercent}%` }} />
+            <div className={styles['header-bar']}>
+              <span className={styles['bar-label']}>灵气</span>
+              <div className={styles['bar-track']}>
+                <div className={`${styles['bar-fill']} ${styles['bar-qi']}`} style={{ width: `${qiPercent}%` }} />
               </div>
             </div>
           </div>
         </div>
-        <div className="app-content">
+        <div className={styles['app-content']}>
           {gameLoading ? (
-            <div className="loading-message">加载游戏状态...</div>
+            <div className={styles['loading-message']}>加载游戏状态...</div>
           ) : error ? (
-            <div className="error-message">
+            <div className={styles['error-message']}>
               <p>错误：{error}</p>
               <button onClick={() => window.location.reload()}>刷新页面</button>
             </div>
           ) : !state ? (
-            <div className="loading-message">游戏状态为空，请刷新页面</div>
+            <div className={styles['loading-message']}>游戏状态为空，请刷新页面</div>
           ) : state.name === '无名修士' ? (
             <CharacterCreation onCreateCharacter={async (name) => {
               const result = await createCharacter(name);
@@ -178,22 +180,28 @@ function App() {
           ) : (
             <>
               <EventLog state={state} variant="system-chat" title="系统频道" />
-              <GameActions state={state} onTick={tick} onToggleTuna={toggleTuna} />
-              <div className="control-zone">
-                <div className="control-title">控制区域</div>
-                <div className="control-buttons">
-                  <button type="button" onClick={() => handleOpenPanel('bag')} className="control-button-with-icon">
-                    <img src={bagIcon} alt="背包" className="control-icon" />
+              <GameActions state={state} onTick={tick} />
+              <div className={styles['control-zone']}>
+                <div className={styles['control-title']}>控制区域</div>
+                <div className={styles['control-buttons']}>
+                  <button type="button" onClick={() => handleOpenPanel('bag')} className={styles['control-button-with-icon']}>
+                    <img src={bagIcon} alt="背包" className={styles['control-icon']} />
                     <span>背包</span>
                   </button>
-                  <button type="button" onClick={() => handleOpenPanel('stats')} className="control-button-with-icon">
-                    <span className="control-icon-placeholder">👤</span>
+                  <button type="button" onClick={() => handleOpenPanel('stats')} className={styles['control-button-with-icon']}>
+                    <span className={styles['control-icon-placeholder']}>👤</span>
                     <span>人物属性</span>
                   </button>
-                  <button type="button" onClick={() => handleOpenPanel('settings')} className="control-button-with-icon">
-                    <span className="control-icon-placeholder">⚙️</span>
+                  <button type="button" onClick={() => handleOpenPanel('settings')} className={styles['control-button-with-icon']}>
+                    <span className={styles['control-icon-placeholder']}>⚙️</span>
                     <span>设置</span>
                   </button>
+                  {user.isAdmin && (
+                    <button type="button" onClick={() => handleOpenPanel('admin')} className={styles['control-button-with-icon']}>
+                      <span className={styles['control-icon-placeholder']}>👑</span>
+                      <span>管理员</span>
+                    </button>
+                  )}
                 </div>
               </div>
             </>
@@ -216,16 +224,18 @@ function App() {
             size={panel.type === 'bag' ? 'large' : 'normal'}
           >
             {panel.type === 'bag' ? (
-              <Inventory items={state?.inventory || Array(20).fill(null)} lingshi={state?.lingshi} equipment={state?.equipment} onEquip={equipItem} onUse={useItem} onUnequip={unequipItem} onUpdate={refresh} />
+              <Inventory items={state?.inventory || Array(20).fill(null)} lingshi={state?.lingshi} equipment={state?.equipment} playerLevel={state?.level} onEquip={equipItem} onUse={useItem} onUnequip={unequipItem} onUpdate={refresh} />
             ) : panel.type === 'stats' ? (
               <MainStatus state={state} onLevelUp={levelUp} onAllocateStats={allocateStats} />
             ) : panel.type === 'settings' ? (
-              <div className="settings-panel">
+              <div className={styles['settings-panel']}>
                 <p>功能开发中，占位展示。</p>
-                <button type="button" className="logout-button" onClick={logout}>
+                <button type="button" className={styles['logout-button']} onClick={logout}>
                   退出游戏
                 </button>
               </div>
+            ) : panel.type === 'admin' ? (
+              <AdminGiveItem onSuccess={refresh} />
             ) : (
               <>功能开发中，占位展示。</>
             )}

@@ -1,4 +1,4 @@
-export type PanelType = 'bag' | 'equipment' | 'stats' | 'settings';
+export type PanelType = 'bag' | 'equipment' | 'stats' | 'settings' | 'admin';
 
 export interface Panel {
   id: string;

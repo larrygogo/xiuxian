@@ -2,17 +2,18 @@ import { ItemCard } from './ItemCard';
 import { gameAPI } from '../services/api';
 import type { EquipmentSlots, EquipmentSlot } from '../types/item';
 import { SLOT_NAMES } from '../types/item';
-import './Equipment.css';
+import styles from './Equipment.module.css';
 
 interface EquipmentProps {
   equipment: EquipmentSlots;
+  playerLevel?: number; // 玩家当前等级
   onUnequip?: (slot: string) => Promise<{ success: boolean; error?: string }>;
   onUpdate: () => void;
 }
 
 const SLOT_ORDER: EquipmentSlot[] = ['weapon', 'helmet', 'armor', 'leggings', 'boots', 'accessory'];
 
-export function Equipment({ equipment, onUnequip, onUpdate }: EquipmentProps) {
+export function Equipment({ equipment, playerLevel, onUnequip, onUpdate }: EquipmentProps) {
   const handleUnequip = async (slot: EquipmentSlot) => {
     try {
       if (onUnequip) {
@@ -31,22 +32,23 @@ export function Equipment({ equipment, onUnequip, onUpdate }: EquipmentProps) {
   };
 
   return (
-    <div className="equipment-container">
-      <div className="equipment-grid">
+    <div className={styles['equipment-container']}>
+      <div className={styles['equipment-grid']}>
         {SLOT_ORDER.map(slot => {
           const item = equipment[slot];
           return (
-            <div key={slot} className="equipment-slot">
-              <div className="slot-label">{SLOT_NAMES[slot]}</div>
+            <div key={slot} className={styles['equipment-slot']}>
+              <div className={styles['slot-label']}>{SLOT_NAMES[slot]}</div>
               {item ? (
                 <ItemCard
                   item={item}
                   isEquipped={true}
                   slot={slot}
+                  playerLevel={playerLevel}
                   onUnequip={handleUnequip}
                 />
               ) : (
-                <div className="empty-slot">空</div>
+                <div className={styles['empty-slot']}>空</div>
               )}
             </div>
           );

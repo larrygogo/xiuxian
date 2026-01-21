@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import './Login.css';
+import styles from './Login.module.css';
 import type { ActionResult } from '../types/game';
 
 interface LoginProps {
@@ -31,11 +31,11 @@ export function Login({ onLogin, onRegister }: LoginProps) {
   };
 
   return (
-    <div className="login-container">
-      <div className="login-card">
+    <div className={styles['login-container']}>
+      <div className={styles['login-card']}>
         <h1>问道长生</h1>
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
+          <div className={styles['form-group']}>
             <label>仙号</label>
             <input
               type="text"
@@ -47,7 +47,7 @@ export function Login({ onLogin, onRegister }: LoginProps) {
               placeholder="请输入您的仙号（3-20个字符）"
             />
           </div>
-          <div className="form-group">
+          <div className={styles['form-group']}>
             <label>密令</label>
             <input
               type="password"
@@ -58,12 +58,12 @@ export function Login({ onLogin, onRegister }: LoginProps) {
               placeholder="请输入您的密令（至少6个字符）"
             />
           </div>
-          {error && <div className="error-message">{error}</div>}
-          <button type="submit" disabled={loading} className="submit-button">
+          {error && <div className={styles['error-message']}>{error}</div>}
+          <button type="submit" disabled={loading} className={styles['submit-button']}>
             {loading ? '处理中...' : isRegister ? '创建仙号' : '进入仙门'}
           </button>
         </form>
-        <div className="switch-mode">
+        <div className={styles['switch-mode']}>
           <span>
             {isRegister ? '已有仙号？' : '尚未创建仙号？'}
             <button
@@ -72,7 +72,7 @@ export function Login({ onLogin, onRegister }: LoginProps) {
                 setIsRegister(!isRegister);
                 setError('');
               }}
-              className="link-button"
+              className={styles['link-button']}
             >
               {isRegister ? '进入仙门' : '创建仙号'}
             </button>

@@ -1,21 +1,22 @@
 import express, { Request, Response } from "express";
-import { authenticateToken } from "../middleware/auth";
+import { authenticateToken, requireAdmin } from "../middleware/auth";
 import {
   getUserGameState,
   initializeUserGame,
   updateUserGameState,
-  acquireUserLock
+  acquireUserLock,
+  findUserIdByCharacterId
 } from "../services/gameService";
 import { toClientState } from "../services/stateView";
-import { cultivateTick, ensureDailyReset, heal } from "../systems/actions";
+import { ensureDailyReset, heal } from "../systems/actions";
 import { exploreTick } from "../systems/events";
 import { stepUpOnce, needQi } from "../systems/progression";
 import { logLine } from "../services/logger";
-import { equipItem, unequipItem, useConsumable, reorderItems } from "../systems/items";
-import { getItemTemplates } from "../services/itemService";
-import { refreshDerivedStats } from "../systems/battle";
+import { equipItem, unequipItem, useConsumable, reorderItems, addItemToInventory } from "../systems/items";
+import { getItemTemplates, itemGenerator } from "../services/itemService";
+import { refreshDerivedStats } from "../systems/stats";
 import { getUserById } from "../services/userService";
-import type { EquipmentSlot } from "../types/item";
+import type { EquipmentSlot, ItemType } from "../types/item";
 
 const router = express.Router();
 
@@ -86,48 +87,7 @@ router.post("/actions/heal", async (req: Request, res: Response) => {
 });
 
 /**
- * 切换吐纳状态
- * POST /api/game/actions/toggle-tuna
- */
-router.post("/actions/toggle-tuna", async (req: Request, res: Response) => {
-  try {
-    const userId = req.user?.userId;
-    if (!userId) {
-      return res.status(401).json({ error: "未提供认证令牌" });
-    }
-
-    const state = getUserGameState(userId);
-    if (!state) {
-      return res.status(404).json({ error: "游戏状态未找到" });
-    }
-
-    const { enabled } = req.body as { enabled?: boolean | string };
-    const newTunaState = enabled === true || enabled === "true";
-
-    // 如果状态未变化，直接返回提示
-    if (state.isTuna === newTunaState) {
-      const message = newTunaState ? "你已经在吐纳状态中" : "你当前不在吐纳状态";
-      return res.json({ message, state: toClientState(state) });
-    }
-
-    state.isTuna = newTunaState;
-    const message = newTunaState
-      ? "进入吐纳状态：专注修炼，无法进行探索"
-      : "退出吐纳状态：恢复自由游历";
-    logLine(message, state);
-
-    await updateUserGameState(userId, state);
-
-    // 状态变化回调会在 gameService 中处理 WebSocket 推送
-    res.json({ message, state: toClientState(state) });
-  } catch (error) {
-    console.error("切换吐纳状态错误:", error);
-    res.status(500).json({ error: "切换吐纳状态失败" });
-  }
-});
-
-/**
- * 手动行动（消耗一次每日次数）
+ * 执行探索
  * POST /api/game/actions/tick
  */
 router.post("/actions/tick", async (req: Request, res: Response) => {
@@ -157,24 +117,20 @@ router.post("/actions/tick", async (req: Request, res: Response) => {
 
       ensureDailyReset(state);
 
+      /** 测试时不消耗次数 */
+
       // 检查剩余次数（必须在消耗之前检查）
-      if (state.daily.remainingTicks <= 0) {
-        responseSent = true;
-        res.status(400).json({ error: "今日行动次数已用尽" });
-        return;
-      }
+      // if (state.daily.remainingTicks <= 0) {
+      //   responseSent = true;
+      //   res.status(400).json({ error: "今日行动次数已用尽" });
+      //   return;
+      // }
 
-      // 消耗一次行动次数（在检查通过后立即消耗，避免并发问题）
-      state.daily.remainingTicks -= 1;
+      // // 消耗一次行动次数（在检查通过后立即消耗，避免并发问题）
+      // state.daily.remainingTicks -= 1;
 
-      // 根据吐纳状态选择修炼或探索
-      if (state.isTuna) {
-        cultivateTick(state);
-        // 修炼时不自动升级，需要手动点击升级按钮
-      } else {
-        exploreTick(state);
-        // 探索时不自动升级，需要手动点击升级按钮
-      }
+      // 执行探索
+      exploreTick(state);
 
       await updateUserGameState(userId, state);
 
@@ -225,6 +181,11 @@ router.post("/character/create", async (req: Request, res: Response) => {
     // 检查是否已经创建过角色
     if (state.name && state.name !== "无名修士") {
       return res.status(400).json({ error: "角色已创建，无法重复创建" });
+    }
+
+    // 确保角色ID存在（兼容旧数据）
+    if (typeof state.characterId !== "number") {
+      state.characterId = Date.now() * 1000 + Math.floor(Math.random() * 1000);
     }
 
     // 更新角色名称
@@ -525,6 +486,171 @@ router.post("/actions/allocate-stats", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("分配属性点错误:", error);
     res.status(500).json({ error: "分配属性点失败" });
+  }
+});
+
+/**
+ * 管理员：赠送物品给指定用户
+ * POST /api/game/admin/give-item
+ */
+router.post("/admin/give-item", requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { targetUserId, targetCharacterId, itemType, slot, level } = req.body as {
+      targetUserId?: number;
+      targetCharacterId?: number;
+      itemType?: ItemType;
+      slot?: EquipmentSlot;
+      level?: number;
+    };
+
+    // 确定目标用户ID：优先使用 targetUserId，如果没有则通过 targetCharacterId 查找
+    let finalTargetUserId: number | null = null;
+    
+    if (targetUserId && typeof targetUserId === "number") {
+      finalTargetUserId = targetUserId;
+    } else if (targetCharacterId && typeof targetCharacterId === "number") {
+      finalTargetUserId = await findUserIdByCharacterId(targetCharacterId);
+      if (!finalTargetUserId) {
+        return res.status(404).json({ error: `指定的角色ID ${targetCharacterId} 不存在` });
+      }
+    } else {
+      return res.status(400).json({ error: "必须提供目标用户ID或角色ID" });
+    }
+
+    // 获取目标用户信息（用于日志显示）
+    const targetUser = await getUserById(finalTargetUserId);
+    if (!targetUser) {
+      return res.status(404).json({ error: "指定的目标用户ID不存在" });
+    }
+
+    // 获取目标用户的游戏状态
+    let targetState = getUserGameState(finalTargetUserId);
+    if (!targetState) {
+      targetState = await initializeUserGame(finalTargetUserId, null);
+    }
+
+    // 确定物品等级（使用目标用户等级或指定等级）
+    const itemLevel = level || targetState.level || 1;
+
+    // 生成物品
+    let item;
+    if (itemType === "equipment") {
+      item = itemGenerator.generateEquipment(itemLevel, slot);
+    } else if (itemType === "consumable") {
+      item = itemGenerator.generateConsumable(itemLevel);
+    } else if (itemType === "material") {
+      item = itemGenerator.generateMaterial(itemLevel);
+    } else {
+      item = itemGenerator.generateRandomItem(itemLevel, itemType);
+    }
+
+    // 添加到目标用户背包
+    const success = addItemToInventory(targetState, item);
+    if (!success) {
+      return res.status(400).json({ error: "目标用户背包已满，无法添加物品" });
+    }
+
+    // 替换最后一条日志（addItemToInventory 添加的"获得"消息）为更详细的日志
+    if (targetState.eventLog && targetState.eventLog.length > 0) {
+      const lastLog = targetState.eventLog[targetState.eventLog.length - 1];
+      // 如果最后一条日志是"获得"消息，替换它
+      if (lastLog && lastLog.includes(`获得 ${item.name}`)) {
+        const userDisplayName = targetState.name && targetState.name !== "无名修士" 
+          ? `${targetState.name}(${targetUser.username})` 
+          : targetUser.username;
+        const ts = new Date().toLocaleString();
+        targetState.eventLog[targetState.eventLog.length - 1] = `[${ts}] 管理员赠送：${userDisplayName} 获得 ${item.name}。`;
+        console.log(`[${ts}] 管理员赠送：${userDisplayName} 获得 ${item.name}。`);
+      }
+    }
+
+    // 刷新属性（如果装备了物品可能会影响属性）
+    refreshDerivedStats(targetState);
+
+    // 保存状态并推送更新
+    await updateUserGameState(finalTargetUserId, targetState);
+
+    res.json({
+      message: `成功赠送 ${item.name} 给用户 ${targetUser.username} (用户ID: ${finalTargetUserId}, 角色ID: ${targetState.characterId})`,
+      item: {
+        id: item.id,
+        name: item.name,
+        type: item.type
+      }
+    });
+  } catch (error) {
+    console.error("赠送物品错误:", error);
+    res.status(500).json({ error: "赠送物品失败" });
+  }
+});
+
+/**
+ * 管理员：赠送经验（灵气）给指定用户
+ * POST /api/game/admin/give-exp
+ */
+router.post("/admin/give-exp", requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { targetUserId, targetCharacterId, amount } = req.body as {
+      targetUserId?: number;
+      targetCharacterId?: number;
+      amount?: number;
+    };
+
+    // 确定目标用户ID：优先使用 targetUserId，如果没有则通过 targetCharacterId 查找
+    let finalTargetUserId: number | null = null;
+    
+    if (targetUserId && typeof targetUserId === "number") {
+      finalTargetUserId = targetUserId;
+    } else if (targetCharacterId && typeof targetCharacterId === "number") {
+      finalTargetUserId = await findUserIdByCharacterId(targetCharacterId);
+      if (!finalTargetUserId) {
+        return res.status(404).json({ error: `指定的角色ID ${targetCharacterId} 不存在` });
+      }
+    } else {
+      return res.status(400).json({ error: "必须提供目标用户ID或角色ID" });
+    }
+
+    // 验证经验数量
+    if (!amount || typeof amount !== "number" || amount <= 0) {
+      return res.status(400).json({ error: "经验数量必须为正整数" });
+    }
+
+    // 获取目标用户信息（用于日志显示）
+    const targetUser = await getUserById(finalTargetUserId);
+    if (!targetUser) {
+      return res.status(404).json({ error: "指定的目标用户ID不存在" });
+    }
+
+    // 获取目标用户的游戏状态
+    let targetState = getUserGameState(finalTargetUserId);
+    if (!targetState) {
+      targetState = await initializeUserGame(finalTargetUserId, null);
+    }
+
+    // 增加经验（灵气）
+    const oldQi = targetState.qi;
+    targetState.qi += amount;
+
+    // 记录日志
+    const userDisplayName = targetState.name && targetState.name !== "无名修士" 
+      ? `${targetState.name}(${targetUser.username})` 
+      : targetUser.username;
+    logLine(`管理员赠送：${userDisplayName} 获得 ${amount} 点灵气（${oldQi} → ${targetState.qi}）。`, targetState);
+
+    // 保存状态并推送更新
+    await updateUserGameState(finalTargetUserId, targetState);
+
+    res.json({
+      message: `成功赠送 ${amount} 点灵气给用户 ${targetUser.username} (用户ID: ${finalTargetUserId}, 角色ID: ${targetState.characterId})`,
+      exp: {
+        old: oldQi,
+        new: targetState.qi,
+        added: amount
+      }
+    });
+  } catch (error) {
+    console.error("赠送经验错误:", error);
+    res.status(500).json({ error: "赠送经验失败" });
   }
 });
 

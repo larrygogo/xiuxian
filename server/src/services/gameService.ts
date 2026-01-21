@@ -175,4 +175,52 @@ export function cleanupUserGame(userId: number): void {
   userStateCallbacks.delete(userId);
 }
 
+/**
+ * 通过角色ID查找用户ID
+ * 返回用户ID，如果未找到则返回 null
+ */
+export async function findUserIdByCharacterId(characterId: number): Promise<number | null> {
+  const db = await getDatabase();
+
+  try {
+    // 查询所有游戏状态
+    const stmt = db.prepare("SELECT user_id, state_data FROM game_states");
+    const results: { user_id: number; state_data: string }[] = [];
+
+    while (stmt.step()) {
+      const row = stmt.getAsObject() as { user_id?: number; state_data?: string };
+      if (row.user_id && row.state_data) {
+        results.push({ user_id: row.user_id, state_data: row.state_data });
+      }
+    }
+    stmt.free();
+
+    // 遍历所有状态，查找匹配的角色ID
+    for (const result of results) {
+      try {
+        const parsed = JSON.parse(result.state_data) as unknown;
+        const state = migrateState(parsed);
+        if (state && state.characterId === characterId) {
+          return result.user_id;
+        }
+      } catch (e) {
+        // 解析失败，跳过这条记录
+        continue;
+      }
+    }
+
+    // 也检查内存中的状态（可能还未保存到数据库）
+    for (const [userId, state] of userGameStates.entries()) {
+      if (state.characterId === characterId) {
+        return userId;
+      }
+    }
+
+    return null;
+  } catch (err) {
+    console.error("通过角色ID查找用户ID失败:", err);
+    return null;
+  }
+}
+
 export { saveGameState };

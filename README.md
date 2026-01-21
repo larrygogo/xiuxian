@@ -109,7 +109,6 @@ pnpm dev
 ### 游戏
 - `GET /api/game/state` - 获取游戏状态
 - `POST /api/game/actions/heal` - 疗伤
-- `POST /api/game/actions/toggle-tuna` - 切换吐纳状态
 - `POST /api/game/character/create` - 创建角色
 - `POST /api/game/character/rename` - 修改角色名称
 

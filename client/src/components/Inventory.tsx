@@ -3,12 +3,13 @@ import { ItemCard } from './ItemCard';
 import { gameAPI } from '../services/api';
 import type { Item, EquipmentSlots, EquipmentSlot } from '../types/item';
 import { SLOT_NAMES, isConsumable, isEquipment } from '../types/item';
-import './Inventory.css';
+import styles from './Inventory.module.css';
 
 interface InventoryProps {
   items: (Item | null)[]; // 固定20个位置，null表示空位置
   lingshi?: number;
   equipment?: EquipmentSlots;
+  playerLevel?: number; // 玩家当前等级
   onEquip?: (itemId: string) => Promise<{ success: boolean; error?: string }>;
   onUse?: (itemId: string) => Promise<{ success: boolean; error?: string }>;
   onUnequip?: (slot: string) => Promise<{ success: boolean; error?: string }>;
@@ -19,7 +20,7 @@ const SLOT_ORDER: EquipmentSlot[] = ['weapon', 'helmet', 'armor', 'leggings', 'b
 
 const INVENTORY_SIZE = 20;
 
-export function Inventory({ items, lingshi, equipment, onEquip, onUse, onUnequip, onUpdate }: InventoryProps) {
+export function Inventory({ items, lingshi, equipment, playerLevel, onEquip, onUse, onUnequip, onUpdate }: InventoryProps) {
   const [loading, setLoading] = useState<string | null>(null);
   const [selectedSlotIndex, setSelectedSlotIndex] = useState<number | null>(null);
 
@@ -216,24 +217,25 @@ export function Inventory({ items, lingshi, equipment, onEquip, onUse, onUnequip
   };
 
   return (
-    <div className="inventory-container">
+    <div className={styles['inventory-container']}>
       {equipment && (
-        <div className="inventory-equipment">
-          <div className="inventory-equipment-grid">
+        <div className={styles['inventory-equipment']}>
+          <div className={styles['inventory-equipment-grid']}>
             {SLOT_ORDER.map(slot => {
               const item = equipment[slot];
               return (
-                <div key={slot} className="inventory-equipment-slot">
-                  <div className="inventory-slot-label">{SLOT_NAMES[slot]}</div>
+                <div key={slot} className={styles['inventory-equipment-slot']}>
+                  <div className={styles['inventory-slot-label']}>{SLOT_NAMES[slot]}</div>
                   {item ? (
                     <ItemCard
                       item={item}
                       isEquipped={true}
                       slot={slot}
+                      playerLevel={playerLevel}
                       onUnequip={(slot: string) => handleUnequip(slot as EquipmentSlot)}
                     />
                   ) : (
-                    <div className="inventory-empty-slot">空</div>
+                    <div className={styles['inventory-empty-slot']}>空</div>
                   )}
                 </div>
               );
@@ -241,19 +243,19 @@ export function Inventory({ items, lingshi, equipment, onEquip, onUse, onUnequip
           </div>
         </div>
       )}
-      <div className="inventory-lingshi">
-        <span className="inventory-lingshi-label">灵石</span>
-        <div className="inventory-lingshi-box">
+      <div className={styles['inventory-lingshi']}>
+        <span className={styles['inventory-lingshi-label']}>灵石</span>
+        <div className={styles['inventory-lingshi-box']}>
           {lingshi ?? 0}
         </div>
       </div>
-      <div className="inventory-grid-wrapper">
-        <div className="inventory-grid">
+      <div className={styles['inventory-grid-wrapper']}>
+        <div className={styles['inventory-grid']}>
           {slots.map((item, index) => (
             item ? (
               <div
                 key={item.id}
-                className={`inventory-slot ${selectedSlotIndex === index ? 'selected' : ''}`}
+                className={`${styles['inventory-slot']} ${selectedSlotIndex === index ? styles['selected'] : ''}`}
                 onClick={(e) => {
                   console.log('inventory-slot div 被点击, index:', index);
                   // 如果 ItemCard 没有处理，这里作为备用
@@ -270,6 +272,7 @@ export function Inventory({ items, lingshi, equipment, onEquip, onUse, onUnequip
               >
                 <ItemCard
                   item={item}
+                  playerLevel={playerLevel}
                   onEquip={handleEquip}
                   onUse={handleUse}
                   onClick={() => {
@@ -282,12 +285,13 @@ export function Inventory({ items, lingshi, equipment, onEquip, onUse, onUnequip
                       handleSlotRightClick(e, index);
                     }
                   }}
+                  className={styles['inventory-item-card']}
                 />
               </div>
             ) : (
               <div
                 key={`empty-${index}`}
-                className={`inventory-slot-empty ${selectedSlotIndex !== null ? 'can-drop' : ''}`}
+                className={`${styles['inventory-slot-empty']} ${selectedSlotIndex !== null ? styles['can-drop'] : ''}`}
                 onClick={() => handleSlotClick(index)}
               />
             )

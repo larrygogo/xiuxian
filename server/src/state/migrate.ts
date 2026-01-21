@@ -13,6 +13,14 @@ function getDateString(date: Date = new Date()): string {
 }
 
 /**
+ * 生成唯一的角色数字ID
+ * 使用时间戳 + 随机数确保唯一性
+ */
+function generateCharacterId(): number {
+  return Date.now() * 1000 + Math.floor(Math.random() * 1000);
+}
+
+/**
  * 迁移和验证游戏状态
  * 确保所有必需字段存在且类型正确，修复损坏的存档
  */
@@ -21,10 +29,17 @@ export function migrateState(state: unknown): GameState | null {
 
   const s = state as Partial<GameState>;
 
+  // 角色ID：如果不存在则生成一个新的
+  if (typeof s.characterId !== "number") {
+    s.characterId = generateCharacterId();
+  }
+
   // 基础字段兜底
   if (typeof s.name !== "string") s.name = "无名修士";
-  // 新版本统一重置为 1 级
-  s.level = 1;
+  // 等级：只在不存在或无效时才设置为默认值 1
+  if (typeof s.level !== "number" || s.level < 1 || s.level > 100) {
+    s.level = 1;
+  }
 
   if (typeof s.qi !== "number") s.qi = 0;
   if (typeof s.lingshi !== "number") s.lingshi = 0;
@@ -49,9 +64,6 @@ export function migrateState(state: unknown): GameState | null {
     s.lingshi = Math.max(0, (s.lingshi || 0) - lingshiLoss);
     s.alive = true;
   }
-
-  // 吐纳状态
-  if (typeof s.isTuna !== "boolean") s.isTuna = false;
 
   // 事件日志兜底
   if (!Array.isArray(s.eventLog)) {

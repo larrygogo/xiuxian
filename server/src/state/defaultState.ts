@@ -10,11 +10,20 @@ function getDateString(date: Date = new Date()): string {
 }
 
 /**
+ * 生成唯一的角色数字ID
+ * 使用时间戳 + 随机数确保唯一性
+ */
+function generateCharacterId(): number {
+  return Date.now() * 1000 + Math.floor(Math.random() * 1000);
+}
+
+/**
  * 创建默认的游戏状态对象
  * @returns 包含所有默认值的游戏状态对象
  */
 export function defaultState(): GameState {
   return {
+    characterId: generateCharacterId(),
     name: "无名修士",
 
     // 等级
@@ -59,9 +68,6 @@ export function defaultState(): GameState {
 
     alive: true,
     lastTs: Date.now(),
-
-    // 吐纳状态
-    isTuna: false,
 
     // 事件日志（最多保留最近100条）
     eventLog: [],

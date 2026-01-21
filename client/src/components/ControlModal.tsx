@@ -1,5 +1,5 @@
 import { useRef, type ReactNode, type MouseEvent } from 'react';
-import './ControlModal.css';
+import styles from './ControlModal.module.css';
 import type { Panel } from '../types/panel';
 
 interface ControlModalProps {
@@ -37,23 +37,23 @@ export function ControlModal({
   };
 
   return (
-    <div className="control-modal" style={{ zIndex: panel.z }}>
+    <div className={styles['control-modal']} style={{ zIndex: panel.z }}>
       <div
-        className={`control-modal-card ${size === 'large' ? 'large' : ''} ${draggingId === panel.id ? 'is-dragging' : ''}`}
+        className={`${styles['control-modal-card']} ${size === 'large' ? styles['large'] : ''} ${draggingId === panel.id ? 'is-dragging' : ''}`}
         role="dialog"
         style={{ transform: `translate(${panel.x}px, ${panel.y}px)` }}
         ref={onCardRef}
         onMouseDown={handleCardMouseDown}
       >
         <div
-          className="control-modal-header"
+          className={styles['control-modal-header']}
         >
           <span>{title}</span>
           <button type="button" onClick={() => onClose(panel.id)}>
             关闭
           </button>
         </div>
-        <div className="control-modal-body" ref={bodyRef}>
+        <div className={styles['control-modal-body']} ref={bodyRef}>
           {children}
         </div>
       </div>

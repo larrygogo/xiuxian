@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import type { Item, Equipment, Consumable } from '../types/item';
-import { isEquipment, isConsumable, QUALITY_NAMES, QUALITY_COLORS, SLOT_NAMES } from '../types/item';
-import './ItemCard.css';
+import { isEquipment, isConsumable, SLOT_NAMES } from '../types/item';
+import styles from './ItemCard.module.css';
 
 interface ItemCardProps {
   item: Item;
@@ -13,6 +13,8 @@ interface ItemCardProps {
   slot?: string;
   onClick?: (e?: React.MouseEvent) => void;
   onRightClick?: (e?: React.MouseEvent) => void;
+  className?: string;
+  playerLevel?: number; // 玩家当前等级，用于判断是否可以装备
 }
 
 // 获取物品图标字符（基于类型）
@@ -35,11 +37,9 @@ function getItemIcon(item: Item): string {
   return '💎';
 }
 
-export function ItemCard({ item, onEquip, onUse, onUnequip, isEquipped, slot, onClick, onRightClick }: ItemCardProps) {
+export function ItemCard({ item, onEquip, onUse, onUnequip, isEquipped, slot, onClick, onRightClick, className, playerLevel }: ItemCardProps) {
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
-  const qualityColor = QUALITY_COLORS[item.quality];
-  const qualityName = QUALITY_NAMES[item.quality];
 
   const handleClick = (e: React.MouseEvent) => {
     console.log('ItemCard handleClick 被调用, item:', item.name, 'onClick存在:', !!onClick);
@@ -151,9 +151,9 @@ export function ItemCard({ item, onEquip, onUse, onUnequip, isEquipped, slot, on
     }
 
     return stats.length > 0 ? (
-      <div className="item-stats">
+      <div className={styles['item-stats']}>
         {stats.map((stat, idx) => (
-          <div key={idx} className="item-stat">{stat}</div>
+          <div key={idx} className={styles['item-stat']}>{stat}</div>
         ))}
       </div>
     ) : null;
@@ -166,13 +166,13 @@ export function ItemCard({ item, onEquip, onUse, onUnequip, isEquipped, slot, on
     const effect = consumable.effect;
 
     if (effect.type === 'heal' && effect.value) {
-      return <div className="item-effect">恢复生命 +{effect.value}</div>;
+      return <div className={styles['item-effect']}>恢复生命 +{effect.value}</div>;
     }
     if (effect.type === 'mana' && effect.value) {
-      return <div className="item-effect">恢复法力 +{effect.value}</div>;
+      return <div className={styles['item-effect']}>恢复法力 +{effect.value}</div>;
     }
     if (effect.type === 'buff') {
-      return <div className="item-effect">临时增益效果</div>;
+      return <div className={styles['item-effect']}>临时增益效果</div>;
     }
 
     return null;
@@ -180,29 +180,36 @@ export function ItemCard({ item, onEquip, onUse, onUnequip, isEquipped, slot, on
 
   const tooltipContent = showTooltip ? (
     <div
-      className="item-tooltip"
+      className={styles['item-tooltip']}
       style={{
         left: `${tooltipPosition.x}px`,
         top: `${tooltipPosition.y}px`
       }}
     >
-      <div className="tooltip-header">
-        <span className="tooltip-name" style={{ color: qualityColor }}>
+      <div className={styles['tooltip-header']}>
+        <span className={styles['tooltip-name']}>
           {item.name}
         </span>
-        <span className="tooltip-quality">{qualityName}</span>
       </div>
-      <div className="tooltip-level">等级 {item.level}</div>
+      <div className={styles['tooltip-level']}>等级 {item.level}</div>
       {isEquipment(item) && (
-        <div className="tooltip-slot">槽位: {SLOT_NAMES[item.slot]}</div>
+        <>
+          <div className={styles['tooltip-slot']}>槽位: {SLOT_NAMES[item.slot]}</div>
+          <div className={styles['tooltip-required-level']}>
+            需求等级: {item.requiredLevel}
+            {playerLevel !== undefined && playerLevel < item.requiredLevel && (
+              <span className={styles['tooltip-level-warning']}> (等级不足)</span>
+            )}
+          </div>
+        </>
       )}
       {isConsumable(item) && item.stackSize > 1 && (
-        <div className="tooltip-stack">堆叠: {item.stackSize}</div>
+        <div className={styles['tooltip-stack']}>堆叠: {item.stackSize}</div>
       )}
       {renderStats()}
       {renderEffect()}
       {item.description && (
-        <div className="tooltip-description">{item.description}</div>
+        <div className={styles['tooltip-description']}>{item.description}</div>
       )}
     </div>
   ) : null;
@@ -210,17 +217,16 @@ export function ItemCard({ item, onEquip, onUse, onUnequip, isEquipped, slot, on
   return (
     <>
       <div
-        className={`item-card ${isEquipped ? 'equipped' : ''}`}
-        style={isEquipped ? {} : { borderColor: qualityColor }}
+        className={`${styles['item-card']} ${isEquipped ? styles['equipped'] : ''} ${className || ''}`}
         onClick={handleClick}
         onContextMenu={handleContextMenu}
         onMouseEnter={handleMouseEnter}
         onMouseMove={handleMouseMove}
         onMouseLeave={() => setShowTooltip(false)}
       >
-        <div className="item-icon">{getItemIcon(item)}</div>
+        <div className={styles['item-icon']}>{getItemIcon(item)}</div>
         {isConsumable(item) && item.stackSize > 1 && (
-          <div className="item-stack">x{item.stackSize}</div>
+          <div className={styles['item-stack']}>x{item.stackSize}</div>
         )}
       </div>
       {typeof document !== 'undefined' && createPortal(tooltipContent, document.body)}

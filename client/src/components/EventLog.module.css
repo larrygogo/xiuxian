@@ -1,20 +1,26 @@
 /* 样式已移至 Card.css，这里只保留日志相关的特定样式 */
 
-.game-card.event-log {
+.event-log-wrapper {
   max-height: 170px;
   display: flex;
   flex-direction: column;
 }
 
-.game-card.event-log .card-content {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+.event-log-wrapper :global(.event-log-card) {
+  max-height: 170px !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
-.game-card.event-log::after {
+.event-log-wrapper :global(.event-log-card) > div:last-child {
+  flex: 1 !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.event-log-wrapper :global(.event-log-card)::after {
   content: '';
   position: absolute;
   top: 0;
@@ -150,17 +156,21 @@
   background: rgba(0, 0, 0, 0.05);
 }
 
-.game-card.system-chat {
+.event-log-wrapper.system-chat {
   max-height: 220px;
 }
 
-.game-card.system-chat .card-title {
+.event-log-wrapper.system-chat :global(.event-log-card) {
+  max-height: 220px !important;
+}
+
+.event-log-wrapper.system-chat :global(.event-log-card) > h2 {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.game-card.system-chat .card-title::after {
+.event-log-wrapper.system-chat :global(.event-log-card) > h2::after {
   content: '系统';
   font-size: 12px;
   color: var(--ink-text-muted);
@@ -169,11 +179,11 @@
   border-radius: 999px;
 }
 
-.game-card.system-chat .log-content {
+.event-log-wrapper.system-chat .log-content {
   background: rgba(255, 255, 255, 0.75);
 }
 
-.game-card.system-chat .log-list li {
+.event-log-wrapper.system-chat .log-list li {
   border: none;
   background: rgba(0, 0, 0, 0.03);
   border-radius: 10px;
@@ -182,15 +192,19 @@
   color: rgba(47, 43, 37, 0.8);
 }
 
-.game-card.system-chat .log-list li:hover {
+.event-log-wrapper.system-chat .log-list li:hover {
   transform: none;
   padding-left: 12px;
   border-left-color: transparent;
 }
 
 @media (max-width: 600px) {
-  .game-card.event-log {
+  .event-log-wrapper {
     max-height: 150px;
+  }
+  
+  .event-log-wrapper :global(.event-log-card) {
+    max-height: 150px !important;
   }
   
   .log-content {

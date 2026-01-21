@@ -1,0 +1,235 @@
+.admin-panel {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 1;
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  margin-bottom: 8px;
+}
+
+.admin-tab {
+  flex: 1;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.2) 100%);
+  border: 1.5px solid var(--ink-border);
+  border-radius: 10px;
+  color: var(--ink-text-muted);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 0.5px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 
+    0 2px 8px var(--ink-shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.admin-tab::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.3), 
+    transparent);
+  transition: left 0.5s ease;
+}
+
+.admin-tab:hover::before {
+  left: 100%;
+}
+
+.admin-tab:hover {
+  color: var(--ink-text);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.4) 100%);
+  border-color: var(--ink-border-strong);
+  box-shadow: 
+    0 4px 12px var(--ink-shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+.admin-tab.active {
+  color: var(--ink-text);
+  background: linear-gradient(135deg, var(--ink-paper) 0%, var(--ink-paper-deep) 100%);
+  border-color: var(--ink-border-strong);
+  box-shadow: 
+    0 6px 16px var(--ink-shadow-strong),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+.admin-give-item-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.form-group label {
+  font-weight: 600;
+  color: var(--ink-text-muted);
+  font-size: 14px;
+  text-shadow: none;
+  letter-spacing: 0.3px;
+}
+
+.form-group input,
+.form-group select {
+  padding: 12px 16px;
+  padding-right: 40px;
+  border: 1.5px solid var(--ink-border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--ink-text);
+  font-size: 14px;
+  font-family: 'Noto Serif SC', 'Microsoft YaHei', serif;
+  transition: all 0.3s ease;
+  box-shadow: 
+    inset 0 2px 6px rgba(0, 0, 0, 0.05),
+    0 0 0 0 var(--ink-wash);
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  position: relative;
+}
+
+.form-group select {
+  background-image: 
+    linear-gradient(45deg, transparent 50%, var(--ink-text-muted) 50%),
+    linear-gradient(135deg, var(--ink-text-muted) 50%, transparent 50%);
+  background-position: 
+    calc(100% - 18px) calc(1em + 2px),
+    calc(100% - 14px) calc(1em + 2px);
+  background-size: 
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+}
+
+.form-group input {
+  padding-right: 16px;
+  background-image: none;
+  cursor: text;
+}
+
+.form-group input::placeholder {
+  color: rgba(47, 43, 37, 0.45);
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--ink-border-strong);
+  box-shadow: 
+    0 0 12px var(--ink-wash-strong),
+    inset 0 2px 6px rgba(0, 0, 0, 0.05);
+  background-color: rgba(255, 255, 255, 0.85);
+}
+
+.form-group select:focus {
+  background-image: 
+    linear-gradient(45deg, transparent 50%, var(--ink-border-strong) 50%),
+    linear-gradient(135deg, var(--ink-border-strong) 50%, transparent 50%);
+  background-position: 
+    calc(100% - 18px) calc(1em + 2px),
+    calc(100% - 14px) calc(1em + 2px);
+  background-size: 
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+}
+
+.form-group select:hover {
+  border-color: var(--ink-border-strong);
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+.error-message {
+  padding: 12px 16px;
+  background: #f3e6e6;
+  border: 1px solid rgba(122, 47, 47, 0.35);
+  border-radius: 8px;
+  color: var(--ink-error);
+  font-size: 14px;
+  text-shadow: none;
+}
+
+.success-message {
+  padding: 12px 16px;
+  background: rgba(47, 90, 58, 0.15);
+  border: 1px solid rgba(47, 90, 58, 0.4);
+  border-radius: 8px;
+  color: rgba(47, 90, 58, 0.9);
+  font-size: 14px;
+  text-shadow: none;
+}
+
+.submit-button {
+  width: 100%;
+  padding: 16px;
+  background: var(--ink-paper);
+  color: var(--ink-text);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 1px;
+  border: 1.5px solid var(--ink-border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 8px;
+  box-shadow: 
+    0 8px 20px var(--ink-shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.submit-button::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.06);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.submit-button:hover::after {
+  width: 400px;
+  height: 400px;
+}
+
+.submit-button:hover:not(:disabled) {
+  background: var(--ink-paper-deep);
+  box-shadow: 
+    0 12px 30px var(--ink-shadow-strong),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+.submit-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--ink-paper-deep);
+}

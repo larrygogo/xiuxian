@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Card } from './Card';
-import './CharacterCreation.css';
+import styles from './CharacterCreation.module.css';
 import type { ActionResult } from '../types/game';
 
 interface CharacterCreationProps {
@@ -37,27 +37,27 @@ export function CharacterCreation({ onCreateCharacter }: CharacterCreationProps)
   };
 
   return (
-    <div className="character-creation-container">
-      <div className="creation-background">
-        <div className="creation-decoration decoration-1">⚛</div>
-        <div className="creation-decoration decoration-2">✨</div>
-        <div className="creation-decoration decoration-3">🌟</div>
+    <div className={styles['character-creation-container']}>
+      <div className={styles['creation-background']}>
+        <div className={`${styles['creation-decoration']} ${styles['decoration-1']}`}>⚛</div>
+        <div className={`${styles['creation-decoration']} ${styles['decoration-2']}`}>✨</div>
+        <div className={`${styles['creation-decoration']} ${styles['decoration-3']}`}>🌟</div>
       </div>
       <Card title="创建角色">
-        <div className="creation-content">
-          <div className="creation-header">
-            <div className="creation-icon">⚔</div>
-            <p className="creation-description">
+        <div className={styles['creation-content']}>
+          <div className={styles['creation-header']}>
+            <div className={styles['creation-icon']}>⚔</div>
+            <p className={styles['creation-description']}>
               欢迎踏入仙途！请为您的角色起一个仙号，这将伴随您的修仙之路。
             </p>
           </div>
-          <form onSubmit={handleSubmit} className="creation-form">
-            <div className="form-group">
+          <form onSubmit={handleSubmit} className={styles['creation-form']}>
+            <div className={styles['form-group']}>
               <label>
-                <span className="label-icon">📜</span>
+                <span className={styles['label-icon']}>📜</span>
                 角色名称
               </label>
-              <div className="input-wrapper">
+              <div className={styles['input-wrapper']}>
                 <input
                   type="text"
                   value={name}
@@ -67,32 +67,32 @@ export function CharacterCreation({ onCreateCharacter }: CharacterCreationProps)
                   disabled={loading}
                   autoFocus
                 />
-                <div className="input-glow"></div>
+                <div className={styles['input-glow']}></div>
               </div>
-              <div className="input-hint">
+              <div className={styles['input-hint']}>
                 仙号将决定您在修仙世界的身份
               </div>
             </div>
-            {error && <div className="error-message">{error}</div>}
+            {error && <div className={styles['error-message']}>{error}</div>}
             <button 
               type="submit" 
               disabled={loading || !name.trim()} 
-              className="create-button"
+              className={styles['create-button']}
             >
-              <span className="button-text">
+              <span className={styles['button-text']}>
                 {loading ? (
                   <>
-                    <span className="loading-spinner">⚡</span>
+                    <span className={styles['loading-spinner']}>⚡</span>
                     创建中...
                   </>
                 ) : (
                   <>
-                    <span className="button-icon">🚀</span>
+                    <span className={styles['button-icon']}>🚀</span>
                     开始修仙
                   </>
                 )}
               </span>
-              <div className="button-glow"></div>
+              <div className={styles['button-glow']}></div>
             </button>
           </form>
         </div>

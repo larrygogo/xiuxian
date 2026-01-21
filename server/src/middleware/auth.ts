@@ -27,3 +27,22 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
     next();
   });
 }
+
+/**
+ * 管理员权限检查中间件
+ * 必须在 authenticateToken 之后使用
+ * 检查用户是否为管理员，如果不是则返回 403 错误
+ */
+export function requireAdmin(req: Request, res: Response, next: NextFunction): void {
+  if (!req.user) {
+    res.status(401).json({ error: "未提供认证令牌" });
+    return;
+  }
+
+  if (!req.user.isAdmin) {
+    res.status(403).json({ error: "需要管理员权限" });
+    return;
+  }
+
+  next();
+}

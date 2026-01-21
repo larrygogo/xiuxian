@@ -27,14 +27,14 @@ router.post("/register", async (req: Request, res: Response) => {
     }
 
     const user = await createUser(username, password);
-    const token = jwt.sign({ userId: user.id, username: user.username }, JWT_SECRET, {
+    const token = jwt.sign({ userId: user.id, username: user.username, isAdmin: user.isAdmin }, JWT_SECRET, {
       expiresIn: JWT_EXPIRES_IN
     });
 
     res.json({
       message: "注册成功",
       token,
-      user: { id: user.id, username: user.username }
+      user: { id: user.id, username: user.username, isAdmin: user.isAdmin }
     });
   } catch (error) {
     if (error instanceof Error && error.message === "用户名已存在") {
@@ -62,14 +62,14 @@ router.post("/login", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "用户名或密码错误" });
     }
 
-    const token = jwt.sign({ userId: user.id, username: user.username }, JWT_SECRET, {
+    const token = jwt.sign({ userId: user.id, username: user.username, isAdmin: user.isAdmin }, JWT_SECRET, {
       expiresIn: JWT_EXPIRES_IN
     });
 
     res.json({
       message: "登录成功",
       token,
-      user: { id: user.id, username: user.username }
+      user: { id: user.id, username: user.username, isAdmin: user.isAdmin }
     });
   } catch (error) {
     console.error("登录错误:", error);

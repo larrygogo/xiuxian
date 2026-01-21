@@ -4,13 +4,13 @@ import type { BaseStats, CombatStats } from "../types/game";
 import type {
   Equipment,
   Item,
-  ItemQuality,
   ItemType,
   EquipmentSlot,
   Consumable,
   Material,
   ConsumableEffect
 } from "../types/item";
+import { ItemGenerator } from "./ItemGenerator";
 
 // 装备模板定义
 interface EquipmentTemplate {
@@ -18,9 +18,7 @@ interface EquipmentTemplate {
   name: string;
   description?: string;
   slot: EquipmentSlot;
-  baseStatTypes: (keyof BaseStats)[];
   combatStatTypes: (keyof CombatStats)[];
-  baseValueRange: [number, number];
   combatValueRange: [number, number];
 }
 
@@ -42,9 +40,7 @@ interface MaterialTemplate {
 
 // 物品配置
 interface ItemConfig {
-  qualityMultipliers: Record<ItemQuality, number>;
-  qualityDropChances: Record<ItemQuality, number>;
-  qualityPrefixes: Record<ItemQuality, string>;
+  // 配置字段已移除，保留接口以便将来扩展
 }
 
 // 装备数据
@@ -114,21 +110,21 @@ let consumableDataCache: ConsumableTemplate[] | null = null;
 let materialDataCache: MaterialTemplate[] | null = null;
 let itemConfigCache: ItemConfig | null = null;
 
-function getEquipmentData(): EquipmentData {
+export function getEquipmentData(): EquipmentData {
   if (!equipmentDataCache) {
     equipmentDataCache = loadEquipmentData();
   }
   return equipmentDataCache;
 }
 
-function getConsumableData(): ConsumableTemplate[] {
+export function getConsumableData(): ConsumableTemplate[] {
   if (!consumableDataCache) {
     consumableDataCache = loadConsumableData();
   }
   return consumableDataCache;
 }
 
-function getMaterialData(): MaterialTemplate[] {
+export function getMaterialData(): MaterialTemplate[] {
   if (!materialDataCache) {
     materialDataCache = loadMaterialData();
   }
@@ -145,7 +141,7 @@ export function clearItemDataCache(): void {
   itemConfigCache = null;
 }
 
-function getItemConfig(): ItemConfig {
+export function getItemConfig(): ItemConfig {
   if (!itemConfigCache) {
     itemConfigCache = loadItemConfig();
   }
@@ -153,189 +149,44 @@ function getItemConfig(): ItemConfig {
 }
 
 // 获取所有装备模板（武器+防具）
-function getAllEquipmentTemplates(): EquipmentTemplate[] {
+export function getAllEquipmentTemplates(): EquipmentTemplate[] {
   const data = getEquipmentData();
   return [...data.weapons, ...data.armor];
 }
 
-/**
- * 生成唯一物品ID
- */
-function generateItemId(): string {
-  return `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-}
+// 注意：generateItemId, generateQuality, randomInRange 等辅助函数已移至 ItemGenerator 类中
 
 /**
- * 根据随机数生成品质
+ * 物品生成器单例实例
  */
-function generateQuality(): ItemQuality {
-  const config = getItemConfig();
-  const r = Math.random();
-  if (r < config.qualityDropChances.common) return "common";
-  if (r < config.qualityDropChances.uncommon) return "uncommon";
-  if (r < config.qualityDropChances.rare) return "rare";
-  if (r < config.qualityDropChances.epic) return "epic";
-  return "legendary";
-}
+export const itemGenerator = new ItemGenerator();
 
 /**
- * 在范围内生成随机值
- */
-function randomInRange(min: number, max: number): number {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-/**
- * 生成装备物品
+ * 生成装备物品（向后兼容函数）
  */
 export function generateEquipment(level: number, slot?: EquipmentSlot): Equipment {
-  const config = getItemConfig();
-  const quality = generateQuality();
-  const multiplier = config.qualityMultipliers[quality];
-
-  // 选择模板
-  let templates: EquipmentTemplate[];
-  if (slot) {
-    templates = getAllEquipmentTemplates().filter(t => t.slot === slot);
-  } else {
-    templates = getAllEquipmentTemplates();
-  }
-
-  if (templates.length === 0) {
-    // 默认生成武器
-    const data = getEquipmentData();
-    templates = data.weapons;
-  }
-
-  const template = templates[Math.floor(Math.random() * templates.length)];
-
-  // 根据等级和品质计算属性
-  const levelScale = 1 + (level - 1) * 0.1;
-  const baseStats: Partial<BaseStats> = {};
-  const combatStats: Partial<CombatStats> = {};
-
-  // 生成基础属性
-  for (const statType of template.baseStatTypes) {
-    const [min, max] = template.baseValueRange;
-    const value = Math.floor((randomInRange(min, max) * multiplier * levelScale));
-    baseStats[statType] = ((baseStats[statType] as number) || 0) + value;
-  }
-
-  // 生成战斗属性
-  for (const statType of template.combatStatTypes) {
-    const [min, max] = template.combatValueRange;
-    const value = Math.floor((randomInRange(min, max) * multiplier * levelScale));
-    const currentValue = combatStats[statType];
-    if (typeof currentValue === "number") {
-      (combatStats as any)[statType] = currentValue + value;
-    } else {
-      (combatStats as any)[statType] = value;
-    }
-  }
-
-  const name = config.qualityPrefixes[quality] + template.name;
-  // 优先使用模板中的描述，如果不存在或为空则使用默认描述
-  const description = (template.description && template.description.trim()) 
-    ? template.description 
-    : `${name}，适合${level}级修士使用。`;
-
-  return {
-    id: generateItemId(),
-    templateId: template.templateId,
-    name,
-    type: "equipment",
-    quality,
-    level,
-    slot: template.slot,
-    baseStats,
-    combatStats,
-    description
-  };
+  return itemGenerator.generateEquipment(level, slot);
 }
 
 /**
- * 生成消耗品
+ * 生成消耗品（向后兼容函数）
  */
 export function generateConsumable(level: number): Consumable {
-  const templates = getConsumableData();
-  const template = templates[Math.floor(Math.random() * templates.length)];
-  const config = getItemConfig();
-  const quality = generateQuality();
-  const multiplier = config.qualityMultipliers[quality];
-
-  // 根据品质调整效果值
-  const effect: ConsumableEffect = { ...template.effect };
-  if (effect.value) {
-    effect.value = Math.floor(effect.value * multiplier);
-  }
-
-  const name = config.qualityPrefixes[quality] + template.name;
-  // 优先使用模板中的描述，如果不存在或为空则使用默认描述
-  const description = (template.description && template.description.trim()) 
-    ? template.description 
-    : `${name}，使用后可恢复或增强。`;
-
-  return {
-    id: generateItemId(),
-    templateId: template.templateId,
-    name,
-    type: "consumable",
-    quality,
-    level,
-    effect,
-    stackSize: 1,
-    description
-  };
+  return itemGenerator.generateConsumable(level);
 }
 
 /**
- * 生成材料
+ * 生成材料（向后兼容函数）
  */
 export function generateMaterial(level: number): Material {
-  const templates = getMaterialData();
-  const template = templates[Math.floor(Math.random() * templates.length)];
-  const quality = generateQuality();
-
-  // 优先使用模板中的描述，如果不存在或为空则使用默认描述
-  const description = (template.description && template.description.trim()) 
-    ? template.description 
-    : `${template.name}，可用于合成或强化。`;
-
-  return {
-    id: generateItemId(),
-    templateId: template.templateId,
-    name: template.name,
-    type: "material",
-    quality,
-    level,
-    stackSize: randomInRange(1, 5),
-    description
-  };
+  return itemGenerator.generateMaterial(level);
 }
 
 /**
- * 随机生成物品（根据类型）
+ * 随机生成物品（根据类型）（向后兼容函数）
  */
 export function generateRandomItem(level: number, type?: ItemType): Item {
-  if (type === "equipment") {
-    return generateEquipment(level);
-  }
-  if (type === "consumable") {
-    return generateConsumable(level);
-  }
-  if (type === "material") {
-    return generateMaterial(level);
-  }
-
-  // 随机类型
-  const r = Math.random();
-  if (r < 0.5) {
-    return generateEquipment(level);
-  } else if (r < 0.8) {
-    return generateConsumable(level);
-  } else {
-    return generateMaterial(level);
-  }
+  return itemGenerator.generateRandomItem(level, type);
 }
 
 /**

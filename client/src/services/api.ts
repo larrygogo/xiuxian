@@ -30,7 +30,9 @@ api.interceptors.response.use(
     const status = error.response?.status;
     const payload = error.response?.data as { error?: string } | undefined;
     const errorMessage = payload?.error;
-    const isUserMissing = status === 404 && !!errorMessage && errorMessage.includes('用户不存在');
+    // 只对特定的"用户不存在"错误触发退出，排除管理员操作中的"目标用户不存在"等错误
+    const isUserMissing = status === 404 && !!errorMessage && 
+      (errorMessage === '用户不存在' || errorMessage === '用户不存在，无法创建角色');
     const shouldLogout = status === 401 || status === 403 || isUserMissing;
 
     if (shouldLogout) {
@@ -54,7 +56,6 @@ export const gameAPI = {
   getState: () => api.get('/api/game/state'),
   heal: () => api.post('/api/game/actions/heal'),
   tick: () => api.post('/api/game/actions/tick'),
-  toggleTuna: (enabled: boolean) => api.post('/api/game/actions/toggle-tuna', { enabled }),
   levelUp: () => api.post('/api/game/actions/levelup'),
   allocateStats: (payload: { str: number; agi: number; vit: number; int: number; spi: number }) =>
     api.post('/api/game/actions/allocate-stats', payload),
@@ -65,6 +66,10 @@ export const gameAPI = {
   useItem: (itemId: string) => api.post('/api/game/items/use', { itemId }),
   getItemTemplates: () => api.get('/api/game/items/templates'),
   reorderItems: (itemIds: (string | null)[]) => api.post('/api/game/items/reorder', { itemIds }),
+  giveItem: (payload: { targetUserId?: number; targetCharacterId?: number; itemType?: string; slot?: string; level?: number }) =>
+    api.post('/api/game/admin/give-item', payload),
+  giveExp: (payload: { targetUserId?: number; targetCharacterId?: number; amount: number }) =>
+    api.post('/api/game/admin/give-exp', payload),
 };
 
 export default api;

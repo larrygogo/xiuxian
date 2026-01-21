@@ -1,6 +1,6 @@
 import { logLine } from "../services/logger";
 import { generateRandomItem } from "../services/itemService";
-import { refreshDerivedStats } from "./battle";
+import { refreshDerivedStats } from "./stats";
 import type { GameState, CombatStats } from "../types/game";
 import type { Item, Equipment, Consumable, Material, EquipmentSlot } from "../types/item";
 import { isEquipment, isConsumable, isMaterial } from "../types/item";
@@ -26,7 +26,7 @@ export function addItemToInventory(state: GameState, item: Item): boolean {
   // 如果是可堆叠物品，尝试合并到现有堆叠
   if (isConsumable(item) || isMaterial(item)) {
     const existingItem = state.inventory.find(
-      invItem => invItem !== null && invItem.templateId === item.templateId && invItem.quality === item.quality
+      invItem => invItem !== null && invItem.templateId === item.templateId
     );
 
     if (existingItem) {
@@ -92,6 +92,12 @@ export function equipItem(state: GameState, itemId: string): boolean {
 
   const item = state.inventory.find(i => i !== null && i.id === itemId);
   if (!item || !isEquipment(item)) {
+    return false;
+  }
+
+  // 检查玩家等级是否满足装备需求等级
+  if (state.level < item.requiredLevel) {
+    logLine(`无法装备 ${item.name}：需要等级 ${item.requiredLevel}，当前等级 ${state.level}。`, state);
     return false;
   }
 

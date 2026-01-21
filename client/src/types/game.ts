@@ -1,6 +1,7 @@
 export interface User {
   id: string;
   username?: string;
+  isAdmin?: boolean;
 }
 
 export interface DailyState {
@@ -29,6 +30,7 @@ export interface CombatStats {
 import type { Item, EquipmentSlots } from './item';
 
 export interface GameState {
+  characterId?: number;
   name: string;
   level: number;
   hp: number;
@@ -38,7 +40,6 @@ export interface GameState {
   qi: number;
   lingshi?: number;
   statPoints?: number;
-  isTuna: boolean;
   alive: boolean;
   daily?: DailyState;
   baseStats?: BaseStats;

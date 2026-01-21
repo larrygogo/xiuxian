@@ -1,5 +1,6 @@
 import { BEASTS } from "../config";
 import { logLine } from "../services/logger";
+import { handleDeath } from "./actions";
 import { autoBattle } from "./battle";
 import { dropItem } from "./items";
 import type { GameState } from "../types/game";
@@ -104,16 +105,9 @@ function badEvent(state: GameState): void {
 
   // 战败或平局，根据当前血量决定是否死亡
   if (state.hp <= 0) {
-    // 战斗死亡惩罚：保留1HP，清空MP，扣除3%灵气和10%灵石
     const qiLoss = Math.floor(state.qi * 0.03);
     const lingshiLoss = Math.floor(state.lingshi * 0.1);
-    
-    state.hp = 1;
-    state.mp = 0;
-    state.qi = Math.max(0, state.qi - qiLoss);
-    state.lingshi = Math.max(0, state.lingshi - lingshiLoss);
-    
-    logLine(`你倒在荒野之中，身受重伤。保留1点生命，法力耗尽，灵气 -${qiLoss}，灵石 -${lingshiLoss}。`, state);
+    handleDeath(state, `你倒在荒野之中，身受重伤。保留1点生命，法力耗尽，灵气 -${qiLoss}，灵石 -${lingshiLoss}。`);
     return;
   }
 

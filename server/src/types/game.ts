@@ -1,10 +1,10 @@
 // 核心基础属性（与成长相关）
 export interface BaseStats {
-  str: number; // 力道：物攻/破防/负重
-  agi: number; // 身法：速度/闪避/暴击率
-  vit: number; // 体魄：生命上限/物防/部分异常抗性
-  int: number; // 灵识：法攻/法力上限/法术命中
-  spi: number; // 根骨：法力回复/元素抗性/控制抗性
+  str: number; // 力道
+  agi: number; // 身法
+  vit: number; // 体魄
+  int: number; // 灵识
+  spi: number; // 根骨
 }
 
 // 战斗衍生属性（由基础属性映射）
@@ -31,6 +31,7 @@ import type { EquipmentSlots, Item } from "./item";
 
 // 游戏主状态对象（用于存档与运行）
 export interface GameState {
+  characterId: number; // 角色数字ID
   name: string; // 角色名称
   level: number; // 等级（1-100）
   qi: number; // 灵气
@@ -45,7 +46,6 @@ export interface GameState {
   daily: DailyState; // 每日计数状态
   alive: boolean; // 是否存活
   lastTs: number; // 最近一次更新时间戳
-  isTuna: boolean; // 是否处于吐纳状态
   eventLog: string[]; // 事件日志
   inventory: (Item | null)[]; // 背包物品列表（固定20个位置，null表示空位置）
   equipment: EquipmentSlots; // 已装备的物品

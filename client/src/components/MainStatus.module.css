@@ -17,11 +17,60 @@
   gap: 16px;
 }
 
+.main-status-name-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .main-status-name {
   font-size: 28px;
   font-weight: 700;
   color: var(--ink-text);
   letter-spacing: 2px;
+}
+
+.main-status-character-id {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-text-muted);
+}
+
+.character-id-label {
+  font-weight: 500;
+}
+
+.character-id-value {
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  color: var(--ink-text);
+  background: rgba(255, 255, 255, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.copy-character-id-button {
+  padding: 2px 6px;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--ink-border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1;
+  color: var(--ink-text-muted);
+}
+
+.copy-character-id-button:hover {
+  background: rgba(255, 255, 255, 0.4);
+  border-color: var(--ink-border-strong);
+  transform: translateY(-1px);
+}
+
+.copy-character-id-button:active {
+  transform: translateY(0);
 }
 
 .main-status-realm {

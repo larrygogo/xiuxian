@@ -1,4 +1,4 @@
-import { MISHAP_BASE, MISHAP_STEP, QI_PER_TICK_BASE, QI_PER_TICK_STEP, TICKS_PER_DAY } from "../config";
+import { TICKS_PER_DAY } from "../config";
 import { logLine } from "../services/logger";
 import type { GameState } from "../types/game";
 
@@ -53,6 +53,27 @@ export function ensureDailyReset(state: GameState): boolean {
 }
 
 /**
+ * 处理角色死亡
+ * 应用死亡惩罚：保留1HP，清空MP，扣除3%灵气和10%灵石
+ * @param state 游戏状态
+ * @param deathMessage 死亡日志消息（可选，默认使用通用消息）
+ */
+export function handleDeath(state: GameState, deathMessage?: string): void {
+  // 死亡惩罚：保留1HP，清空MP，扣除3%灵气和10%灵石
+  const qiLoss = Math.floor(state.qi * 0.03);
+  const lingshiLoss = Math.floor(state.lingshi * 0.1);
+  
+  state.hp = 1;
+  state.mp = 0;
+  state.qi = Math.max(0, state.qi - qiLoss);
+  state.lingshi = Math.max(0, state.lingshi - lingshiLoss);
+  state.alive = false;
+  
+  const message = deathMessage || `你身死道消，修仙路断。保留1点生命，法力耗尽，灵气 -${qiLoss}，灵石 -${lingshiLoss}。`;
+  logLine(message, state);
+}
+
+/**
  * 手动疗伤：消耗灵气恢复生命
  */
 export function heal(state: GameState): boolean {
@@ -81,26 +102,4 @@ export function heal(state: GameState): boolean {
 
   logLine(`疗伤：消耗灵气 ${cost}，生命 +${state.hp - oldHp}（${state.hp}/${state.maxHp}）。`, state);
   return true;
-}
-
-/**
- * 执行一次修炼（吐纳）
- * 获得基础灵气，有概率走火入魔造成伤害
- */
-export function cultivateTick(state: GameState): void {
-  const base = QI_PER_TICK_BASE + Math.floor((state.level - 1) * QI_PER_TICK_STEP);
-  const gain = base + (Math.random() < 0.05 ? 1 : 0); // 5% 小波动
-  state.qi += gain;
-
-  // 走火入魔：随着等级提升，风险略增
-  const mishapChance = MISHAP_BASE + (state.level - 1) * MISHAP_STEP;
-  if (Math.random() < mishapChance) {
-    const dmg = Math.floor(3 + Math.random() * 8) + Math.floor(state.level * 0.2);
-    state.hp = Math.max(0, state.hp - dmg);
-    logLine(`走火入魔：生命 -${dmg}（${state.hp}/${state.maxHp}）。`, state);
-    if (state.hp <= 0) {
-      state.alive = false;
-      logLine("你身死道消，修仙路断。", state);
-    }
-  }
 }

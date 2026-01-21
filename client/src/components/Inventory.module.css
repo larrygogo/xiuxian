@@ -91,34 +91,25 @@
   width: fit-content;
 }
 
-.inventory-grid .item-card {
-  margin: 0;
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
-  border-radius: 0;
+.inventory-item-card {
+  margin: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  box-sizing: border-box !important;
+  border-radius: 0 !important;
   box-shadow: none !important;
   border: none !important;
   background: transparent !important;
-  padding: 0;
-  /* 覆盖内联样式 */
+  padding: 0 !important;
   border-color: transparent !important;
 }
 
-.inventory-grid .item-card:hover {
+.inventory-item-card:hover {
   box-shadow: none !important;
   transform: none !important;
   background: transparent !important;
   border: none !important;
   border-color: transparent !important;
-}
-
-.inventory-grid .item-card:nth-child(5n) {
-  border-right: none;
-}
-
-.inventory-grid .item-card:nth-child(n+16) {
-  border-bottom: none;
 }
 
 .inventory-slot {

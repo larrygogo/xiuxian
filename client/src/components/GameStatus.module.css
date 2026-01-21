@@ -73,12 +73,6 @@
   left: 100%;
 }
 
-.status-item:hover {
-  border-color: var(--ink-border-strong);
-  box-shadow: 0 4px 15px var(--ink-shadow);
-  transform: translateY(-2px);
-}
-
 .status-item .label {
   font-size: 11px;
   color: var(--ink-text-muted);

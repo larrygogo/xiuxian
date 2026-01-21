@@ -1,34 +1,277 @@
 {
   "weapons": [
     {
-      "templateId": "sword_001",
+      "templateId": "weapon_001",
       "name": "青钢剑",
       "description": "以青钢锻造的利剑，剑身轻盈，适合快速攻击。",
       "slot": "weapon",
-      "baseStatTypes": ["str", "agi"],
-      "combatStatTypes": ["atk", "crit"],
-      "baseValueRange": [2, 5],
-      "combatValueRange": [5, 12]
+      "combatStatTypes": [
+        "pdmg"
+      ],
+      "combatValueRange": [
+        2,
+        0
+      ]
     },
     {
-      "templateId": "sword_002",
-      "name": "玄铁剑",
-      "description": "由玄铁打造的重剑，剑身厚重，具有强大的破甲能力。",
+      "templateId": "weapon_005",
+      "name": "玄铁重剑",
+      "description": "由玄铁打造的重剑，剑身厚重，具有强大的物理伤害。",
       "slot": "weapon",
-      "baseStatTypes": ["str"],
-      "combatStatTypes": ["atk", "armorPen"],
-      "baseValueRange": [3, 6],
-      "combatValueRange": [8, 15]
+      "combatStatTypes": [
+        "mdmg"
+      ],
+      "combatValueRange": [
+        2,
+        3
+      ]
     },
     {
-      "templateId": "staff_001",
+      "templateId": "weapon_010",
       "name": "灵木法杖",
       "description": "用灵木制成的法杖，能够增强法术威力。",
       "slot": "weapon",
-      "baseStatTypes": ["int", "spi"],
-      "combatStatTypes": ["matk"],
-      "baseValueRange": [2, 5],
-      "combatValueRange": [5, 12]
+      "combatStatTypes": [
+        "pdmg"
+      ],
+      "combatValueRange": [
+        3,
+        6
+      ]
+    },
+    {
+      "templateId": "weapon_015",
+      "name": "紫金剑",
+      "description": "紫金锻造的宝剑，剑光如电，速度极快。",
+      "slot": "weapon",
+      "combatStatTypes": [
+        "mdmg"
+      ],
+      "combatValueRange": [
+        4,
+        9
+      ]
+    },
+    {
+      "templateId": "weapon_020",
+      "name": "寒冰法杖",
+      "description": "蕴含寒冰之力的法杖，能够释放强大的法术伤害。",
+      "slot": "weapon",
+      "combatStatTypes": [
+        "pdmg"
+      ],
+      "combatValueRange": [
+        6,
+        12
+      ]
+    },
+    {
+      "templateId": "weapon_025",
+      "name": "赤焰刀",
+      "description": "燃烧着赤焰的战刀，物理伤害极高。",
+      "slot": "weapon",
+      "combatStatTypes": [
+        "mdmg"
+      ],
+      "combatValueRange": [
+        7,
+        15
+      ]
+    },
+    {
+      "templateId": "weapon_030",
+      "name": "雷霆法杖",
+      "description": "缠绕着雷霆的法杖，法术威力惊人。",
+      "slot": "weapon",
+      "combatStatTypes": [
+        "pdmg"
+      ],
+      "combatValueRange": [
+        9,
+        18
+      ]
+    },
+    {
+      "templateId": "weapon_035",
+      "name": "龙鳞剑",
+      "description": "以龙鳞锻造的神剑，兼具力量与速度。",
+      "slot": "weapon",
+      "combatStatTypes": [
+        "mdmg"
+      ],
+      "combatValueRange": [
+        10,
+        21
+      ]
+    },
+    {
+      "templateId": "weapon_040",
+      "name": "星辰法杖",
+      "description": "汇聚星辰之力的法杖，法术防御与伤害并重。",
+      "slot": "weapon",
+      "combatStatTypes": [
+        "pdmg"
+      ],
+      "combatValueRange": [
+        12,
+        24
+      ]
+    },
+    {
+      "templateId": "weapon_045",
+      "name": "破军刀",
+      "description": "战场上的破军之刃，物理伤害与命中并重。",
+      "slot": "weapon",
+      "combatStatTypes": [
+        "mdmg"
+      ],
+      "combatValueRange": [
+        13,
+        27
+      ]
+    },
+    {
+      "templateId": "weapon_050",
+      "name": "九幽法杖",
+      "description": "来自九幽的法杖，法术伤害与法力上限极高。",
+      "slot": "weapon",
+      "combatStatTypes": [
+        "pdmg"
+      ],
+      "combatValueRange": [
+        15,
+        30
+      ]
+    },
+    {
+      "templateId": "weapon_055",
+      "name": "天罡剑",
+      "description": "天罡之力加持的宝剑，速度与伤害并重。",
+      "slot": "weapon",
+      "combatStatTypes": [
+        "mdmg"
+      ],
+      "combatValueRange": [
+        16,
+        33
+      ]
+    },
+    {
+      "templateId": "weapon_060",
+      "name": "太虚法杖",
+      "description": "太虚之力凝聚的法杖，法术防御与伤害并重。",
+      "slot": "weapon",
+      "combatStatTypes": [
+        "pdmg"
+      ],
+      "combatValueRange": [
+        18,
+        36
+      ]
+    },
+    {
+      "templateId": "weapon_065",
+      "name": "斩仙刀",
+      "description": "可斩仙人的神刀，物理伤害与命中极高。",
+      "slot": "weapon",
+      "combatStatTypes": [
+        "mdmg"
+      ],
+      "combatValueRange": [
+        19,
+        39
+      ]
+    },
+    {
+      "templateId": "weapon_070",
+      "name": "混元法杖",
+      "description": "混元一气所化的法杖，法术威力与法力并重。",
+      "slot": "weapon",
+      "combatStatTypes": [
+        "pdmg"
+      ],
+      "combatValueRange": [
+        21,
+        42
+      ]
+    },
+    {
+      "templateId": "weapon_075",
+      "name": "诛神剑",
+      "description": "可诛杀神明的圣剑，速度与物理伤害并重。",
+      "slot": "weapon",
+      "combatStatTypes": [
+        "mdmg"
+      ],
+      "combatValueRange": [
+        22,
+        45
+      ]
+    },
+    {
+      "templateId": "weapon_080",
+      "name": "造化法杖",
+      "description": "蕴含造化之力的法杖，法术防御与伤害并重。",
+      "slot": "weapon",
+      "combatStatTypes": [
+        "pdmg"
+      ],
+      "combatValueRange": [
+        24,
+        48
+      ]
+    },
+    {
+      "templateId": "weapon_085",
+      "name": "开天刀",
+      "description": "可开天辟地的神刀，物理伤害与命中并重。",
+      "slot": "weapon",
+      "combatStatTypes": [
+        "mdmg"
+      ],
+      "combatValueRange": [
+        25,
+        51
+      ]
+    },
+    {
+      "templateId": "weapon_090",
+      "name": "鸿蒙法杖",
+      "description": "鸿蒙初开时的法杖，法术伤害与法力并重。",
+      "slot": "weapon",
+      "combatStatTypes": [
+        "pdmg"
+      ],
+      "combatValueRange": [
+        27,
+        54
+      ]
+    },
+    {
+      "templateId": "weapon_095",
+      "name": "混沌剑",
+      "description": "混沌之力所化的神剑，速度与物理伤害并重。",
+      "slot": "weapon",
+      "combatStatTypes": [
+        "mdmg"
+      ],
+      "combatValueRange": [
+        28,
+        57
+      ]
+    },
+    {
+      "templateId": "weapon_100",
+      "name": "大道法杖",
+      "description": "大道至简的法杖，法术防御与伤害并重。",
+      "slot": "weapon",
+      "combatStatTypes": [
+        "pdmg"
+      ],
+      "combatValueRange": [
+        30,
+        60
+      ]
     }
   ],
   "armor": [
@@ -37,50 +280,1449 @@
       "name": "布帽",
       "description": "普通的布制帽子，提供基础的头部防护。",
       "slot": "helmet",
-      "baseStatTypes": ["vit"],
-      "combatStatTypes": ["def", "maxHp"],
-      "baseValueRange": [1, 3],
-      "combatValueRange": [3, 8]
+      "combatStatTypes": [
+        "pdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        2,
+        0
+      ]
+    },
+    {
+      "templateId": "helmet_005",
+      "name": "皮帽",
+      "description": "用兽皮制成的帽子，防护能力更强。",
+      "slot": "helmet",
+      "combatStatTypes": [
+        "maxHp",
+        "pdef"
+      ],
+      "combatValueRange": [
+        3,
+        1
+      ]
+    },
+    {
+      "templateId": "helmet_010",
+      "name": "铁盔",
+      "description": "铁制的头盔，提供良好的物理防护。",
+      "slot": "helmet",
+      "combatStatTypes": [
+        "mdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        2,
+        0
+      ]
+    },
+    {
+      "templateId": "helmet_015",
+      "name": "灵木冠",
+      "description": "用灵木制成的头冠，增强法术防御。",
+      "slot": "helmet",
+      "combatStatTypes": [
+        "spd"
+      ],
+      "combatValueRange": [
+        2,
+        0
+      ]
+    },
+    {
+      "templateId": "helmet_020",
+      "name": "紫金盔",
+      "description": "紫金锻造的头盔，物理与法术防护并重。",
+      "slot": "helmet",
+      "combatStatTypes": [
+        "maxMp",
+        "mdef"
+      ],
+      "combatValueRange": [
+        2,
+        0
+      ]
+    },
+    {
+      "templateId": "helmet_025",
+      "name": "寒冰冠",
+      "description": "蕴含寒冰之力的头冠，增强生命上限。",
+      "slot": "helmet",
+      "combatStatTypes": [
+        "pdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        2,
+        3
+      ]
+    },
+    {
+      "templateId": "helmet_030",
+      "name": "雷霆盔",
+      "description": "缠绕雷霆的头盔，物理与法术防护并重。",
+      "slot": "helmet",
+      "combatStatTypes": [
+        "maxHp",
+        "pdef"
+      ],
+      "combatValueRange": [
+        3,
+        5
+      ]
+    },
+    {
+      "templateId": "helmet_035",
+      "name": "龙鳞盔",
+      "description": "以龙鳞制成的头盔，生命与防御并重。",
+      "slot": "helmet",
+      "combatStatTypes": [
+        "mdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        2,
+        3
+      ]
+    },
+    {
+      "templateId": "helmet_040",
+      "name": "星辰冠",
+      "description": "汇聚星辰之力的头冠，法术防御与生命并重。",
+      "slot": "helmet",
+      "combatStatTypes": [
+        "spd"
+      ],
+      "combatValueRange": [
+        2,
+        3
+      ]
+    },
+    {
+      "templateId": "helmet_045",
+      "name": "破军盔",
+      "description": "战场上的破军头盔，物理防护极强。",
+      "slot": "helmet",
+      "combatStatTypes": [
+        "maxMp",
+        "mdef"
+      ],
+      "combatValueRange": [
+        2,
+        3
+      ]
+    },
+    {
+      "templateId": "helmet_050",
+      "name": "九幽冠",
+      "description": "来自九幽的头冠，生命与防御并重。",
+      "slot": "helmet",
+      "combatStatTypes": [
+        "pdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        3,
+        6
+      ]
+    },
+    {
+      "templateId": "helmet_055",
+      "name": "天罡盔",
+      "description": "天罡之力加持的头盔，物理与法术防护并重。",
+      "slot": "helmet",
+      "combatStatTypes": [
+        "maxHp",
+        "pdef"
+      ],
+      "combatValueRange": [
+        5,
+        10
+      ]
+    },
+    {
+      "templateId": "helmet_060",
+      "name": "太虚冠",
+      "description": "太虚之力凝聚的头冠，法术防御与生命并重。",
+      "slot": "helmet",
+      "combatStatTypes": [
+        "mdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        3,
+        6
+      ]
+    },
+    {
+      "templateId": "helmet_065",
+      "name": "斩仙盔",
+      "description": "可斩仙人的头盔，物理防护与生命并重。",
+      "slot": "helmet",
+      "combatStatTypes": [
+        "spd"
+      ],
+      "combatValueRange": [
+        3,
+        6
+      ]
+    },
+    {
+      "templateId": "helmet_070",
+      "name": "混元冠",
+      "description": "混元一气所化的头冠，物理与法术防护并重。",
+      "slot": "helmet",
+      "combatStatTypes": [
+        "maxMp",
+        "mdef"
+      ],
+      "combatValueRange": [
+        3,
+        6
+      ]
+    },
+    {
+      "templateId": "helmet_075",
+      "name": "诛神盔",
+      "description": "可诛杀神明的头盔，生命与防御并重。",
+      "slot": "helmet",
+      "combatStatTypes": [
+        "pdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        4,
+        9
+      ]
+    },
+    {
+      "templateId": "helmet_080",
+      "name": "造化冠",
+      "description": "蕴含造化之力的头冠，法术防御与生命并重。",
+      "slot": "helmet",
+      "combatStatTypes": [
+        "maxHp",
+        "pdef"
+      ],
+      "combatValueRange": [
+        7,
+        15
+      ]
+    },
+    {
+      "templateId": "helmet_085",
+      "name": "开天盔",
+      "description": "可开天辟地的头盔，物理与法术防护并重。",
+      "slot": "helmet",
+      "combatStatTypes": [
+        "mdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        4,
+        9
+      ]
+    },
+    {
+      "templateId": "helmet_090",
+      "name": "鸿蒙冠",
+      "description": "鸿蒙初开时的头冠，生命与防御并重。",
+      "slot": "helmet",
+      "combatStatTypes": [
+        "spd"
+      ],
+      "combatValueRange": [
+        4,
+        9
+      ]
+    },
+    {
+      "templateId": "helmet_095",
+      "name": "混沌盔",
+      "description": "混沌之力所化的头盔，物理与法术防护并重。",
+      "slot": "helmet",
+      "combatStatTypes": [
+        "maxMp",
+        "mdef"
+      ],
+      "combatValueRange": [
+        4,
+        9
+      ]
+    },
+    {
+      "templateId": "helmet_100",
+      "name": "大道冠",
+      "description": "大道至简的头冠，法术防御与生命并重。",
+      "slot": "helmet",
+      "combatStatTypes": [
+        "pdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        6,
+        12
+      ]
     },
     {
       "templateId": "armor_001",
       "name": "布衣",
       "description": "简单的布制衣服，能够提供基本的身体防护。",
       "slot": "armor",
-      "baseStatTypes": ["vit"],
-      "combatStatTypes": ["def", "maxHp"],
-      "baseValueRange": [2, 5],
-      "combatValueRange": [5, 12]
+      "combatStatTypes": [
+        "maxHp",
+        "pdef"
+      ],
+      "combatValueRange": [
+        10,
+        20
+      ]
+    },
+    {
+      "templateId": "armor_005",
+      "name": "皮甲",
+      "description": "用兽皮制成的护甲，防护能力更强。",
+      "slot": "armor",
+      "combatStatTypes": [
+        "mdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        6,
+        12
+      ]
+    },
+    {
+      "templateId": "armor_010",
+      "name": "铁甲",
+      "description": "铁制的护甲，提供良好的物理防护。",
+      "slot": "armor",
+      "combatStatTypes": [
+        "spd"
+      ],
+      "combatValueRange": [
+        6,
+        12
+      ]
+    },
+    {
+      "templateId": "armor_015",
+      "name": "灵木甲",
+      "description": "用灵木制成的护甲，增强法术防御。",
+      "slot": "armor",
+      "combatStatTypes": [
+        "maxMp",
+        "mdef"
+      ],
+      "combatValueRange": [
+        6,
+        12
+      ]
+    },
+    {
+      "templateId": "armor_020",
+      "name": "紫金甲",
+      "description": "紫金锻造的护甲，物理与法术防护并重。",
+      "slot": "armor",
+      "combatStatTypes": [
+        "pdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        7,
+        15
+      ]
+    },
+    {
+      "templateId": "armor_025",
+      "name": "寒冰甲",
+      "description": "蕴含寒冰之力的护甲，增强生命上限。",
+      "slot": "armor",
+      "combatStatTypes": [
+        "maxHp",
+        "pdef"
+      ],
+      "combatValueRange": [
+        12,
+        25
+      ]
+    },
+    {
+      "templateId": "armor_030",
+      "name": "雷霆甲",
+      "description": "缠绕雷霆的护甲，物理与法术防护并重。",
+      "slot": "armor",
+      "combatStatTypes": [
+        "mdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        7,
+        15
+      ]
+    },
+    {
+      "templateId": "armor_035",
+      "name": "龙鳞甲",
+      "description": "以龙鳞制成的护甲，生命与防御并重。",
+      "slot": "armor",
+      "combatStatTypes": [
+        "spd"
+      ],
+      "combatValueRange": [
+        7,
+        15
+      ]
+    },
+    {
+      "templateId": "armor_040",
+      "name": "星辰甲",
+      "description": "汇聚星辰之力的护甲，法术防御与生命并重。",
+      "slot": "armor",
+      "combatStatTypes": [
+        "maxMp",
+        "mdef"
+      ],
+      "combatValueRange": [
+        7,
+        15
+      ]
+    },
+    {
+      "templateId": "armor_045",
+      "name": "破军甲",
+      "description": "战场上的破军护甲，物理防护极强。",
+      "slot": "armor",
+      "combatStatTypes": [
+        "pdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        9,
+        18
+      ]
+    },
+    {
+      "templateId": "armor_050",
+      "name": "九幽甲",
+      "description": "来自九幽的护甲，生命与防御并重。",
+      "slot": "armor",
+      "combatStatTypes": [
+        "maxHp",
+        "pdef"
+      ],
+      "combatValueRange": [
+        15,
+        30
+      ]
+    },
+    {
+      "templateId": "armor_055",
+      "name": "天罡甲",
+      "description": "天罡之力加持的护甲，物理与法术防护并重。",
+      "slot": "armor",
+      "combatStatTypes": [
+        "mdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        9,
+        18
+      ]
+    },
+    {
+      "templateId": "armor_060",
+      "name": "太虚甲",
+      "description": "太虚之力凝聚的护甲，法术防御与生命并重。",
+      "slot": "armor",
+      "combatStatTypes": [
+        "spd"
+      ],
+      "combatValueRange": [
+        9,
+        18
+      ]
+    },
+    {
+      "templateId": "armor_065",
+      "name": "斩仙甲",
+      "description": "可斩仙人的护甲，物理防护与生命并重。",
+      "slot": "armor",
+      "combatStatTypes": [
+        "maxMp",
+        "mdef"
+      ],
+      "combatValueRange": [
+        9,
+        18
+      ]
+    },
+    {
+      "templateId": "armor_070",
+      "name": "混元甲",
+      "description": "混元一气所化的护甲，物理与法术防护并重。",
+      "slot": "armor",
+      "combatStatTypes": [
+        "pdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        10,
+        21
+      ]
+    },
+    {
+      "templateId": "armor_075",
+      "name": "诛神甲",
+      "description": "可诛杀神明的护甲，生命与防御并重。",
+      "slot": "armor",
+      "combatStatTypes": [
+        "maxHp",
+        "pdef"
+      ],
+      "combatValueRange": [
+        17,
+        35
+      ]
+    },
+    {
+      "templateId": "armor_080",
+      "name": "造化甲",
+      "description": "蕴含造化之力的护甲，法术防御与生命并重。",
+      "slot": "armor",
+      "combatStatTypes": [
+        "mdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        10,
+        21
+      ]
+    },
+    {
+      "templateId": "armor_085",
+      "name": "开天甲",
+      "description": "可开天辟地的护甲，物理与法术防护并重。",
+      "slot": "armor",
+      "combatStatTypes": [
+        "spd"
+      ],
+      "combatValueRange": [
+        10,
+        21
+      ]
+    },
+    {
+      "templateId": "armor_090",
+      "name": "鸿蒙甲",
+      "description": "鸿蒙初开时的护甲，生命与防御并重。",
+      "slot": "armor",
+      "combatStatTypes": [
+        "maxMp",
+        "mdef"
+      ],
+      "combatValueRange": [
+        10,
+        21
+      ]
+    },
+    {
+      "templateId": "armor_095",
+      "name": "混沌甲",
+      "description": "混沌之力所化的护甲，物理与法术防护并重。",
+      "slot": "armor",
+      "combatStatTypes": [
+        "pdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        12,
+        24
+      ]
+    },
+    {
+      "templateId": "armor_100",
+      "name": "大道甲",
+      "description": "大道至简的护甲，法术防御与生命并重。",
+      "slot": "armor",
+      "combatStatTypes": [
+        "maxHp",
+        "pdef"
+      ],
+      "combatValueRange": [
+        20,
+        40
+      ]
     },
     {
       "templateId": "leggings_001",
       "name": "布裤",
       "description": "轻便的布制裤子，不影响行动灵活性。",
       "slot": "leggings",
-      "baseStatTypes": ["agi", "vit"],
-      "combatStatTypes": ["def", "eva"],
-      "baseValueRange": [1, 3],
-      "combatValueRange": [3, 8]
+      "combatStatTypes": [
+        "mdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        12,
+        24
+      ]
+    },
+    {
+      "templateId": "leggings_005",
+      "name": "皮裤",
+      "description": "用兽皮制成的裤子，防护与速度并重。",
+      "slot": "leggings",
+      "combatStatTypes": [
+        "spd"
+      ],
+      "combatValueRange": [
+        12,
+        24
+      ]
+    },
+    {
+      "templateId": "leggings_010",
+      "name": "铁护腿",
+      "description": "铁制的护腿，提供良好的物理防护。",
+      "slot": "leggings",
+      "combatStatTypes": [
+        "maxMp",
+        "mdef"
+      ],
+      "combatValueRange": [
+        12,
+        24
+      ]
+    },
+    {
+      "templateId": "leggings_015",
+      "name": "灵木护腿",
+      "description": "用灵木制成的护腿，速度与防御并重。",
+      "slot": "leggings",
+      "combatStatTypes": [
+        "pdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        13,
+        27
+      ]
+    },
+    {
+      "templateId": "leggings_020",
+      "name": "紫金护腿",
+      "description": "紫金锻造的护腿，速度与物理防护并重。",
+      "slot": "leggings",
+      "combatStatTypes": [
+        "maxHp",
+        "pdef"
+      ],
+      "combatValueRange": [
+        22,
+        45
+      ]
+    },
+    {
+      "templateId": "leggings_025",
+      "name": "寒冰护腿",
+      "description": "蕴含寒冰之力的护腿，速度与防御并重。",
+      "slot": "leggings",
+      "combatStatTypes": [
+        "mdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        13,
+        27
+      ]
+    },
+    {
+      "templateId": "leggings_030",
+      "name": "雷霆护腿",
+      "description": "缠绕雷霆的护腿，速度极快。",
+      "slot": "leggings",
+      "combatStatTypes": [
+        "spd"
+      ],
+      "combatValueRange": [
+        13,
+        27
+      ]
+    },
+    {
+      "templateId": "leggings_035",
+      "name": "龙鳞护腿",
+      "description": "以龙鳞制成的护腿，速度与防御并重。",
+      "slot": "leggings",
+      "combatStatTypes": [
+        "maxMp",
+        "mdef"
+      ],
+      "combatValueRange": [
+        13,
+        27
+      ]
+    },
+    {
+      "templateId": "leggings_040",
+      "name": "星辰护腿",
+      "description": "汇聚星辰之力的护腿，速度与物理防护并重。",
+      "slot": "leggings",
+      "combatStatTypes": [
+        "pdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        15,
+        30
+      ]
+    },
+    {
+      "templateId": "leggings_045",
+      "name": "破军护腿",
+      "description": "战场上的破军护腿，速度与防御并重。",
+      "slot": "leggings",
+      "combatStatTypes": [
+        "maxHp",
+        "pdef"
+      ],
+      "combatValueRange": [
+        25,
+        50
+      ]
+    },
+    {
+      "templateId": "leggings_050",
+      "name": "九幽护腿",
+      "description": "来自九幽的护腿，速度极快。",
+      "slot": "leggings",
+      "combatStatTypes": [
+        "mdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        15,
+        30
+      ]
+    },
+    {
+      "templateId": "leggings_055",
+      "name": "天罡护腿",
+      "description": "天罡之力加持的护腿，速度与防御并重。",
+      "slot": "leggings",
+      "combatStatTypes": [
+        "spd"
+      ],
+      "combatValueRange": [
+        15,
+        30
+      ]
+    },
+    {
+      "templateId": "leggings_060",
+      "name": "太虚护腿",
+      "description": "太虚之力凝聚的护腿，速度与物理防护并重。",
+      "slot": "leggings",
+      "combatStatTypes": [
+        "maxMp",
+        "mdef"
+      ],
+      "combatValueRange": [
+        15,
+        30
+      ]
+    },
+    {
+      "templateId": "leggings_065",
+      "name": "斩仙护腿",
+      "description": "可斩仙人的护腿，速度与防御并重。",
+      "slot": "leggings",
+      "combatStatTypes": [
+        "pdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        16,
+        33
+      ]
+    },
+    {
+      "templateId": "leggings_070",
+      "name": "混元护腿",
+      "description": "混元一气所化的护腿，速度极快。",
+      "slot": "leggings",
+      "combatStatTypes": [
+        "maxHp",
+        "pdef"
+      ],
+      "combatValueRange": [
+        27,
+        55
+      ]
+    },
+    {
+      "templateId": "leggings_075",
+      "name": "诛神护腿",
+      "description": "可诛杀神明的护腿，速度与防御并重。",
+      "slot": "leggings",
+      "combatStatTypes": [
+        "mdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        16,
+        33
+      ]
+    },
+    {
+      "templateId": "leggings_080",
+      "name": "造化护腿",
+      "description": "蕴含造化之力的护腿，速度与物理防护并重。",
+      "slot": "leggings",
+      "combatStatTypes": [
+        "spd"
+      ],
+      "combatValueRange": [
+        16,
+        33
+      ]
+    },
+    {
+      "templateId": "leggings_085",
+      "name": "开天护腿",
+      "description": "可开天辟地的护腿，速度与防御并重。",
+      "slot": "leggings",
+      "combatStatTypes": [
+        "maxMp",
+        "mdef"
+      ],
+      "combatValueRange": [
+        16,
+        33
+      ]
+    },
+    {
+      "templateId": "leggings_090",
+      "name": "鸿蒙护腿",
+      "description": "鸿蒙初开时的护腿，速度极快。",
+      "slot": "leggings",
+      "combatStatTypes": [
+        "pdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        18,
+        36
+      ]
+    },
+    {
+      "templateId": "leggings_095",
+      "name": "混沌护腿",
+      "description": "混沌之力所化的护腿，速度与防御并重。",
+      "slot": "leggings",
+      "combatStatTypes": [
+        "maxHp",
+        "pdef"
+      ],
+      "combatValueRange": [
+        30,
+        60
+      ]
+    },
+    {
+      "templateId": "leggings_100",
+      "name": "大道护腿",
+      "description": "大道至简的护腿，速度与物理防护并重。",
+      "slot": "leggings",
+      "combatStatTypes": [
+        "mdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        18,
+        36
+      ]
     },
     {
       "templateId": "boots_001",
       "name": "布鞋",
-      "description": "舒适的布鞋，能够提升移动速度和闪避能力。",
+      "description": "舒适的布鞋，能够提升移动速度。",
       "slot": "boots",
-      "baseStatTypes": ["agi"],
-      "combatStatTypes": ["spd", "eva"],
-      "baseValueRange": [1, 3],
-      "combatValueRange": [3, 8]
+      "combatStatTypes": [
+        "spd"
+      ],
+      "combatValueRange": [
+        18,
+        36
+      ]
+    },
+    {
+      "templateId": "boots_005",
+      "name": "皮靴",
+      "description": "用兽皮制成的靴子，速度与命中并重。",
+      "slot": "boots",
+      "combatStatTypes": [
+        "maxMp",
+        "mdef"
+      ],
+      "combatValueRange": [
+        18,
+        36
+      ]
+    },
+    {
+      "templateId": "boots_010",
+      "name": "铁靴",
+      "description": "铁制的靴子，速度与命中并重。",
+      "slot": "boots",
+      "combatStatTypes": [
+        "pdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        19,
+        39
+      ]
+    },
+    {
+      "templateId": "boots_015",
+      "name": "灵木靴",
+      "description": "用灵木制成的靴子，速度极快。",
+      "slot": "boots",
+      "combatStatTypes": [
+        "maxHp",
+        "pdef"
+      ],
+      "combatValueRange": [
+        32,
+        65
+      ]
+    },
+    {
+      "templateId": "boots_020",
+      "name": "紫金靴",
+      "description": "紫金锻造的靴子，速度与命中并重。",
+      "slot": "boots",
+      "combatStatTypes": [
+        "mdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        19,
+        39
+      ]
+    },
+    {
+      "templateId": "boots_025",
+      "name": "寒冰靴",
+      "description": "蕴含寒冰之力的靴子，速度极快。",
+      "slot": "boots",
+      "combatStatTypes": [
+        "spd"
+      ],
+      "combatValueRange": [
+        19,
+        39
+      ]
+    },
+    {
+      "templateId": "boots_030",
+      "name": "雷霆靴",
+      "description": "缠绕雷霆的靴子，速度与命中并重。",
+      "slot": "boots",
+      "combatStatTypes": [
+        "maxMp",
+        "mdef"
+      ],
+      "combatValueRange": [
+        19,
+        39
+      ]
+    },
+    {
+      "templateId": "boots_035",
+      "name": "龙鳞靴",
+      "description": "以龙鳞制成的靴子，速度极快。",
+      "slot": "boots",
+      "combatStatTypes": [
+        "pdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        21,
+        42
+      ]
+    },
+    {
+      "templateId": "boots_040",
+      "name": "星辰靴",
+      "description": "汇聚星辰之力的靴子，速度与命中并重。",
+      "slot": "boots",
+      "combatStatTypes": [
+        "maxHp",
+        "pdef"
+      ],
+      "combatValueRange": [
+        35,
+        70
+      ]
+    },
+    {
+      "templateId": "boots_045",
+      "name": "破军靴",
+      "description": "战场上的破军靴子，速度极快。",
+      "slot": "boots",
+      "combatStatTypes": [
+        "mdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        21,
+        42
+      ]
+    },
+    {
+      "templateId": "boots_050",
+      "name": "九幽靴",
+      "description": "来自九幽的靴子，速度与命中并重。",
+      "slot": "boots",
+      "combatStatTypes": [
+        "spd"
+      ],
+      "combatValueRange": [
+        21,
+        42
+      ]
+    },
+    {
+      "templateId": "boots_055",
+      "name": "天罡靴",
+      "description": "天罡之力加持的靴子，速度极快。",
+      "slot": "boots",
+      "combatStatTypes": [
+        "maxMp",
+        "mdef"
+      ],
+      "combatValueRange": [
+        21,
+        42
+      ]
+    },
+    {
+      "templateId": "boots_060",
+      "name": "太虚靴",
+      "description": "太虚之力凝聚的靴子，速度与命中并重。",
+      "slot": "boots",
+      "combatStatTypes": [
+        "pdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        22,
+        45
+      ]
+    },
+    {
+      "templateId": "boots_065",
+      "name": "斩仙靴",
+      "description": "可斩仙人的靴子，速度极快。",
+      "slot": "boots",
+      "combatStatTypes": [
+        "maxHp",
+        "pdef"
+      ],
+      "combatValueRange": [
+        37,
+        75
+      ]
+    },
+    {
+      "templateId": "boots_070",
+      "name": "混元靴",
+      "description": "混元一气所化的靴子，速度与命中并重。",
+      "slot": "boots",
+      "combatStatTypes": [
+        "mdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        22,
+        45
+      ]
+    },
+    {
+      "templateId": "boots_075",
+      "name": "诛神靴",
+      "description": "可诛杀神明的靴子，速度极快。",
+      "slot": "boots",
+      "combatStatTypes": [
+        "spd"
+      ],
+      "combatValueRange": [
+        22,
+        45
+      ]
+    },
+    {
+      "templateId": "boots_080",
+      "name": "造化靴",
+      "description": "蕴含造化之力的靴子，速度与命中并重。",
+      "slot": "boots",
+      "combatStatTypes": [
+        "maxMp",
+        "mdef"
+      ],
+      "combatValueRange": [
+        22,
+        45
+      ]
+    },
+    {
+      "templateId": "boots_085",
+      "name": "开天靴",
+      "description": "可开天辟地的靴子，速度极快。",
+      "slot": "boots",
+      "combatStatTypes": [
+        "pdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        24,
+        48
+      ]
+    },
+    {
+      "templateId": "boots_090",
+      "name": "鸿蒙靴",
+      "description": "鸿蒙初开时的靴子，速度与命中并重。",
+      "slot": "boots",
+      "combatStatTypes": [
+        "maxHp",
+        "pdef"
+      ],
+      "combatValueRange": [
+        40,
+        80
+      ]
+    },
+    {
+      "templateId": "boots_095",
+      "name": "混沌靴",
+      "description": "混沌之力所化的靴子，速度极快。",
+      "slot": "boots",
+      "combatStatTypes": [
+        "mdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        24,
+        48
+      ]
+    },
+    {
+      "templateId": "boots_100",
+      "name": "大道靴",
+      "description": "大道至简的靴子，速度与命中并重。",
+      "slot": "boots",
+      "combatStatTypes": [
+        "spd"
+      ],
+      "combatValueRange": [
+        24,
+        48
+      ]
     },
     {
       "templateId": "accessory_001",
       "name": "护身符",
-      "description": "蕴含灵气的护身符，能够提升暴击伤害。",
+      "description": "蕴含灵气的护身符，能够提升法力上限。",
       "slot": "accessory",
-      "baseStatTypes": ["spi"],
-      "combatStatTypes": ["critDmg"],
-      "baseValueRange": [1, 3],
-      "combatValueRange": [2, 6]
+      "combatStatTypes": [
+        "maxMp",
+        "mdef"
+      ],
+      "combatValueRange": [
+        24,
+        48
+      ]
+    },
+    {
+      "templateId": "accessory_005",
+      "name": "灵玉",
+      "description": "蕴含灵气的玉石，增强法术能力。",
+      "slot": "accessory",
+      "combatStatTypes": [
+        "pdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        25,
+        51
+      ]
+    },
+    {
+      "templateId": "accessory_010",
+      "name": "法珠",
+      "description": "能够增强法术防御的法珠。",
+      "slot": "accessory",
+      "combatStatTypes": [
+        "maxHp",
+        "pdef"
+      ],
+      "combatValueRange": [
+        42,
+        85
+      ]
+    },
+    {
+      "templateId": "accessory_015",
+      "name": "灵晶",
+      "description": "蕴含强大灵气的晶石，法术伤害与法力并重。",
+      "slot": "accessory",
+      "combatStatTypes": [
+        "mdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        25,
+        51
+      ]
+    },
+    {
+      "templateId": "accessory_020",
+      "name": "紫金符",
+      "description": "紫金制成的符箓，法术防御与法力并重。",
+      "slot": "accessory",
+      "combatStatTypes": [
+        "spd"
+      ],
+      "combatValueRange": [
+        25,
+        51
+      ]
+    },
+    {
+      "templateId": "accessory_025",
+      "name": "寒冰珠",
+      "description": "蕴含寒冰之力的法珠，法术伤害与防御并重。",
+      "slot": "accessory",
+      "combatStatTypes": [
+        "maxMp",
+        "mdef"
+      ],
+      "combatValueRange": [
+        25,
+        51
+      ]
+    },
+    {
+      "templateId": "accessory_030",
+      "name": "雷霆符",
+      "description": "缠绕雷霆的符箓，法术伤害与法力并重。",
+      "slot": "accessory",
+      "combatStatTypes": [
+        "pdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        27,
+        54
+      ]
+    },
+    {
+      "templateId": "accessory_035",
+      "name": "龙鳞珠",
+      "description": "以龙鳞制成的法珠，法术防御与法力并重。",
+      "slot": "accessory",
+      "combatStatTypes": [
+        "maxHp",
+        "pdef"
+      ],
+      "combatValueRange": [
+        45,
+        90
+      ]
+    },
+    {
+      "templateId": "accessory_040",
+      "name": "星辰符",
+      "description": "汇聚星辰之力的符箓，法术伤害与防御并重。",
+      "slot": "accessory",
+      "combatStatTypes": [
+        "mdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        27,
+        54
+      ]
+    },
+    {
+      "templateId": "accessory_045",
+      "name": "破军珠",
+      "description": "战场上的破军法珠，法术防御与法力并重。",
+      "slot": "accessory",
+      "combatStatTypes": [
+        "spd"
+      ],
+      "combatValueRange": [
+        27,
+        54
+      ]
+    },
+    {
+      "templateId": "accessory_050",
+      "name": "九幽符",
+      "description": "来自九幽的符箓，法术伤害与法力并重。",
+      "slot": "accessory",
+      "combatStatTypes": [
+        "maxMp",
+        "mdef"
+      ],
+      "combatValueRange": [
+        27,
+        54
+      ]
+    },
+    {
+      "templateId": "accessory_055",
+      "name": "天罡珠",
+      "description": "天罡之力加持的法珠，法术防御与法力并重。",
+      "slot": "accessory",
+      "combatStatTypes": [
+        "pdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        28,
+        57
+      ]
+    },
+    {
+      "templateId": "accessory_060",
+      "name": "太虚符",
+      "description": "太虚之力凝聚的符箓，法术伤害与防御并重。",
+      "slot": "accessory",
+      "combatStatTypes": [
+        "maxHp",
+        "pdef"
+      ],
+      "combatValueRange": [
+        47,
+        95
+      ]
+    },
+    {
+      "templateId": "accessory_065",
+      "name": "斩仙珠",
+      "description": "可斩仙人的法珠，法术防御与法力并重。",
+      "slot": "accessory",
+      "combatStatTypes": [
+        "mdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        28,
+        57
+      ]
+    },
+    {
+      "templateId": "accessory_070",
+      "name": "混元符",
+      "description": "混元一气所化的符箓，法术伤害与法力并重。",
+      "slot": "accessory",
+      "combatStatTypes": [
+        "spd"
+      ],
+      "combatValueRange": [
+        28,
+        57
+      ]
+    },
+    {
+      "templateId": "accessory_075",
+      "name": "诛神珠",
+      "description": "可诛杀神明的法珠，法术防御与法力并重。",
+      "slot": "accessory",
+      "combatStatTypes": [
+        "maxMp",
+        "mdef"
+      ],
+      "combatValueRange": [
+        28,
+        57
+      ]
+    },
+    {
+      "templateId": "accessory_080",
+      "name": "造化符",
+      "description": "蕴含造化之力的符箓，法术伤害与防御并重。",
+      "slot": "accessory",
+      "combatStatTypes": [
+        "pdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        30,
+        60
+      ]
+    },
+    {
+      "templateId": "accessory_085",
+      "name": "开天珠",
+      "description": "可开天辟地的法珠，法术防御与法力并重。",
+      "slot": "accessory",
+      "combatStatTypes": [
+        "maxHp",
+        "pdef"
+      ],
+      "combatValueRange": [
+        50,
+        100
+      ]
+    },
+    {
+      "templateId": "accessory_090",
+      "name": "鸿蒙符",
+      "description": "鸿蒙初开时的符箓，法术伤害与法力并重。",
+      "slot": "accessory",
+      "combatStatTypes": [
+        "mdef",
+        "maxHp"
+      ],
+      "combatValueRange": [
+        30,
+        60
+      ]
+    },
+    {
+      "templateId": "accessory_095",
+      "name": "混沌珠",
+      "description": "混沌之力所化的法珠，法术防御与法力并重。",
+      "slot": "accessory",
+      "combatStatTypes": [
+        "spd"
+      ],
+      "combatValueRange": [
+        30,
+        60
+      ]
+    },
+    {
+      "templateId": "accessory_100",
+      "name": "大道符",
+      "description": "大道至简的符箓，法术伤害与防御并重。",
+      "slot": "accessory",
+      "combatStatTypes": [
+        "maxMp",
+        "mdef"
+      ],
+      "combatValueRange": [
+        30,
+        60
+      ]
     }
   ]
 }

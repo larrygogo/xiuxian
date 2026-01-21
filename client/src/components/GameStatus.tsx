@@ -1,5 +1,5 @@
 import { useState, type KeyboardEvent } from 'react';
-import './GameStatus.css';
+import styles from './GameStatus.module.css';
 import { Card } from './Card';
 import { stageName, needQi } from '../utils/gameUtils';
 import type { ActionResult, GameState } from '../types/game';
@@ -91,15 +91,15 @@ export function GameStatus({ state, onRename, onHeal }: GameStatusProps) {
     }
   };
 
-  const statusLabel = state.isTuna ? '闭关修炼' : '自由游历';
+  const statusLabel = '自由游历';
 
   return (
     <Card className="detail-card">
-      <div className="detail-header">
-        <div className="detail-title">修士详情</div>
+      <div className={styles['detail-header']}>
+        <div className={styles['detail-title']}>修士详情</div>
         <button
           type="button"
-          className="detail-toggle"
+          className={styles['detail-toggle']}
           onClick={() => setCollapsed((prev) => !prev)}
         >
           {collapsed ? '展开' : '收起'}
@@ -107,53 +107,53 @@ export function GameStatus({ state, onRename, onHeal }: GameStatusProps) {
       </div>
 
       {collapsed ? (
-        <div className="summary-grid">
-          <div className="status-item">
-            <span className="label">生命</span>
-            <div className="value-row">
-              <span className="value">{state.hp} / {state.maxHp}</span>
+        <div className={styles['summary-grid']}>
+          <div className={styles['status-item']}>
+            <span className={styles['label']}>生命</span>
+            <div className={styles['value-row']}>
+              <span className={styles['value']}>{state.hp} / {state.maxHp}</span>
               <button
                 onClick={handleHeal}
                 disabled={healLoading || !state.alive || state.hp >= state.maxHp || state.qi < 15}
-                className="heal-inline-button"
+                className={styles['heal-inline-button']}
                 title="消耗灵气恢复生命"
               >
                 疗伤
               </button>
             </div>
             {healMessage && (
-              <span className={`heal-message ${healMessage.includes('失败') ? 'error' : 'success'}`}>
+              <span className={`${styles['heal-message']} ${healMessage.includes('失败') ? styles['error'] : styles['success']}`}>
                 {healMessage}
               </span>
             )}
           </div>
-          <div className="status-item">
-            <span className="label">状态</span>
-            <span className="value">{statusLabel}</span>
+          <div className={styles['status-item']}>
+            <span className={styles['label']}>状态</span>
+            <span className={styles['value']}>{statusLabel}</span>
           </div>
         </div>
       ) : (
         <>
-          <div className="status-grid">
-        <div className="status-item name-item">
-          <span className="label">姓名</span>
+          <div className={styles['status-grid']}>
+        <div className={`${styles['status-item']} ${styles['name-item']}`}>
+          <span className={styles['label']}>姓名</span>
           {isEditing ? (
-            <div className="name-edit-container">
+            <div className={styles['name-edit-container']}>
               <input
                 type="text"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
                 onKeyDown={handleKeyPress}
-                className="name-edit-input"
+                className={styles['name-edit-input']}
                 maxLength={10}
                 autoFocus
                 disabled={loading}
               />
-              <div className="name-edit-actions">
+              <div className={styles['name-edit-actions']}>
                 <button
                   onClick={handleSave}
                   disabled={loading}
-                  className="name-edit-btn save-btn"
+                  className={`${styles['name-edit-btn']} ${styles['save-btn']}`}
                   title="保存 (Enter)"
                 >
                   ✓
@@ -161,67 +161,67 @@ export function GameStatus({ state, onRename, onHeal }: GameStatusProps) {
                 <button
                   onClick={handleCancel}
                   disabled={loading}
-                  className="name-edit-btn cancel-btn"
+                  className={`${styles['name-edit-btn']} ${styles['cancel-btn']}`}
                   title="取消 (Esc)"
                 >
                   ✕
                 </button>
               </div>
-              {error && <div className="name-edit-error">{error}</div>}
+              {error && <div className={styles['name-edit-error']}>{error}</div>}
             </div>
           ) : (
             <span 
-              className="value name-value" 
+              className={`${styles['value']} ${styles['name-value']}`}
               onClick={handleEditClick}
               title="点击修改姓名"
             >
               {state.name}
-              <span className="edit-icon">✎</span>
+              <span className={styles['edit-icon']}>✎</span>
             </span>
           )}
         </div>
-        <div className="status-item">
-          <span className="label">等级</span>
-          <span className="value">{stage}</span>
+        <div className={styles['status-item']}>
+          <span className={styles['label']}>等级</span>
+          <span className={styles['value']}>{stage}</span>
         </div>
-        <div className="status-item">
-          <span className="label">灵气</span>
-          <span className="value">{state.qi} / {requiredQi}</span>
+        <div className={styles['status-item']}>
+          <span className={styles['label']}>灵气</span>
+          <span className={styles['value']}>{state.qi} / {requiredQi}</span>
         </div>
-        <div className="status-item">
-          <span className="label">生命</span>
-          <div className="value-row">
-            <span className="value">{state.hp} / {state.maxHp}</span>
+        <div className={styles['status-item']}>
+          <span className={styles['label']}>生命</span>
+          <div className={styles['value-row']}>
+            <span className={styles['value']}>{state.hp} / {state.maxHp}</span>
             <button
               onClick={handleHeal}
               disabled={healLoading || !state.alive || state.hp >= state.maxHp || state.qi < 15}
-              className="heal-inline-button"
+              className={styles['heal-inline-button']}
               title="消耗灵气恢复生命"
             >
               疗伤
             </button>
           </div>
           {healMessage && (
-            <span className={`heal-message ${healMessage.includes('失败') ? 'error' : 'success'}`}>
+            <span className={`${styles['heal-message']} ${healMessage.includes('失败') ? styles['error'] : styles['success']}`}>
               {healMessage}
             </span>
           )}
         </div>
-        <div className="status-item">
-          <span className="label">今日剩余</span>
-          <span className="value">{remainingTicks} 次</span>
+        <div className={styles['status-item']}>
+          <span className={styles['label']}>今日剩余</span>
+          <span className={styles['value']}>{remainingTicks} 次</span>
         </div>
-        <div className="status-item">
-          <span className="label">状态</span>
-          <span className="value">{statusLabel}</span>
+        <div className={styles['status-item']}>
+          <span className={styles['label']}>状态</span>
+          <span className={styles['value']}>{statusLabel}</span>
         </div>
       </div>
-      <div className="progress-bar">
+      <div className={styles['progress-bar']}>
         <div
-          className="progress-fill"
+          className={styles['progress-fill']}
           style={{ width: `${Math.min(100, (state.qi / requiredQi) * 100)}%` }}
         />
-        <span className="progress-text">
+        <span className={styles['progress-text']}>
           灵气进度: {state.qi} / {requiredQi}
         </span>
       </div>
