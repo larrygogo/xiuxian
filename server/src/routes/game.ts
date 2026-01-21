@@ -170,12 +170,12 @@ router.post("/actions/tick", async (req: Request, res: Response) => {
       // 根据吐纳状态选择修炼或探索
       if (state.isTuna) {
         cultivateTick(state);
+        // 修炼时不自动升级，需要手动点击升级按钮
       } else {
         exploreTick(state);
+        // 探索时不自动升级，需要手动点击升级按钮
       }
 
-      // 尝试自动进境，避免积压灵气
-      stepUpAsMuchAsPossible(state, STEP_UP_LIMIT_PER_TICK);
       await updateUserGameState(userId, state);
 
       responseSent = true;

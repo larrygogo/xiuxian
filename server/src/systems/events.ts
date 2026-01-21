@@ -45,7 +45,13 @@ function goodEvent(state: GameState): void {
   // 小概率掉落物品（10%）
   if (Math.random() < 0.1) {
     dropItem(state);
+    return;
   }
+
+  // 默认：普通探索，获得少量灵气
+  const gain = randInt(2, 6);
+  state.qi += gain;
+  logLine(`游历探索：灵气 +${gain}。`, state);
 }
 
 /**
@@ -57,7 +63,13 @@ function neutralEvent(state: GameState): void {
     const heal = randInt(4, 10);
     state.hp = Math.min(state.maxHp, state.hp + heal);
     logLine(`清泉洗髓：生命 +${heal}（${state.hp}/${state.maxHp}）。`, state);
+    return;
   }
+
+  // 默认：普通探索，获得少量灵气
+  const gain = randInt(1, 4);
+  state.qi += gain;
+  logLine(`游历探索：灵气 +${gain}。`, state);
 }
 
 /**
@@ -66,7 +78,13 @@ function neutralEvent(state: GameState): void {
  */
 function badEvent(state: GameState): void {
   // 妖兽限流：每天最多 3 次
-  if (state.daily.beastCount >= 3) return;
+  if (state.daily.beastCount >= 3) {
+    // 达到上限时，普通探索获得少量灵气
+    const gain = randInt(1, 3);
+    state.qi += gain;
+    logLine(`游历探索：灵气 +${gain}。`, state);
+    return;
+  }
   state.daily.beastCount += 1;
 
   const beast = BEASTS[randInt(0, BEASTS.length - 1)];
