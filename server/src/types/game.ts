@@ -39,6 +39,7 @@ export interface GameState {
   maxHp: number; // 最大生命
   mp: number; // 当前法力
   maxMp: number; // 最大法力
+  statPoints: number; // 待分配属性点
   baseStats: BaseStats; // 基础属性
   combatStats: CombatStats; // 战斗属性
   daily: DailyState; // 每日计数状态

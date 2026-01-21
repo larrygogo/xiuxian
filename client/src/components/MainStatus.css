@@ -83,6 +83,53 @@
   margin-bottom: 10px;
 }
 
+.stats-allocation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 11px;
+  color: var(--ink-text-muted);
+}
+
+.stats-allocation-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stats-allocation-value {
+  font-weight: 700;
+  color: var(--ink-text);
+}
+
+.stats-allocation-button {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-text);
+  background: linear-gradient(135deg, var(--ink-paper) 0%, var(--ink-paper-deep) 100%);
+  border: 1px solid var(--ink-border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Noto Serif SC', 'Microsoft YaHei', serif;
+  white-space: nowrap;
+}
+
+.stats-allocation-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--ink-paper-deep) 0%, var(--ink-paper-edge) 100%);
+  border-color: var(--ink-border-strong);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px var(--ink-shadow);
+}
+
+.stats-allocation-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
@@ -95,17 +142,75 @@
 
 .stats-item {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 10px;
 }
+
+.stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stats-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stats-value-box {
+  flex: 1;
+  min-width: 60px;
+  padding: 4px 8px;
+  border: 1px solid var(--ink-border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.stats-inline-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stats-control-button {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--ink-border);
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--ink-text);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.stats-control-button:hover:not(:disabled) {
+  border-color: var(--ink-border-strong);
+  transform: translateY(-1px);
+}
+
+.stats-control-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 
 .stats-label {
   font-size: 11px;
   color: var(--ink-text-muted);
+  min-width: 40px;
 }
 
 .stats-value {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--ink-text);
 }

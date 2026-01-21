@@ -16,7 +16,7 @@ import type { Panel, PanelType } from './types/panel';
 
 function App() {
   const { user, loading: authLoading, login, register, logout } = useAuth();
-  const { state, loading: gameLoading, error, tick, toggleTuna, createCharacter, equipItem, unequipItem, useItem, levelUp, refresh } = useGameState(user?.id);
+  const { state, loading: gameLoading, error, tick, toggleTuna, createCharacter, equipItem, unequipItem, useItem, levelUp, allocateStats, refresh } = useGameState(user?.id);
   const [openPanels, setOpenPanels] = useState<Panel[]>([]);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const modalManagerRef = useRef(new ModalManager());
@@ -218,7 +218,7 @@ function App() {
             {panel.type === 'bag' ? (
               <Inventory items={state?.inventory || Array(20).fill(null)} lingshi={state?.lingshi} equipment={state?.equipment} onEquip={equipItem} onUse={useItem} onUnequip={unequipItem} onUpdate={refresh} />
             ) : panel.type === 'stats' ? (
-              <MainStatus state={state} onLevelUp={levelUp} />
+              <MainStatus state={state} onLevelUp={levelUp} onAllocateStats={allocateStats} />
             ) : panel.type === 'settings' ? (
               <div className="settings-panel">
                 <p>功能开发中，占位展示。</p>

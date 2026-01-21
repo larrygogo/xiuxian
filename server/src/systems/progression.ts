@@ -1,6 +1,5 @@
 import { LEVEL_MAX, QI_NEED_BASE, QI_NEED_STEP } from "../config";
 import { logLine } from "../services/logger";
-import { refreshDerivedStats } from "./battle";
 import type { GameState } from "../types/game";
 
 /**
@@ -48,7 +47,9 @@ export function stepUpOnce(state: GameState): boolean {
 
   if (state.level < LEVEL_MAX) {
     state.level += 1;
-    applyGrowth(state, "level");
+    state.statPoints += 5;
+    state.hp = state.maxHp;
+    state.mp = state.maxMp;
     logLine(`升级：${stageName(state)}（消耗灵气 ${req}）。`, state);
     return true;
   }
@@ -65,40 +66,3 @@ export function stepUpAsMuchAsPossible(state: GameState, limit: number): number 
   return count;
 }
 
-type GrowthType = "level";
-
-/**
- * 应用境界成长：提升基础属性并刷新战斗属性
- */
-function applyGrowth(state: GameState, type: GrowthType): void {
-  // 若基础属性缺失，则按默认值补齐
-  const base = state.baseStats ?? {
-    str: 10,
-    agi: 10,
-    vit: 10,
-    int: 10,
-    spi: 10
-  };
-
-  const growth = {
-    str: 1,
-    agi: 1,
-    vit: 1,
-    int: 1,
-    spi: 1
-  };
-
-  // 破境额外奖励
-  void type;
-
-  base.str += growth.str;
-  base.agi += growth.agi;
-  base.vit += growth.vit;
-  base.int += growth.int;
-  base.spi += growth.spi;
-
-  state.baseStats = base;
-
-  // 同步刷新战斗属性与上限
-  refreshDerivedStats(state);
-}

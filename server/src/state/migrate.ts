@@ -32,6 +32,7 @@ export function migrateState(state: unknown): GameState | null {
   if (typeof s.maxHp !== "number") s.maxHp = 100;
   if (typeof s.mp !== "number") s.mp = 50;
   if (typeof s.maxMp !== "number") s.maxMp = 50;
+  if (typeof s.statPoints !== "number") s.statPoints = 0;
 
   if (typeof s.alive !== "boolean") s.alive = true;
   if (typeof s.lastTs !== "number") s.lastTs = Date.now();

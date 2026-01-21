@@ -9,12 +9,12 @@ import {
 import { toClientState } from "../services/stateView";
 import { cultivateTick, ensureDailyReset, heal } from "../systems/actions";
 import { exploreTick } from "../systems/events";
-import { stepUpAsMuchAsPossible, stepUpOnce, needQi } from "../systems/progression";
-import { STEP_UP_LIMIT_PER_TICK } from "../config";
+import { stepUpOnce, needQi } from "../systems/progression";
 import { logLine } from "../services/logger";
 import { equipItem, unequipItem, useConsumable, reorderItems } from "../systems/items";
 import { getItemTemplates } from "../services/itemService";
 import { refreshDerivedStats } from "../systems/battle";
+import { getUserById } from "../services/userService";
 import type { EquipmentSlot } from "../types/item";
 
 const router = express.Router();
@@ -208,6 +208,11 @@ router.post("/character/create", async (req: Request, res: Response) => {
     const trimmedName = name.trim();
     if (trimmedName.length < 2 || trimmedName.length > 10) {
       return res.status(400).json({ error: "角色名称长度为2-10个字符" });
+    }
+
+    const user = await getUserById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "用户不存在，无法创建角色" });
     }
 
     let state = getUserGameState(userId);
@@ -458,6 +463,68 @@ router.post("/actions/levelup", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("升级错误:", error);
     res.status(500).json({ error: "升级失败" });
+  }
+});
+
+/**
+ * 分配属性点
+ * POST /api/game/actions/allocate-stats
+ */
+router.post("/actions/allocate-stats", async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "未提供认证令牌" });
+    }
+
+    const state = getUserGameState(userId);
+    if (!state) {
+      return res.status(404).json({ error: "游戏状态未找到" });
+    }
+
+    if (!state.alive) {
+      return res.status(400).json({ error: "你已死亡，无法分配属性点" });
+    }
+
+    const payload = req.body as Partial<Record<"str" | "agi" | "vit" | "int" | "spi", number>>;
+    const allocations = {
+      str: Number(payload.str ?? 0),
+      agi: Number(payload.agi ?? 0),
+      vit: Number(payload.vit ?? 0),
+      int: Number(payload.int ?? 0),
+      spi: Number(payload.spi ?? 0)
+    };
+
+    const values = Object.values(allocations);
+    if (values.some((value) => !Number.isFinite(value) || value < 0 || !Number.isInteger(value))) {
+      return res.status(400).json({ error: "分配点数必须是非负整数" });
+    }
+
+    const total = values.reduce((sum, value) => sum + value, 0);
+    if (total <= 0) {
+      return res.status(400).json({ error: "分配点数不能为 0" });
+    }
+
+    if (state.statPoints < total) {
+      return res.status(400).json({ error: "可用属性点不足" });
+    }
+
+    state.baseStats = state.baseStats ?? { str: 10, agi: 10, vit: 10, int: 10, spi: 10 };
+    state.baseStats.str += allocations.str;
+    state.baseStats.agi += allocations.agi;
+    state.baseStats.vit += allocations.vit;
+    state.baseStats.int += allocations.int;
+    state.baseStats.spi += allocations.spi;
+    state.statPoints -= total;
+
+    refreshDerivedStats(state);
+    logLine(`属性分配：力道+${allocations.str} 身法+${allocations.agi} 体魄+${allocations.vit} 灵识+${allocations.int} 根骨+${allocations.spi}。`, state);
+
+    await updateUserGameState(userId, state);
+    res.json({ message: "分配成功", state: toClientState(state) });
+  } catch (error) {
+    console.error("分配属性点错误:", error);
+    res.status(500).json({ error: "分配属性点失败" });
   }
 });
 

@@ -37,6 +37,7 @@ export interface GameState {
   maxMp?: number | null;
   qi: number;
   lingshi?: number;
+  statPoints?: number;
   isTuna: boolean;
   alive: boolean;
   daily?: DailyState;

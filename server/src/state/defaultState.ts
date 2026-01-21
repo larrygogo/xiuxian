@@ -26,6 +26,7 @@ export function defaultState(): GameState {
     maxHp: 100,
     mp: 50,
     maxMp: 50,
+    statPoints: 0,
 
     // 基础属性（成长维度）
     baseStats: {

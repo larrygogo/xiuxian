@@ -27,8 +27,14 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
-    if (error.response?.status === 401) {
-      // Token 过期或无效，清除本地存储
+    const status = error.response?.status;
+    const payload = error.response?.data as { error?: string } | undefined;
+    const errorMessage = payload?.error;
+    const isUserMissing = status === 404 && !!errorMessage && errorMessage.includes('用户不存在');
+    const shouldLogout = status === 401 || status === 403 || isUserMissing;
+
+    if (shouldLogout) {
+      // Token 无效或用户不存在，清除本地存储并回到登录页
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/';
@@ -50,6 +56,8 @@ export const gameAPI = {
   tick: () => api.post('/api/game/actions/tick'),
   toggleTuna: (enabled: boolean) => api.post('/api/game/actions/toggle-tuna', { enabled }),
   levelUp: () => api.post('/api/game/actions/levelup'),
+  allocateStats: (payload: { str: number; agi: number; vit: number; int: number; spi: number }) =>
+    api.post('/api/game/actions/allocate-stats', payload),
   createCharacter: (name: string) => api.post('/api/game/character/create', { name }),
   renameCharacter: (name: string) => api.post('/api/game/character/rename', { name }),
   equipItem: (itemId: string) => api.post('/api/game/items/equip', { itemId }),

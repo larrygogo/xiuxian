@@ -13,6 +13,14 @@ interface GameStateResponse {
   message?: string;
 }
 
+interface StatAllocationPayload {
+  str: number;
+  agi: number;
+  vit: number;
+  int: number;
+  spi: number;
+}
+
 export function useGameState(userId: string | null | undefined) {
   const [state, setState] = useState<GameState | null>(null);
   const [loading, setLoading] = useState(true);
@@ -216,6 +224,21 @@ export function useGameState(userId: string | null | undefined) {
     }
   };
 
+  const allocateStats = async (payload: StatAllocationPayload): Promise<ActionResult> => {
+    try {
+      const response = await gameAPI.allocateStats(payload);
+      const data = response.data as GameStateResponse;
+      setState(data.state);
+      return { success: true, message: data.message };
+    } catch (err: unknown) {
+      const message = (err as AxiosError<ApiError>).response?.data?.error || '分配属性点失败';
+      return {
+        success: false,
+        error: message,
+      };
+    }
+  };
+
   return { 
     state, 
     loading, 
@@ -229,6 +252,7 @@ export function useGameState(userId: string | null | undefined) {
     unequipItem,
     useItem,
     levelUp,
+    allocateStats,
     refresh: fetchState 
   };
 }
