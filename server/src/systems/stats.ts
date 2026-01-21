@@ -109,11 +109,21 @@ export function refreshDerivedStats(state: GameState): CombatStats {
 
   const derived = computeDerivedStats(effectiveBase);
 
-  // 叠加装备提供的战斗属性加成
-  const finalCombatStats: CombatStats = {
-    ...derived,
-    ...equipmentStats.combatStats
-  };
+  // 叠加装备提供的战斗属性加成（数值型字段做“加法”，避免覆盖基础派生属性）
+  const finalCombatStats: CombatStats = { ...derived };
+  for (const [key, value] of Object.entries(equipmentStats.combatStats)) {
+    // elementRes 等扩展字段不属于 CombatStats，这里跳过（由其他系统/展示层处理）
+    if (key === "elementRes") continue;
+    if (typeof value !== "number" || !Number.isFinite(value)) continue;
+
+    const statKey = key as keyof CombatStats;
+    const current = finalCombatStats[statKey];
+    if (typeof current === "number" && Number.isFinite(current)) {
+      finalCombatStats[statKey] = Math.floor(current + value) as any;
+    } else {
+      finalCombatStats[statKey] = Math.floor(value) as any;
+    }
+  }
 
   // 合并已有的战斗属性，避免丢失自定义字段
   state.combatStats = {
