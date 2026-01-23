@@ -9,16 +9,19 @@ import { battleAPI } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import type { Socket } from 'socket.io-client';
 import type { BattleSnapshotDTO, BattleEventDTO, BattleStartPayload, TurnBeginPayload, TurnAutoFillPayload, TurnResolvePayload, BattleEndPayload } from '../types/battle';
+import type { Item } from '../types/item';
+import { isConsumable } from '../types/item';
 import styles from './BattleView.module.css';
 
 interface BattleViewProps {
   roomId: string;
+  inventory?: (Item | null)[];
   headerRight?: ReactNode | ((context: { battleEnded: boolean }) => ReactNode);
   onRoomMissing?: () => void;
   onBattleEnd?: () => void;
 }
 
-export function BattleView({ roomId, headerRight, onRoomMissing, onBattleEnd }: BattleViewProps) {
+export function BattleView({ roomId, inventory = [], headerRight, onRoomMissing, onBattleEnd }: BattleViewProps) {
   const { user } = useAuth();
   const [socket, setSocket] = useState<Socket | null>(null);
   const socketRef = useRef<Socket | null>(null);
@@ -28,8 +31,35 @@ export function BattleView({ roomId, headerRight, onRoomMissing, onBattleEnd }: 
   const [countdown, setCountdown] = useState<number | null>(null);
   const [submittedCount, setSubmittedCount] = useState<number>(0);
   const [commandSubmitted, setCommandSubmitted] = useState<boolean>(false);
-  const [selectedCommand, setSelectedCommand] = useState<'attack' | 'defend' | 'escape' | null>(null);
+  const [submittedPlayerIds, setSubmittedPlayerIds] = useState<string[]>([]);
+  const [selectedCommand, setSelectedCommand] = useState<'attack' | 'defend' | 'escape' | 'item' | null>(null);
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const consumables = inventory.filter((item): item is Item => !!item).filter(isConsumable);
+  const selectedItem = consumables.find((item) => item.id === selectedItemId) || null;
+  const selectedItemTargetScope = selectedItem
+    ? (selectedItem.battleTarget ?? (selectedItem.effect.type === 'buff' ? 'self' : 'ally'))
+    : null;
+
+  const selfCombatantId = snapshot?.players.find((player) => player.userId === user?.id)?.id ?? null;
+  const submittedCombatantIds = snapshot?.players
+    ? snapshot.players
+        .filter((player) => typeof player.userId === 'number' && submittedPlayerIds.includes(`player_${player.userId}`))
+        .map((player) => player.id)
+    : [];
+
+  useEffect(() => {
+    if (selectedCommand !== 'item') {
+      setSelectedItemId(null);
+    }
+  }, [selectedCommand]);
+
+  useEffect(() => {
+    if (!selectedItem || selectedItemTargetScope !== 'self' || !selfCombatantId) {
+      return;
+    }
+    setSelectedTarget(selfCombatantId);
+  }, [selectedItem, selectedItemTargetScope, selfCombatantId]);
   const refreshTimeoutRef = useRef<number | null>(null);
   const refreshAttemptsRef = useRef(0);
   const refreshInFlightRef = useRef(false);
@@ -52,6 +82,7 @@ export function BattleView({ roomId, headerRight, onRoomMissing, onBattleEnd }: 
 
       // 计算已提交指令数
       setSubmittedCount(stateSnapshot.commands.length);
+      setSubmittedPlayerIds(stateSnapshot.commands.map((cmd) => cmd.playerId));
 
       // 检查当前用户是否已提交指令
       if (user?.id) {
@@ -137,6 +168,7 @@ export function BattleView({ roomId, headerRight, onRoomMissing, onBattleEnd }: 
           const payload = event.payload as TurnBeginPayload;
           const newSubmittedCount = payload.submittedCommands.length;
           setSubmittedCount(newSubmittedCount);
+          setSubmittedPlayerIds(payload.submittedCommands);
           
           // 检查当前用户是否已提交指令
           if (user?.id) {
@@ -166,6 +198,7 @@ export function BattleView({ roomId, headerRight, onRoomMissing, onBattleEnd }: 
           const payload = event.payload as TurnResolvePayload;
           setSnapshot(payload.snapshot);
           setBattleLogs(prev => [...prev, ...payload.logs]);
+          setSubmittedPlayerIds(payload.snapshot.commands.map((cmd) => cmd.playerId));
           stopRefreshPolling({ resetGiveUp: true });
           break;
         }
@@ -186,9 +219,6 @@ export function BattleView({ roomId, headerRight, onRoomMissing, onBattleEnd }: 
           setSocket(null);
           socketRef.current = null;
           clearAutoExitTimeout();
-          autoExitTimeoutRef.current = window.setTimeout(() => {
-            onBattleEnd?.();
-          }, 5000);
           break;
         }
       }
@@ -339,15 +369,6 @@ export function BattleView({ roomId, headerRight, onRoomMissing, onBattleEnd }: 
         </div>
       </div>
 
-      <div className={styles.topArea}>
-        <CountdownBar
-          turnNumber={snapshot.turnNumber}
-          countdown={countdown}
-          submittedCount={submittedCount}
-          totalPlayers={snapshot.players.length}
-        />
-      </div>
-
       <div className={styles.mainArea}>
         <div className={styles.battlefield}>
           <BattlefieldGrid
@@ -356,9 +377,19 @@ export function BattleView({ roomId, headerRight, onRoomMissing, onBattleEnd }: 
             selectedCommand={selectedCommand}
             selectedTarget={selectedTarget}
             targetingEnabled={!commandSubmitted}
-            onTargetClick={(targetId, isPlayer) => {
-              // 只能选择敌方作为攻击目标
-              if (selectedCommand === 'attack' && !isPlayer && !commandSubmitted) {
+            targetScope={selectedCommand === 'item' ? selectedItemTargetScope : selectedCommand === 'attack' ? 'enemy' : null}
+            selfId={selfCombatantId}
+            submittedPlayerIds={submittedCombatantIds}
+            middleContent={(
+              <CountdownBar
+                turnNumber={snapshot.turnNumber}
+                countdown={countdown}
+                submittedCount={submittedCount}
+                totalPlayers={snapshot.players.length}
+              />
+            )}
+            onTargetClick={(targetId) => {
+              if (!commandSubmitted) {
                 setSelectedTarget(targetId);
               }
             }}
@@ -371,13 +402,25 @@ export function BattleView({ roomId, headerRight, onRoomMissing, onBattleEnd }: 
             roomId={roomId}
             turnNumber={snapshot.turnNumber}
             phase={snapshot.phase}
+            players={snapshot.players}
             monsters={snapshot.monsters}
             commandSubmitted={commandSubmitted}
             selectedCommand={selectedCommand}
             selectedTarget={selectedTarget}
+            consumables={consumables}
+            selectedItemId={selectedItemId}
+            itemTargetScope={selectedItemTargetScope}
             onCommandSelect={(cmd) => {
               setSelectedCommand(cmd);
-              if (cmd !== 'attack') {
+              if (cmd === 'item') {
+                setSelectedTarget(null);
+              } else if (cmd !== 'attack') {
+                setSelectedTarget(null);
+              }
+            }}
+            onItemSelect={(itemId) => {
+              setSelectedItemId(itemId);
+              if (!itemId) {
                 setSelectedTarget(null);
               }
             }}
@@ -386,6 +429,7 @@ export function BattleView({ roomId, headerRight, onRoomMissing, onBattleEnd }: 
               // 提交后清除选择
               setSelectedCommand(null);
               setSelectedTarget(null);
+              setSelectedItemId(null);
             }}
           />
         </div>

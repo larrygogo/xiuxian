@@ -11,7 +11,7 @@ export function CountdownBar({ turnNumber, countdown, submittedCount, totalPlaye
   if (countdown === null) {
     return (
       <div className={styles.countdownBar}>
-        <div className={styles.label}>等待中...</div>
+        <div className={styles.placeholder}>等待中...</div>
       </div>
     );
   }
@@ -23,19 +23,16 @@ export function CountdownBar({ turnNumber, countdown, submittedCount, totalPlaye
 
   return (
     <div className={styles.countdownBar}>
-      <div className={styles.header}>
-        <div className={styles.turnInfo}>第 {turnNumber} 回合</div>
-        <div className={styles.submittedInfo}>
-          已提交: {submittedCount}/{totalPlayers}
-        </div>
-      </div>
       <div className={styles.barContainer}>
         <div
           className={barClassName}
           style={{ width: `${percentage}%` }}
         />
       </div>
-      <div className={timeClassName}>剩余时间: {countdown}秒</div>
+      <div className={styles.infoRow}>
+        <div className={styles.turnInfo}>第 {turnNumber} 回合</div>
+        <div className={timeClassName}>剩余时间: {countdown}秒</div>
+      </div>
     </div>
   );
 }

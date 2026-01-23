@@ -3,20 +3,26 @@ import type { Socket } from 'socket.io-client';
 import { battleAPI } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import type { BattleCommandType, Combatant, BattlePhase } from '../types/battle';
+import type { Consumable } from '../types/item';
 import styles from './CommandPanel.module.css';
 
-type BattleUICommandType = Extract<BattleCommandType, 'attack' | 'defend' | 'escape'>;
+type BattleUICommandType = Extract<BattleCommandType, 'attack' | 'defend' | 'escape' | 'item'>;
 
 interface CommandPanelProps {
   socket: Socket | null;
   roomId: string;
   turnNumber: number;
   phase: BattlePhase;
+  players: Combatant[];
   monsters: Combatant[];
   commandSubmitted: boolean;
-  selectedCommand?: 'attack' | 'defend' | 'escape' | null;
+  selectedCommand?: 'attack' | 'defend' | 'escape' | 'item' | null;
   selectedTarget?: string | null;
+  consumables?: Consumable[];
+  selectedItemId?: string | null;
+  itemTargetScope?: 'self' | 'ally' | 'enemy' | 'any' | null;
   onCommandSelect?: (command: BattleUICommandType) => void;
+  onItemSelect?: (itemId: string | null) => void;
   onCommandSubmitted?: (allSubmitted?: boolean) => void;
 }
 
@@ -25,11 +31,16 @@ export function CommandPanel({
   roomId,
   turnNumber,
   phase,
+  players,
   monsters,
   commandSubmitted,
   selectedCommand: propSelectedCommand,
   selectedTarget: propSelectedTarget,
+  consumables = [],
+  selectedItemId = null,
+  itemTargetScope = null,
   onCommandSelect,
+  onItemSelect,
   onCommandSubmitted
 }: CommandPanelProps) {
   const { user } = useAuth();
@@ -48,8 +59,19 @@ export function CommandPanel({
   }, [commandSubmitted, phase, turnNumber, propSelectedCommand, onCommandSelect]);
 
   const selectedTargetName = selectedTarget
-    ? monsters.find(m => m.id === selectedTarget)?.name
+    ? players.find(p => p.id === selectedTarget)?.name || monsters.find(m => m.id === selectedTarget)?.name
     : null;
+
+  const selectedItem = consumables.find((item) => item.id === selectedItemId) || null;
+  const itemTargetLabel = itemTargetScope === 'self'
+    ? '仅自己'
+    : itemTargetScope === 'ally'
+      ? '我方任一目标'
+      : itemTargetScope === 'enemy'
+        ? '敌方任一目标'
+        : itemTargetScope === 'any'
+          ? '任意目标'
+          : '未指定';
 
   const handleCommandClick = (commandType: BattleUICommandType) => {
     // 如果已提交，不允许修改
@@ -72,13 +94,25 @@ export function CommandPanel({
       return;
     }
 
+    if (selectedCommand === 'item') {
+      if (!selectedItemId) {
+        alert('请先选择消耗品');
+        return;
+      }
+      if (!selectedTarget) {
+        alert('请先选择目标');
+        return;
+      }
+    }
+
     setSubmitting(true);
 
     try {
       const response = await battleAPI.submitCommand(roomId, {
         turn: turnNumber,
         type: selectedCommand,
-        targetId: selectedTarget || undefined
+        targetId: selectedTarget || undefined,
+        itemId: selectedCommand === 'item' ? selectedItemId || undefined : undefined
       });
 
       const { allSubmitted } = response.data as { allSubmitted?: boolean };
@@ -98,12 +132,14 @@ export function CommandPanel({
   };
 
   const canSubmit = phase === 'TURN_INPUT' && !commandSubmitted && selectedCommand &&
-    (selectedCommand !== 'attack' || selectedTarget !== null);
+    (selectedCommand !== 'attack' || selectedTarget !== null) &&
+    (selectedCommand !== 'item' || (selectedItemId !== null && selectedTarget !== null));
 
   const commands: Array<{ id: BattleUICommandType; label: string }> = [
     { id: 'attack', label: '普通攻击' },
     { id: 'defend', label: '防御' },
-    { id: 'escape', label: '逃跑' }
+    { id: 'escape', label: '逃跑' },
+    { id: 'item', label: '物品' }
   ];
 
   return (
@@ -135,6 +171,37 @@ export function CommandPanel({
               <div className={styles.hintText}>
                 已选择"普通攻击"，请在界面上点击敌方目标
               </div>
+              {selectedTarget && (
+                <div className={styles.selectedTargetInfo}>
+                  已选择目标：{selectedTargetName ?? selectedTarget}
+                </div>
+              )}
+            </div>
+          )}
+
+          {selectedCommand === 'item' && (
+            <div className={styles.targetHint}>
+              <div className={styles.hintText}>
+                请选择消耗品并在界面上点击目标（{itemTargetLabel}）
+              </div>
+              <select
+                className={styles.itemSelect}
+                value={selectedItemId ?? ''}
+                onChange={(event) => onItemSelect?.(event.target.value || null)}
+                disabled={consumables.length === 0}
+              >
+                <option value="">选择消耗品</option>
+                {consumables.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name} x{item.stackSize}
+                  </option>
+                ))}
+              </select>
+              {selectedItem && (
+                <div className={styles.selectedTargetInfo}>
+                  已选择物品：{selectedItem.name}
+                </div>
+              )}
               {selectedTarget && (
                 <div className={styles.selectedTargetInfo}>
                   已选择目标：{selectedTargetName ?? selectedTarget}

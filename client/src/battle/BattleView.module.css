@@ -32,10 +32,6 @@
   white-space: nowrap;
 }
 
-.topArea {
-  flex-shrink: 0;
-}
-
 .mainArea {
   display: flex;
   gap: 16px;

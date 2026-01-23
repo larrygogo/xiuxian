@@ -140,12 +140,28 @@ function App() {
     };
   }, [draggingId]);
 
+  const closeAllPanels = () => {
+    modalManagerRef.current.reset();
+    setOpenPanels([]);
+    setDraggingId(null);
+    modalCardRefs.current = {};
+    dragOffsetRef.current = { x: 0, y: 0 };
+    dragStartRef.current = { x: 0, y: 0 };
+    dragPositionRef.current = { x: 0, y: 0 };
+    dragIdRef.current = null;
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+  };
+
   // 处理进入战斗
   const handleEnterBattle = async () => {
     if (!user?.id || creatingBattle) return;
 
     setCreatingBattle(true);
     try {
+      closeAllPanels();
       // 创建战斗房间（使用默认地图和当前玩家）
       const response = await battleAPI.createRoom({
         mapId: 'map_forest_1', // 默认地图
@@ -168,18 +184,7 @@ function App() {
   };
 
   useEffect(() => {
-    modalManagerRef.current.reset();
-    setOpenPanels([]);
-    setDraggingId(null);
-    modalCardRefs.current = {};
-    dragOffsetRef.current = { x: 0, y: 0 };
-    dragStartRef.current = { x: 0, y: 0 };
-    dragPositionRef.current = { x: 0, y: 0 };
-    dragIdRef.current = null;
-    if (rafRef.current !== null) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
+    closeAllPanels();
   }, [user?.id]);
 
   useEffect(() => {
@@ -270,6 +275,7 @@ function App() {
               <div className={styles['battle-container']}>
                 <BattleView
                   roomId={battleRoomId}
+                  inventory={state?.inventory || []}
                   onRoomMissing={handleBattleExit}
                   onBattleEnd={handleBattleExit}
                   headerRight={({ battleEnded }) => (

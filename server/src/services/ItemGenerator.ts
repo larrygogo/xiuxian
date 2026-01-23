@@ -53,6 +53,7 @@ interface ConsumableTemplate {
   description?: string;
   effect: ConsumableEffect;
   maxStack: number;
+  battleTarget?: import("../types/item").BattleTargetScope;
 }
 
 // 材料模板
@@ -343,7 +344,8 @@ export class ItemGenerator {
       level,
       effect,
       stackSize: 1,
-      description
+      description,
+      battleTarget: template.battleTarget
     };
   }
 

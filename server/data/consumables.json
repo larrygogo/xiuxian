@@ -7,7 +7,8 @@
       "type": "heal",
       "value": 50
     },
-    "maxStack": 99
+    "maxStack": 99,
+    "battleTarget": "ally"
   },
   {
     "templateId": "potion_mp_001",
@@ -17,7 +18,8 @@
       "type": "mana",
       "value": 30
     },
-    "maxStack": 99
+    "maxStack": 99,
+    "battleTarget": "ally"
   },
   {
     "templateId": "potion_buff_001",
@@ -28,7 +30,8 @@
       "value": 10,
       "duration": 5
     },
-    "maxStack": 20
+    "maxStack": 20,
+    "battleTarget": "self"
   },
   {
     "templateId": "potion_hp_002",
@@ -38,7 +41,8 @@
       "type": "heal",
       "value": 80
     },
-    "maxStack": 99
+    "maxStack": 99,
+    "battleTarget": "ally"
   },
   {
     "templateId": "potion_hp_003",
@@ -48,7 +52,8 @@
       "type": "heal",
       "value": 120
     },
-    "maxStack": 99
+    "maxStack": 99,
+    "battleTarget": "ally"
   },
   {
     "templateId": "potion_mp_002",
@@ -58,7 +63,8 @@
       "type": "mana",
       "value": 50
     },
-    "maxStack": 99
+    "maxStack": 99,
+    "battleTarget": "ally"
   },
   {
     "templateId": "potion_mp_003",
@@ -68,6 +74,7 @@
       "type": "mana",
       "value": 80
     },
-    "maxStack": 99
+    "maxStack": 99,
+    "battleTarget": "ally"
   }
 ]

@@ -15,6 +15,15 @@ export interface ConsumableEffect {
   statType?: keyof BaseStats | keyof CombatStats; // 属性类型（仅stat类型）
 }
 
+/**
+ * 战斗目标范围
+ * self: 自己
+ * ally: 友军
+ * enemy: 敌人
+ * any: 所有目标
+ */
+export type BattleTargetScope = "self" | "ally" | "enemy" | "any";
+
 // 基础物品接口
 export interface Item {
   id: string; // 唯一ID
@@ -39,6 +48,7 @@ export interface Consumable extends Item {
   type: "consumable";
   effect: ConsumableEffect; // 使用效果
   stackSize: number; // 堆叠数量
+  battleTarget?: BattleTargetScope; // 战斗中可选目标范围
 }
 
 // 材料接口

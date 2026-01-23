@@ -218,7 +218,8 @@ export class BattleRoomService {
     userId: number,
     turn: number,
     type: BattleCommandType,
-    targetId?: string
+    targetId?: string,
+    itemId?: string
   ): { success: boolean; allSubmitted?: boolean } {
     const room = this.repo.findById(roomId);
     if (!room) {
@@ -250,6 +251,9 @@ export class BattleRoomService {
     if (type === "attack" && !targetId) {
       return { success: false };
     }
+    if (type === "item" && (!targetId || !itemId)) {
+      return { success: false };
+    }
 
     // 将 BattleCommandType 转换为 CommandType（处理 "escape"）
     const commandType: CommandType = type === "escape" ? "escape" : type;
@@ -261,6 +265,9 @@ export class BattleRoomService {
       commandType
     );
     command.targetId = targetId;
+    if (itemId) {
+      command.itemId = itemId;
+    }
 
     // 保存指令
     room.pendingCommands.set(player.id, command);

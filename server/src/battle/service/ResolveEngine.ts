@@ -5,6 +5,9 @@ import type { Combatant } from "../domain/Combatant";
 import type { BattleRoomState } from "../domain/BattleRoomState";
 import type { BattleCommandType } from "../domain/BattleCommand";
 import { TurnScheduler } from "./TurnScheduler";
+import { getUserGameState, updateUserGameState } from "../../services/gameService";
+import { isConsumable } from "../../types/item";
+import { removeItemFromInventory } from "../../systems/items";
 
 /**
  * 战斗结算引擎
@@ -124,6 +127,20 @@ export class ResolveEngine {
     // 2. 速度排序
     const orderedParticipants = this.turnScheduler.calculateTurnOrder(allParticipants);
 
+    const findTarget = (targetId?: string) => {
+      if (!targetId) return undefined;
+      return newState.players.find((p) => p.id === targetId) ||
+        newState.monsters.find((m) => m.id === targetId);
+    };
+
+    const isTargetAllowed = (actor: Combatant, target: Combatant, scope: "self" | "ally" | "enemy" | "any") => {
+      if (scope === "any") return true;
+      if (scope === "self") return actor.id === target.id;
+      if (scope === "ally") return actor.side === target.side;
+      if (scope === "enemy") return actor.side !== target.side;
+      return false;
+    };
+
     // 3. 执行指令（按速度顺序）
     for (const actor of orderedParticipants) {
       const command = allCommands.get(actor.id);
@@ -154,10 +171,7 @@ export class ResolveEngine {
           }
 
           // 查找目标（在 players 或 monsters 中）
-          let target: Combatant | undefined = newState.players.find((p) => p.id === command.targetId);
-          if (!target) {
-            target = newState.monsters.find((m) => m.id === command.targetId);
-          }
+          let target: Combatant | undefined = findTarget(command.targetId);
 
           if (!target) {
             logs.push(`${actor.name} 的攻击目标无效`);
@@ -188,6 +202,75 @@ export class ResolveEngine {
             const defendText = wasDefending ? "（被防御）" : "";
             logs.push(`${actor.name} 攻击 ${target.name}，造成 ${damage} 点伤害${defendText}`);
           }
+          break;
+
+        case "item":
+          if (!command.itemId || !command.targetId) {
+            logs.push(`${actor.name} 的物品指令无效（缺少物品或目标）`);
+            break;
+          }
+          if (!actor.userId) {
+            logs.push(`${actor.name} 的物品指令无效（缺少玩家信息）`);
+            break;
+          }
+
+          const itemTarget = findTarget(command.targetId);
+          if (!itemTarget) {
+            logs.push(`${actor.name} 的物品目标无效`);
+            break;
+          }
+          if (itemTarget.status === "dead" || itemTarget.status === "escaped") {
+            logs.push(`${actor.name} 的物品目标无效（目标已死亡或逃脱）`);
+            break;
+          }
+
+          const state = getUserGameState(actor.userId);
+          if (!state || !Array.isArray(state.inventory)) {
+            logs.push(`${actor.name} 无法使用物品（背包不可用）`);
+            break;
+          }
+
+          const invItem = state.inventory.find((entry) => entry !== null && entry.id === command.itemId) || null;
+          if (!invItem || !isConsumable(invItem)) {
+            logs.push(`${actor.name} 的物品指令无效（消耗品不存在）`);
+            break;
+          }
+
+          const targetScope = invItem.battleTarget ?? "any";
+          if (!isTargetAllowed(actor, itemTarget, targetScope)) {
+            logs.push(`${actor.name} 无法对该目标使用 ${invItem.name}`);
+            break;
+          }
+
+          const effect = invItem.effect;
+          if (effect.type === "heal" && effect.value) {
+            const oldHp = itemTarget.hp;
+            itemTarget.hp = Math.min(itemTarget.maxHp, itemTarget.hp + effect.value);
+            const healed = itemTarget.hp - oldHp;
+            logs.push(`${actor.name} 使用 ${invItem.name}，为 ${itemTarget.name} 恢复生命 +${healed}`);
+          } else if (effect.type === "mana" && effect.value) {
+            const maxMp = itemTarget.maxMp ?? 0;
+            const currentMp = itemTarget.mp ?? 0;
+            const nextMp = Math.min(maxMp, currentMp + effect.value);
+            itemTarget.mp = nextMp;
+            const restored = nextMp - currentMp;
+            logs.push(`${actor.name} 使用 ${invItem.name}，为 ${itemTarget.name} 恢复法力 +${restored}`);
+          } else if (effect.type === "buff") {
+            logs.push(`${actor.name} 使用 ${invItem.name}，为 ${itemTarget.name} 获得临时增益效果`);
+          } else if (effect.type === "stat") {
+            logs.push(`${actor.name} 使用 ${invItem.name}，为 ${itemTarget.name} 提升属性`);
+          } else {
+            logs.push(`${actor.name} 使用 ${invItem.name}，但未产生效果`);
+          }
+
+          if (invItem.stackSize > 1) {
+            invItem.stackSize -= 1;
+          } else {
+            removeItemFromInventory(state, invItem.id);
+          }
+          void updateUserGameState(actor.userId, state).catch((error) => {
+            console.error("同步战斗消耗品失败:", error);
+          });
           break;
 
         case "wait":

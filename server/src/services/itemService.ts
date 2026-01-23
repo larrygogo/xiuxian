@@ -47,6 +47,7 @@ interface ConsumableTemplate {
   description?: string;
   effect: ConsumableEffect;
   maxStack: number;
+  battleTarget?: import("../types/item").BattleTargetScope;
 }
 
 // 材料模板

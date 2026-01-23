@@ -50,7 +50,7 @@
   grid-template-rows: repeat(2, minmax(0, 1fr));
   gap: 10px;
   flex: 1;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .gridSlot {
@@ -186,6 +186,24 @@
   box-shadow: 0 10px 22px var(--ink-shadow);
 }
 
+.submittedBadge {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.95);
+  background: linear-gradient(135deg, rgba(47, 90, 58, 0.92), rgba(76, 175, 80, 0.85));
+  border: 1px solid rgba(47, 90, 58, 0.6);
+  box-shadow: 0 10px 22px var(--ink-shadow);
+}
+
 .badgeDefending {
   background: linear-gradient(135deg, rgba(46, 95, 138, 0.9), rgba(25, 118, 210, 0.85));
 }
@@ -207,11 +225,20 @@
   background: rgba(0, 0, 0, 0.03);
 }
 
-.divider {
-  height: 2px;
-  background: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.12) 30%, rgba(0, 0, 0, 0.12) 70%, transparent 100%);
-  margin: 6px 0;
+.turnDivider {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 0;
   flex-shrink: 0;
+}
+
+
+.turnDividerContent {
+  position: relative;
+  z-index: 1;
+  width: 100%;
 }
 
 @media (max-width: 520px) {

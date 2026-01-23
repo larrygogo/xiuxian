@@ -217,10 +217,11 @@ router.post("/rooms/:roomId/command", async (req: Request, res: Response) => {
     }
 
     const roomId = Array.isArray(req.params.roomId) ? req.params.roomId[0] : req.params.roomId;
-    const { turn, type, targetId } = req.body as {
+    const { turn, type, targetId, itemId } = req.body as {
       turn?: number;
       type?: BattleCommandType;
       targetId?: string;
+      itemId?: string;
     };
 
     // 校验参数
@@ -240,7 +241,8 @@ router.post("/rooms/:roomId/command", async (req: Request, res: Response) => {
         userId,
         turn,
         type,
-        targetId
+        targetId,
+        itemId
       );
 
       if (!result.success) {
@@ -308,6 +310,7 @@ router.post("/rooms/:roomId/command", async (req: Request, res: Response) => {
           commandId: command.commandId,
           type: command.type,
           targetId: command.targetId,
+          itemId: command.itemId,
           timestamp: command.timestamp
         },
         allSubmitted: result.allSubmitted

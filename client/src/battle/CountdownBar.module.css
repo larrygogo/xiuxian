@@ -1,54 +1,43 @@
 .countdownBar {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.68) 0%, rgba(255, 255, 255, 0.45) 100%);
   border: 1.5px solid var(--ink-border);
-  border-radius: 16px;
-  padding: 14px 14px 12px;
+  border-radius: 14px;
+  padding: 8px 12px;
   box-shadow:
     0 18px 40px var(--ink-shadow),
     inset 0 1px 0 rgba(255, 255, 255, 0.55);
   backdrop-filter: blur(6px);
 }
 
-.label {
-  font-size: 14px;
-  font-weight: 800;
-  margin-bottom: 2px;
+.placeholder {
+  font-size: 12px;
+  font-weight: 700;
   color: var(--ink-text);
-  letter-spacing: 1px;
-}
-
-.header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
+  letter-spacing: 0.5px;
+  text-align: center;
 }
 
 .turnInfo {
-  font-size: 14px;
-  font-weight: 900;
+  font-size: 12px;
+  font-weight: 800;
   color: var(--ink-text);
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
 }
 
-.submittedInfo {
-  font-size: 12px;
-  color: var(--ink-text-muted);
-  border: 1px solid var(--ink-border);
-  background: rgba(255, 255, 255, 0.55);
-  padding: 4px 10px;
-  border-radius: 999px;
-  box-shadow: 0 10px 22px var(--ink-shadow);
+.infoRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .barContainer {
   width: 100%;
-  height: 20px;
+  height: 12px;
   background: rgba(0, 0, 0, 0.08);
   border-radius: 999px;
   overflow: hidden;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   border: 1px solid rgba(0, 0, 0, 0.10);
 }
 
@@ -69,11 +58,11 @@
 }
 
 .time {
-  font-size: 16px;
-  font-weight: 900;
-  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: right;
   color: var(--ink-text);
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
 }
 
 .timeWarning {

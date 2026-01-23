@@ -90,6 +90,23 @@
   font-weight: 800;
 }
 
+.itemSelect {
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1.5px solid rgba(160, 104, 35, 0.4);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.75);
+  color: rgba(80, 70, 60, 0.95);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.itemSelect:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .submitButton {
   padding: 12px;
   background: linear-gradient(135deg, rgba(47, 90, 58, 0.95), rgba(76, 175, 80, 0.85));

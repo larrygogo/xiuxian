@@ -1,12 +1,17 @@
+import type { ReactNode } from 'react';
 import type { Combatant } from '../types/battle';
 import styles from './BattlefieldGrid.module.css';
 
 interface BattlefieldGridProps {
   players: Combatant[];
   monsters: Combatant[];
-  selectedCommand?: 'attack' | 'defend' | 'escape' | null;
+  selectedCommand?: 'attack' | 'defend' | 'escape' | 'item' | null;
   selectedTarget?: string | null;
   targetingEnabled?: boolean;
+  targetScope?: 'self' | 'ally' | 'enemy' | 'any' | null;
+  selfId?: string | null;
+  submittedPlayerIds?: string[];
+  middleContent?: ReactNode;
   onTargetClick?: (targetId: string, isPlayer: boolean) => void;
 }
 
@@ -16,6 +21,10 @@ export function BattlefieldGrid({
   selectedCommand,
   selectedTarget,
   targetingEnabled = true,
+  targetScope = null,
+  selfId = null,
+  submittedPlayerIds = [],
+  middleContent,
   onTargetClick 
 }: BattlefieldGridProps) {
   // 创建站位网格（上怪物，下玩家），每边最多10个（5列x2行）
@@ -45,9 +54,34 @@ export function BattlefieldGrid({
     const isDead = combatant.status === 'dead';
     const isEscaped = combatant.status === 'escaped';
     
-    // 判断是否可点击（需要选择目标时，且是攻击指令，且目标存活，且不是玩家）
-    const canClick = targetingEnabled && selectedCommand === 'attack' && !isPlayer && isAlive;
+    const canClick = (() => {
+      if (!targetingEnabled || !selectedCommand || !isAlive) {
+        return false;
+      }
+      if (selectedCommand === 'attack') {
+        return !isPlayer;
+      }
+      if (selectedCommand === 'item') {
+        if (!targetScope) {
+          return false;
+        }
+        if (targetScope === 'any') {
+          return true;
+        }
+        if (targetScope === 'self') {
+          return isPlayer && selfId !== null && combatant.id === selfId;
+        }
+        if (targetScope === 'ally') {
+          return isPlayer;
+        }
+        if (targetScope === 'enemy') {
+          return !isPlayer;
+        }
+      }
+      return false;
+    })();
     const isSelected = selectedTarget === combatant.id;
+    const isSubmitted = isPlayer && submittedPlayerIds.includes(combatant.id);
 
     return (
       <div
@@ -88,6 +122,9 @@ export function BattlefieldGrid({
         {isEscaped && (
           <div className={`${styles.statusBadge} ${styles.badgeEscaped}`}>逃脱</div>
         )}
+        {isSubmitted && (
+          <div className={styles.submittedBadge}>✓</div>
+        )}
       </div>
     );
   };
@@ -107,8 +144,14 @@ export function BattlefieldGrid({
           </div>
         </div>
 
-        {/* 中间分隔线 */}
-        <div className={styles.divider} />
+        {/* 中间分隔线与回合信息 */}
+        <div className={styles.turnDivider}>
+          {middleContent && (
+            <div className={styles.turnDividerContent}>
+              {middleContent}
+            </div>
+          )}
+        </div>
 
         {/* 玩家区域（下方） */}
         <div className={styles.playerArea}>

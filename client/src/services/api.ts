@@ -93,7 +93,7 @@ export const battleAPI = {
   getRoom: (roomId: string) => api.get(`/api/battle/rooms/${roomId}`),
   getRoomState: (roomId: string) => api.get(`/api/battle/rooms/${roomId}/state`),
   joinRoom: (roomId: string) => api.post(`/api/battle/rooms/${roomId}/join`),
-  submitCommand: (roomId: string, payload: { turn: number; type: string; targetId?: string }) =>
+  submitCommand: (roomId: string, payload: { turn: number; type: string; targetId?: string; itemId?: string }) =>
     api.post(`/api/battle/rooms/${roomId}/command`, payload),
 };
 
