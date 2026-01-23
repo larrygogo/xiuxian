@@ -14,10 +14,11 @@ import styles from './App.module.css';
 import { needQi } from './utils/gameUtils';
 import { ModalManager } from './utils/modalManager';
 import type { Panel, PanelType } from './types/panel';
+import { MessageProvider } from './components/MessageProvider';
 
 function App() {
   const { user, loading: authLoading, login, register, logout } = useAuth();
-  const { state, loading: gameLoading, error, tick, createCharacter, equipItem, unequipItem, useItem, levelUp, allocateStats, refresh } = useGameState(user?.id);
+  const { state, loading: gameLoading, error, createCharacter, equipItem, unequipItem, useItem, levelUp, allocateStats, refresh } = useGameState(user?.id);
   const [openPanels, setOpenPanels] = useState<Panel[]>([]);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const modalManagerRef = useRef(new ModalManager());
@@ -105,6 +106,27 @@ function App() {
     };
   }, [draggingId]);
 
+  useEffect(() => {
+    modalManagerRef.current.reset();
+    setOpenPanels([]);
+    setDraggingId(null);
+    modalCardRefs.current = {};
+    dragOffsetRef.current = { x: 0, y: 0 };
+    dragStartRef.current = { x: 0, y: 0 };
+    dragPositionRef.current = { x: 0, y: 0 };
+    dragIdRef.current = null;
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (error && error.includes('用户不存在')) {
+      logout();
+    }
+  }, [error, logout]);
+
   const panelTitleMap: Record<PanelType, string> = {
     bag: '背包',
     equipment: '装备',
@@ -134,115 +156,120 @@ function App() {
   }
 
   return (
-    <div className={styles['game-frame']}>
-      <div className={styles['app-container']}>
-        <div className={styles['top-left-status']}>
-          <div className={styles['avatar-placeholder']} aria-hidden="true" />
-          <div className={styles['header-bars']}>
-            <div className={styles['header-bar']}>
-              <span className={styles['bar-label']}>生命</span>
-              <div className={styles['bar-track']}>
-                <div className={`${styles['bar-fill']} ${styles['bar-hp']}`} style={{ width: `${hpPercent}%` }} />
+    <MessageProvider>
+      <div className={styles['game-frame']}>
+        <div className={styles['app-container']}>
+          <div className={styles['top-left-status']}>
+            <div className={styles['avatar-placeholder']} aria-hidden="true" />
+            <div className={styles['header-bars']}>
+              <div className={styles['header-bar']}>
+                <span className={styles['bar-label']}>生命</span>
+                <div className={styles['bar-track']}>
+                  <div className={`${styles['bar-fill']} ${styles['bar-hp']}`} style={{ width: `${hpPercent}%` }} />
+                </div>
               </div>
-            </div>
-            <div className={styles['header-bar']}>
-              <span className={styles['bar-label']}>法力</span>
-              <div className={styles['bar-track']}>
-                <div className={`${styles['bar-fill']} ${styles['bar-mp']}`} style={{ width: `${mpPercent}%` }} />
+              <div className={styles['header-bar']}>
+                <span className={styles['bar-label']}>法力</span>
+                <div className={styles['bar-track']}>
+                  <div className={`${styles['bar-fill']} ${styles['bar-mp']}`} style={{ width: `${mpPercent}%` }} />
+                </div>
               </div>
-            </div>
-            <div className={styles['header-bar']}>
-              <span className={styles['bar-label']}>灵气</span>
-              <div className={styles['bar-track']}>
-                <div className={`${styles['bar-fill']} ${styles['bar-qi']}`} style={{ width: `${qiPercent}%` }} />
+              <div className={styles['header-bar']}>
+                <span className={styles['bar-label']}>灵气</span>
+                <div className={styles['bar-track']}>
+                  <div className={`${styles['bar-fill']} ${styles['bar-qi']}`} style={{ width: `${qiPercent}%` }} />
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        <div className={styles['app-content']}>
-          {gameLoading ? (
-            <div className={styles['loading-message']}>加载游戏状态...</div>
-          ) : error ? (
-            <div className={styles['error-message']}>
-              <p>错误：{error}</p>
-              <button onClick={() => window.location.reload()}>刷新页面</button>
-            </div>
-          ) : !state ? (
-            <div className={styles['loading-message']}>游戏状态为空，请刷新页面</div>
-          ) : state.name === '无名修士' ? (
-            <CharacterCreation onCreateCharacter={async (name) => {
-              const result = await createCharacter(name);
-              if (result.success) {
-                await refresh();
-              }
-              return result;
-            }} />
-          ) : (
-            <>
-              <EventLog state={state} variant="system-chat" title="系统频道" />
-              <GameActions state={state} onTick={tick} />
-              <div className={styles['control-zone']}>
-                <div className={styles['control-title']}>控制区域</div>
-                <div className={styles['control-buttons']}>
-                  <button type="button" onClick={() => handleOpenPanel('bag')} className={styles['control-button-with-icon']}>
-                    <img src={bagIcon} alt="背包" className={styles['control-icon']} />
-                    <span>背包</span>
-                  </button>
-                  <button type="button" onClick={() => handleOpenPanel('stats')} className={styles['control-button-with-icon']}>
-                    <span className={styles['control-icon-placeholder']}>👤</span>
-                    <span>人物属性</span>
-                  </button>
-                  <button type="button" onClick={() => handleOpenPanel('settings')} className={styles['control-button-with-icon']}>
-                    <span className={styles['control-icon-placeholder']}>⚙️</span>
-                    <span>设置</span>
-                  </button>
-                  {user.isAdmin && (
-                    <button type="button" onClick={() => handleOpenPanel('admin')} className={styles['control-button-with-icon']}>
-                      <span className={styles['control-icon-placeholder']}>👑</span>
-                      <span>管理员</span>
-                    </button>
-                  )}
-                </div>
+          <div className={styles['app-content']}>
+            {gameLoading ? (
+              <div className={styles['loading-message']}>加载游戏状态...</div>
+            ) : error ? (
+              <div className={styles['error-message']}>
+                <p>错误：{error}</p>
+                <button onClick={() => window.location.reload()}>刷新页面</button>
               </div>
-            </>
-          )}
-        </div>
-        {openPanels.map((panel) => (
-          <ControlModal
-            key={panel.id}
-            panel={panel}
-            title={panelTitleMap[panel.type]}
-            draggingId={draggingId}
-            onBringToFront={bringToFront}
-            onStartDrag={handleStartDrag}
-            onClose={closePanel}
-            onCardRef={(node) => {
-              if (node) {
-                modalCardRefs.current[panel.id] = node;
-              }
-            }}
-            size={panel.type === 'bag' ? 'large' : 'normal'}
-          >
-            {panel.type === 'bag' ? (
-              <Inventory items={state?.inventory || Array(20).fill(null)} lingshi={state?.lingshi} equipment={state?.equipment} playerLevel={state?.level} onEquip={equipItem} onUse={useItem} onUnequip={unequipItem} onUpdate={refresh} />
-            ) : panel.type === 'stats' ? (
-              <MainStatus state={state} onLevelUp={levelUp} onAllocateStats={allocateStats} />
-            ) : panel.type === 'settings' ? (
-              <div className={styles['settings-panel']}>
-                <p>功能开发中，占位展示。</p>
-                <button type="button" className={styles['logout-button']} onClick={logout}>
-                  退出游戏
-                </button>
-              </div>
-            ) : panel.type === 'admin' ? (
-              <AdminGiveItem onSuccess={refresh} />
+            ) : !state ? (
+              <div className={styles['loading-message']}>游戏状态为空，请刷新页面</div>
+            ) : state.name === '无名修士' ? (
+              <CharacterCreation onCreateCharacter={async (name) => {
+                const result = await createCharacter(name);
+                if (!result.success && result.error && result.error.includes('用户不存在')) {
+                  logout();
+                }
+                if (result.success) {
+                  await refresh();
+                }
+                return result;
+              }} />
             ) : (
-              <>功能开发中，占位展示。</>
+              <>
+                <EventLog state={state} variant="system-chat" title="系统频道" />
+                <GameActions state={state} />
+                <div className={styles['control-zone']}>
+                  <div className={styles['control-title']}>控制区域</div>
+                  <div className={styles['control-buttons']}>
+                    <button type="button" onClick={() => handleOpenPanel('bag')} className={styles['control-button-with-icon']}>
+                      <img src={bagIcon} alt="背包" className={styles['control-icon']} />
+                      <span>背包</span>
+                    </button>
+                    <button type="button" onClick={() => handleOpenPanel('stats')} className={styles['control-button-with-icon']}>
+                      <span className={styles['control-icon-placeholder']}>👤</span>
+                      <span>人物属性</span>
+                    </button>
+                    <button type="button" onClick={() => handleOpenPanel('settings')} className={styles['control-button-with-icon']}>
+                      <span className={styles['control-icon-placeholder']}>⚙️</span>
+                      <span>设置</span>
+                    </button>
+                    {user.isAdmin && (
+                      <button type="button" onClick={() => handleOpenPanel('admin')} className={styles['control-button-with-icon']}>
+                        <span className={styles['control-icon-placeholder']}>👑</span>
+                        <span>管理员</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </>
             )}
-          </ControlModal>
-        ))}
+          </div>
+          {openPanels.map((panel) => (
+            <ControlModal
+              key={panel.id}
+              panel={panel}
+              title={panelTitleMap[panel.type]}
+              draggingId={draggingId}
+              onBringToFront={bringToFront}
+              onStartDrag={handleStartDrag}
+              onClose={closePanel}
+              onCardRef={(node) => {
+                if (node) {
+                  modalCardRefs.current[panel.id] = node;
+                }
+              }}
+              size={panel.type === 'bag' ? 'large' : 'normal'}
+            >
+              {panel.type === 'bag' ? (
+                <Inventory items={state?.inventory || Array(20).fill(null)} lingshi={state?.lingshi} equipment={state?.equipment} playerLevel={state?.level} onEquip={equipItem} onUse={useItem} onUnequip={unequipItem} onUpdate={refresh} />
+              ) : panel.type === 'stats' ? (
+                <MainStatus state={state} onLevelUp={levelUp} onAllocateStats={allocateStats} />
+              ) : panel.type === 'settings' ? (
+                <div className={styles['settings-panel']}>
+                  <p>功能开发中，占位展示。</p>
+                  <button type="button" className={styles['logout-button']} onClick={logout}>
+                    退出游戏
+                  </button>
+                </div>
+              ) : panel.type === 'admin' ? (
+                <AdminGiveItem onSuccess={refresh} />
+              ) : (
+                <>功能开发中，占位展示。</>
+              )}
+            </ControlModal>
+          ))}
+        </div>
       </div>
-    </div>
+    </MessageProvider>
   );
 }
 

@@ -301,7 +301,7 @@ export function getEquipmentStats(state: GameState): {
  * 重新排序背包物品
  * itemIds 数组长度为20，null表示空位置，字符串表示物品ID
  */
-export function reorderItems(state: GameState, itemIds: (string | null)[]): boolean {
+export function reorderItems(state: GameState, itemIds: (string | null)[], allowDiscard = false): boolean {
   if (!state.inventory) {
     state.inventory = Array(INVENTORY_SIZE).fill(null);
   }
@@ -337,13 +337,20 @@ export function reorderItems(state: GameState, itemIds: (string | null)[]): bool
     }
   }
 
-  // 添加任何未在itemIds中的物品到末尾的空位置（以防万一）
-  itemsMap.forEach(item => {
-    const emptyIndex = newInventory.findIndex(slot => slot === null);
-    if (emptyIndex !== -1) {
-      newInventory[emptyIndex] = item;
-    }
-  });
+  // 添加任何未在 itemIds 中的物品到末尾空位（默认行为）
+  if (!allowDiscard) {
+    itemsMap.forEach(item => {
+      const emptyIndex = newInventory.findIndex(slot => slot === null);
+      if (emptyIndex !== -1) {
+        newInventory[emptyIndex] = item;
+      }
+    });
+  } else {
+    // 允许丢弃时，将未包含的物品视为销毁并记录日志
+    itemsMap.forEach(item => {
+      logLine(`销毁 ${item.name}。`, state);
+    });
+  }
 
   state.inventory = newInventory;
   return true;

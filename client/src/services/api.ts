@@ -55,7 +55,6 @@ export const authAPI = {
 export const gameAPI = {
   getState: () => api.get('/api/game/state'),
   heal: () => api.post('/api/game/actions/heal'),
-  tick: () => api.post('/api/game/actions/tick'),
   levelUp: () => api.post('/api/game/actions/levelup'),
   allocateStats: (payload: { str: number; agi: number; vit: number; int: number; spi: number }) =>
     api.post('/api/game/actions/allocate-stats', payload),
@@ -65,8 +64,9 @@ export const gameAPI = {
   unequipItem: (slot: string) => api.post('/api/game/items/unequip', { slot }),
   useItem: (itemId: string) => api.post('/api/game/items/use', { itemId }),
   getItemTemplates: () => api.get('/api/game/items/templates'),
-  reorderItems: (itemIds: (string | null)[]) => api.post('/api/game/items/reorder', { itemIds }),
-  giveItem: (payload: { targetUserId?: number; targetCharacterId?: number; itemType?: string; slot?: string; level?: number }) =>
+  reorderItems: (itemIds: (string | null)[], allowDiscard = false) =>
+    api.post('/api/game/items/reorder', { itemIds, allowDiscard }),
+  giveItem: (payload: { targetUserId?: number; targetCharacterId?: number; itemType?: string; slot?: string; level?: number; templateId?: string; crafted?: boolean }) =>
     api.post('/api/game/admin/give-item', payload),
   giveExp: (payload: { targetUserId?: number; targetCharacterId?: number; amount: number }) =>
     api.post('/api/game/admin/give-exp', payload),

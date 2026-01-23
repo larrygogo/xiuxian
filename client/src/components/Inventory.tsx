@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ItemCard } from './ItemCard';
 import { gameAPI } from '../services/api';
 import type { Item, EquipmentSlots, EquipmentSlot } from '../types/item';
 import { SLOT_NAMES, isConsumable, isEquipment } from '../types/item';
 import styles from './Inventory.module.css';
+import { useMessage } from './MessageProvider';
 
 interface InventoryProps {
   items: (Item | null)[]; // 固定20个位置，null表示空位置
@@ -12,7 +14,7 @@ interface InventoryProps {
   playerLevel?: number; // 玩家当前等级
   onEquip?: (itemId: string) => Promise<{ success: boolean; error?: string }>;
   onUse?: (itemId: string) => Promise<{ success: boolean; error?: string }>;
-  onUnequip?: (slot: string) => Promise<{ success: boolean; error?: string }>;
+  onUnequip?: (slot: EquipmentSlot) => Promise<{ success: boolean; error?: string }>;
   onUpdate: () => void | Promise<void>;
 }
 
@@ -21,8 +23,18 @@ const SLOT_ORDER: EquipmentSlot[] = ['weapon', 'helmet', 'armor', 'leggings', 'b
 const INVENTORY_SIZE = 20;
 
 export function Inventory({ items, lingshi, equipment, playerLevel, onEquip, onUse, onUnequip, onUpdate }: InventoryProps) {
+  const message = useMessage();
   const [loading, setLoading] = useState<string | null>(null);
   const [selectedSlotIndex, setSelectedSlotIndex] = useState<number | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const [dragItem, setDragItem] = useState<Item | null>(null);
+  const [dragFromIndex, setDragFromIndex] = useState<number | null>(null);
+  const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
+
+  const gridRef = useRef<HTMLDivElement | null>(null);
+  const longPressTimerRef = useRef<number | null>(null);
+  const pendingDragRef = useRef<{ index: number; startX: number; startY: number } | null>(null);
+  const ignoreClickRef = useRef(false);
 
   // 确保 items 数组长度为 INVENTORY_SIZE，不足的用 null 填充
   const slots: (Item | null)[] = Array(INVENTORY_SIZE).fill(null);
@@ -99,6 +111,10 @@ export function Inventory({ items, lingshi, equipment, playerLevel, onEquip, onU
   };
 
   const handleSlotClick = async (index: number) => {
+    if (ignoreClickRef.current) {
+      ignoreClickRef.current = false;
+      return;
+    }
     console.log('handleSlotClick 被调用, index:', index, 'selectedSlotIndex:', selectedSlotIndex);
     if (selectedSlotIndex === null) {
       // 没有选中物品，点击物品则选中
@@ -197,6 +213,7 @@ export function Inventory({ items, lingshi, equipment, playerLevel, onEquip, onU
 
   const handleSlotRightClick = async (e: React.MouseEvent, index: number) => {
     e.preventDefault();
+    if (dragging) return;
     console.log('handleSlotRightClick 被调用, index:', index);
     const item = slots[index];
     console.log('item:', item?.name, 'isConsumable:', item ? isConsumable(item) : false, 'isEquipment:', item ? isEquipment(item) : false);
@@ -216,6 +233,171 @@ export function Inventory({ items, lingshi, equipment, playerLevel, onEquip, onU
     }
   };
 
+  const getItemIcon = (item: Item): string => {
+    if (isEquipment(item)) {
+      const icons: Record<string, string> = {
+        weapon: '⚔️',
+        helmet: '⛑️',
+        armor: '🛡️',
+        leggings: '👖',
+        boots: '👢',
+        accessory: '💍'
+      };
+      return icons[item.slot] || '📦';
+    }
+    if (isConsumable(item)) {
+      return '🧪';
+    }
+    return '💎';
+  };
+
+  const clearPendingDrag = () => {
+    if (longPressTimerRef.current !== null) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    pendingDragRef.current = null;
+  };
+
+  const getDropTarget = (x: number, y: number) => {
+    const elements = document.elementsFromPoint(x, y) as HTMLElement[];
+
+    for (const element of elements) {
+      const equipmentSlot = element.dataset.equipmentSlot;
+      if (equipmentSlot) {
+        return { type: 'equipment' as const, slot: equipmentSlot as EquipmentSlot };
+      }
+    }
+
+    for (const element of elements) {
+      const inventoryIndex = element.dataset.inventoryIndex;
+      if (inventoryIndex !== undefined) {
+        const parsed = Number.parseInt(inventoryIndex, 10);
+        if (Number.isFinite(parsed)) {
+          return { type: 'inventory' as const, index: parsed };
+        }
+      }
+    }
+
+    return { type: 'none' as const };
+  };
+
+  const discardItem = async (fromIndex: number) => {
+    try {
+      const itemIds: (string | null)[] = slots.map((slot, index) => {
+        if (index === fromIndex) return null;
+        return slot ? slot.id : null;
+      });
+      await gameAPI.reorderItems(itemIds, true);
+      const updateResult = onUpdate();
+      if (updateResult instanceof Promise) {
+        await updateResult;
+      }
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || error.message || '销毁物品失败';
+      alert(errorMessage);
+    }
+  };
+
+  const resetDragState = () => {
+    setDragging(false);
+    setDragItem(null);
+    setDragFromIndex(null);
+    setDragPosition(null);
+    setSelectedSlotIndex(null);
+    ignoreClickRef.current = true;
+  };
+
+  const endDrag = async (clientX: number, clientY: number) => {
+    if (!dragging || dragFromIndex === null || !dragItem) return;
+    const fromIndex = dragFromIndex;
+    const item = dragItem;
+    const gridRect = gridRef.current?.getBoundingClientRect() || null;
+    const isInsideGrid = !!gridRect &&
+      clientX >= gridRect.left &&
+      clientX <= gridRect.right &&
+      clientY >= gridRect.top &&
+      clientY <= gridRect.bottom;
+    const target = getDropTarget(clientX, clientY);
+    resetDragState();
+    if (target.type === 'equipment') {
+      await handleEquip(item.id);
+    } else if (isInsideGrid && target.type === 'inventory') {
+      if (target.index !== fromIndex) {
+        await moveOrSwapItems(fromIndex, target.index);
+      }
+    } else {
+      const confirmed = await message.confirm(
+        <span>
+          要销毁 <span style={{ fontWeight: 700, color: "#f57c00" }}>{item.name}</span> 吗？
+        </span>
+      );
+      if (confirmed === true) {
+        await discardItem(fromIndex);
+      }
+    }
+  };
+
+  const handleSlotMouseDown = (event: React.MouseEvent, index: number) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    const item = slots[index];
+    if (!item) return;
+    setSelectedSlotIndex(index);
+    clearPendingDrag();
+    pendingDragRef.current = { index, startX: event.clientX, startY: event.clientY };
+    longPressTimerRef.current = window.setTimeout(() => {
+      const latestItem = slots[index];
+      if (!latestItem) return;
+      setDragging(true);
+      setDragItem(latestItem);
+      setDragFromIndex(index);
+      setDragPosition({ x: event.clientX, y: event.clientY });
+    }, 300);
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (event: MouseEvent) => {
+      if (dragging) {
+        setDragPosition({ x: event.clientX, y: event.clientY });
+        return;
+      }
+      if (pendingDragRef.current) {
+        const { index, startX, startY } = pendingDragRef.current;
+        const distance = Math.hypot(event.clientX - startX, event.clientY - startY);
+        if (distance > 6) {
+          const latestItem = slots[index];
+          if (latestItem) {
+            if (longPressTimerRef.current !== null) {
+              window.clearTimeout(longPressTimerRef.current);
+              longPressTimerRef.current = null;
+            }
+            setDragging(true);
+            setDragItem(latestItem);
+            setDragFromIndex(index);
+            setDragPosition({ x: event.clientX, y: event.clientY });
+          }
+          pendingDragRef.current = null;
+        }
+      }
+    };
+
+    const handleMouseUp = (event: MouseEvent) => {
+      if (dragging) {
+        endDrag(event.clientX, event.clientY);
+        return;
+      }
+      clearPendingDrag();
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [dragging, dragFromIndex, dragItem]);
+
   return (
     <div className={styles['inventory-container']}>
       {equipment && (
@@ -224,7 +406,11 @@ export function Inventory({ items, lingshi, equipment, playerLevel, onEquip, onU
             {SLOT_ORDER.map(slot => {
               const item = equipment[slot];
               return (
-                <div key={slot} className={styles['inventory-equipment-slot']}>
+                <div
+                  key={slot}
+                  className={styles['inventory-equipment-slot']}
+                  data-equipment-slot={slot}
+                >
                   <div className={styles['inventory-slot-label']}>{SLOT_NAMES[slot]}</div>
                   {item ? (
                     <ItemCard
@@ -232,7 +418,7 @@ export function Inventory({ items, lingshi, equipment, playerLevel, onEquip, onU
                       isEquipped={true}
                       slot={slot}
                       playerLevel={playerLevel}
-                      onUnequip={(slot: string) => handleUnequip(slot as EquipmentSlot)}
+                      onUnequip={handleUnequip}
                     />
                   ) : (
                     <div className={styles['inventory-empty-slot']}>空</div>
@@ -250,12 +436,13 @@ export function Inventory({ items, lingshi, equipment, playerLevel, onEquip, onU
         </div>
       </div>
       <div className={styles['inventory-grid-wrapper']}>
-        <div className={styles['inventory-grid']}>
+        <div className={styles['inventory-grid']} ref={gridRef}>
           {slots.map((item, index) => (
             item ? (
               <div
                 key={item.id}
                 className={`${styles['inventory-slot']} ${selectedSlotIndex === index ? styles['selected'] : ''}`}
+                data-inventory-index={index}
                 onClick={(e) => {
                   console.log('inventory-slot div 被点击, index:', index);
                   // 如果 ItemCard 没有处理，这里作为备用
@@ -263,6 +450,7 @@ export function Inventory({ items, lingshi, equipment, playerLevel, onEquip, onU
                     handleSlotClick(index);
                   }
                 }}
+                onMouseDown={(e) => handleSlotMouseDown(e, index)}
                 onContextMenu={(e) => {
                   console.log('inventory-slot div 右键点击, index:', index);
                   if (e.target === e.currentTarget && e) {
@@ -275,6 +463,7 @@ export function Inventory({ items, lingshi, equipment, playerLevel, onEquip, onU
                   playerLevel={playerLevel}
                   onEquip={handleEquip}
                   onUse={handleUse}
+                  onMouseDown={(e) => handleSlotMouseDown(e, index)}
                   onClick={() => {
                     console.log('ItemCard onClick 被调用, index:', index);
                     handleSlotClick(index);
@@ -292,12 +481,28 @@ export function Inventory({ items, lingshi, equipment, playerLevel, onEquip, onU
               <div
                 key={`empty-${index}`}
                 className={`${styles['inventory-slot-empty']} ${selectedSlotIndex !== null ? styles['can-drop'] : ''}`}
+                data-inventory-index={index}
                 onClick={() => handleSlotClick(index)}
               />
             )
           ))}
         </div>
       </div>
+      {dragging && typeof document !== 'undefined' &&
+        createPortal(
+          <div className={styles['inventory-drag-overlay']} data-dropzone="inventory-overlay" />,
+          document.body
+        )}
+      {dragging && dragItem && dragPosition && typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            className={styles['inventory-drag-preview']}
+            style={{ left: `${dragPosition.x}px`, top: `${dragPosition.y}px` }}
+          >
+            <span className={styles['inventory-drag-icon']}>{getItemIcon(dragItem)}</span>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

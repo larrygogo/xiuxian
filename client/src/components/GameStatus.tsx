@@ -23,7 +23,6 @@ export function GameStatus({ state, onRename, onHeal }: GameStatusProps) {
 
   const stage = stageName(state);
   const requiredQi = needQi(state);
-  const remainingTicks = state.daily?.remainingTicks ?? 0;
 
   const handleEditClick = () => {
     setEditName(state.name);
@@ -206,10 +205,6 @@ export function GameStatus({ state, onRename, onHeal }: GameStatusProps) {
               {healMessage}
             </span>
           )}
-        </div>
-        <div className={styles['status-item']}>
-          <span className={styles['label']}>今日剩余</span>
-          <span className={styles['value']}>{remainingTicks} 次</span>
         </div>
         <div className={styles['status-item']}>
           <span className={styles['label']}>状态</span>

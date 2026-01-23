@@ -1,6 +1,7 @@
-import { useState, FormEvent } from 'react';
+import { useEffect, useState, FormEvent } from 'react';
 import { gameAPI } from '../services/api';
 import type { AxiosError } from 'axios';
+import { SLOT_NAMES } from '../types/item';
 import styles from './AdminGiveItem.module.css';
 
 interface AdminGiveItemProps {
@@ -11,14 +12,37 @@ interface ApiError {
   error?: string;
 }
 
+interface EquipmentTemplate {
+  templateId: string;
+  name: string;
+  slot: keyof typeof SLOT_NAMES;
+  requiredLevel?: number;
+}
+
+interface ItemTemplatesResponse {
+  templates?: {
+    equipment: EquipmentTemplate[];
+  };
+}
+
+function getRequiredLevelFromTemplateId(templateId: string): number {
+  const match = templateId.match(/_(\d{3})$/);
+  if (!match) return 1;
+  const parsed = Number.parseInt(match[1], 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return 1;
+  return parsed === 1 ? 0 : parsed;
+}
+
 export function AdminGiveItem({ onSuccess }: AdminGiveItemProps) {
   const [activeTab, setActiveTab] = useState<'item' | 'exp'>('item');
   
   // 物品相关状态
   const [targetId, setTargetId] = useState('');
   const [itemType, setItemType] = useState<string>('');
-  const [slot, setSlot] = useState<string>('');
-  const [level, setLevel] = useState('');
+  const [templateId, setTemplateId] = useState<string>('');
+  const [equipmentTemplates, setEquipmentTemplates] = useState<EquipmentTemplate[]>([]);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [isCrafted, setIsCrafted] = useState(false);
   
   // 经验相关状态
   const [expTargetId, setExpTargetId] = useState('');
@@ -27,6 +51,32 @@ export function AdminGiveItem({ onSuccess }: AdminGiveItemProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  useEffect(() => {
+    if (itemType !== 'equipment' || equipmentTemplates.length > 0 || templatesLoading) return;
+    setTemplatesLoading(true);
+    gameAPI.getItemTemplates()
+      .then((response) => {
+        const data = response.data as ItemTemplatesResponse;
+        const templates = data.templates?.equipment || [];
+        const normalized = templates.map((template) => ({
+          ...template,
+          requiredLevel: template.requiredLevel ?? getRequiredLevelFromTemplateId(template.templateId)
+        }));
+        normalized.sort((a, b) => {
+          const levelDiff = (a.requiredLevel ?? 1) - (b.requiredLevel ?? 1);
+          if (levelDiff !== 0) return levelDiff;
+          return a.name.localeCompare(b.name, 'zh-Hans-CN');
+        });
+        setEquipmentTemplates(normalized);
+      })
+      .catch(() => {
+        setEquipmentTemplates([]);
+      })
+      .finally(() => {
+        setTemplatesLoading(false);
+      });
+  }, [equipmentTemplates.length, itemType, templatesLoading]);
 
   const handleItemSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -45,24 +95,20 @@ export function AdminGiveItem({ onSuccess }: AdminGiveItemProps) {
       const payload: {
         targetCharacterId: number;
         itemType?: string;
-        slot?: string;
-        level?: number;
+        templateId?: string;
+        crafted?: boolean;
       } = {
         targetCharacterId: idValue
       };
 
       if (itemType) payload.itemType = itemType;
-      if (slot) payload.slot = slot;
-      if (level) payload.level = parseInt(level, 10);
+      if (templateId) payload.templateId = templateId;
+      if (itemType === 'equipment') payload.crafted = isCrafted;
 
       const response = await gameAPI.giveItem(payload);
       const data = response.data as { message?: string; item?: { name: string } };
       
       setSuccess(data.message || `成功赠送 ${data.item?.name || '物品'}`);
-      setTargetId('');
-      setItemType('');
-      setSlot('');
-      setLevel('');
       
       if (onSuccess) {
         setTimeout(() => {
@@ -110,8 +156,6 @@ export function AdminGiveItem({ onSuccess }: AdminGiveItemProps) {
       const data = response.data as { message?: string; exp?: { old: number; new: number; added: number } };
       
       setSuccess(data.message || `成功赠送 ${amountValue} 点经验`);
-      setExpTargetId('');
-      setExpAmount('');
       
       if (onSuccess) {
         setTimeout(() => {
@@ -151,11 +195,10 @@ export function AdminGiveItem({ onSuccess }: AdminGiveItemProps) {
         <label htmlFor="targetId">目标角色ID *</label>
         <input
           id="targetId"
-          type="number"
+          type="text"
           value={targetId}
           onChange={(e) => setTargetId(e.target.value)}
           required
-          min="1"
           placeholder="输入角色ID"
         />
       </div>
@@ -165,7 +208,11 @@ export function AdminGiveItem({ onSuccess }: AdminGiveItemProps) {
         <select
           id="itemType"
           value={itemType}
-          onChange={(e) => setItemType(e.target.value)}
+          onChange={(e) => {
+            setItemType(e.target.value);
+            setTemplateId('');
+            setIsCrafted(false);
+          }}
         >
           <option value="">随机</option>
           <option value="equipment">装备</option>
@@ -175,55 +222,37 @@ export function AdminGiveItem({ onSuccess }: AdminGiveItemProps) {
       </div>
 
       {itemType === 'equipment' && (
-        <div className={styles['form-group']}>
-          <label htmlFor="slot">装备槽位</label>
-          <select
-            id="slot"
-            value={slot}
-            onChange={(e) => setSlot(e.target.value)}
-          >
-            <option value="">随机</option>
-            <option value="weapon">武器</option>
-            <option value="helmet">头盔</option>
-            <option value="armor">护甲</option>
-            <option value="leggings">护腿</option>
-            <option value="boots">靴子</option>
-            <option value="accessory">饰品</option>
-          </select>
-        </div>
+        <>
+          <div className={styles['form-group']}>
+            <label htmlFor="templateId">装备列表</label>
+            <select
+              id="templateId"
+              value={templateId}
+              onChange={(e) => setTemplateId(e.target.value)}
+              disabled={templatesLoading}
+            >
+              <option value="">随机装备</option>
+              {equipmentTemplates.map((template) => (
+                <option key={template.templateId} value={template.templateId}>
+                  {template.name}（{SLOT_NAMES[template.slot]} / 需求{template.requiredLevel ?? 1}级）
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className={styles['form-group']}>
+            <label htmlFor="isCrafted" className={styles['checkbox-label']}>
+              <input
+                id="isCrafted"
+                type="checkbox"
+                checked={isCrafted}
+                onChange={(e) => setIsCrafted(e.target.checked)}
+                className={styles['checkbox-input']}
+              />
+              是否打造装备
+            </label>
+          </div>
+        </>
       )}
-
-      <div className={styles['form-group']}>
-        <label htmlFor="level">装备等级段</label>
-        <select
-          id="level"
-          value={level}
-          onChange={(e) => setLevel(e.target.value)}
-        >
-          <option value="">使用目标用户等级</option>
-          <option value="1">1级</option>
-          <option value="5">5级</option>
-          <option value="10">10级</option>
-          <option value="15">15级</option>
-          <option value="20">20级</option>
-          <option value="25">25级</option>
-          <option value="30">30级</option>
-          <option value="35">35级</option>
-          <option value="40">40级</option>
-          <option value="45">45级</option>
-          <option value="50">50级</option>
-          <option value="55">55级</option>
-          <option value="60">60级</option>
-          <option value="65">65级</option>
-          <option value="70">70级</option>
-          <option value="75">75级</option>
-          <option value="80">80级</option>
-          <option value="85">85级</option>
-          <option value="90">90级</option>
-          <option value="95">95级</option>
-          <option value="100">100级</option>
-        </select>
-      </div>
 
       {error && <div className={styles['error-message']}>{error}</div>}
       {success && <div className={styles['success-message']}>{success}</div>}
@@ -238,11 +267,10 @@ export function AdminGiveItem({ onSuccess }: AdminGiveItemProps) {
             <label htmlFor="expTargetId">目标角色ID *</label>
             <input
               id="expTargetId"
-              type="number"
+              type="text"
               value={expTargetId}
               onChange={(e) => setExpTargetId(e.target.value)}
               required
-              min="1"
               placeholder="输入角色ID"
             />
           </div>

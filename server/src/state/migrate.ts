@@ -1,24 +1,8 @@
-import { TICKS_PER_DAY } from "../config";
 import type { GameState } from "../types/game";
 import type { Item, Equipment, Consumable, Material } from "../types/item";
 import { isEquipment, isConsumable, isMaterial } from "../types/item";
-import { getItemTemplates } from "../services/itemService";
-
-// 统一生成自然日字符串（YYYY-MM-DD）
-function getDateString(date: Date = new Date()): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-/**
- * 生成唯一的角色数字ID
- * 使用时间戳 + 随机数确保唯一性
- */
-function generateCharacterId(): number {
-  return Date.now() * 1000 + Math.floor(Math.random() * 1000);
-}
+import { getItemTemplates, getRequiredLevelFromTemplateId } from "../services/itemService";
+import { generateCharacterId } from "./defaultState";
 
 /**
  * 迁移和验证游戏状态
@@ -70,21 +54,6 @@ export function migrateState(state: unknown): GameState | null {
     s.eventLog = [];
   }
 
-  // 每日计数兜底
-  if (!s.daily || typeof s.daily !== "object") {
-    s.daily = {
-      remainingTicks: TICKS_PER_DAY,
-      lastResetDate: getDateString(),
-      beastCount: 0,
-      fortuneCount: 0
-    };
-  } else {
-    if (typeof s.daily.remainingTicks !== "number") s.daily.remainingTicks = TICKS_PER_DAY;
-    if (typeof s.daily.lastResetDate !== "string") s.daily.lastResetDate = getDateString();
-    if (typeof s.daily.beastCount !== "number") s.daily.beastCount = 0;
-    if (typeof s.daily.fortuneCount !== "number") s.daily.fortuneCount = 0;
-  }
-
   // 物品系统兜底
   if (!Array.isArray(s.inventory)) {
     s.inventory = Array(20).fill(null);
@@ -112,6 +81,7 @@ export function migrateState(state: unknown): GameState | null {
   
   // 更新旧物品的描述（在类型转换后）
   updateItemDescriptions(finalState);
+  ensureEquipmentRequiredLevel(finalState);
 
   return finalState;
 }
@@ -170,7 +140,7 @@ function updateItemDescription(
   }
   
   // 根据物品类型查找模板
-  let template: { description?: string } | undefined;
+  let template: { name?: string; description?: string } | undefined;
   
   if (isEquipment(item)) {
     const equipment = item as Equipment;
@@ -181,9 +151,38 @@ function updateItemDescription(
   } else if (isMaterial(item)) {
     template = templates.materials.find(t => t.templateId === item.templateId);
   }
+
+  // 统一名称：以后端模板为准（避免前后端/旧存档出现不一致）
+  if (template && template.name && template.name.trim()) {
+    item.name = template.name;
+  }
   
   // 如果找到模板且有描述，更新物品描述
   if (template && template.description && template.description.trim()) {
     item.description = template.description;
+  }
+}
+
+function ensureEquipmentRequiredLevel(state: GameState): void {
+  const fixEquipment = (item: Item | null) => {
+    if (!item || !isEquipment(item)) return;
+    const current = (item as Equipment).requiredLevel;
+    if (typeof current === "number" && current > 0) return;
+    (item as Equipment).requiredLevel = getRequiredLevelFromTemplateId(item.templateId);
+  };
+
+  if (Array.isArray(state.inventory)) {
+    for (const item of state.inventory) {
+      fixEquipment(item);
+    }
+  }
+
+  if (state.equipment && typeof state.equipment === "object") {
+    for (const slot in state.equipment) {
+      const item = state.equipment[slot as keyof typeof state.equipment];
+      if (item) {
+        fixEquipment(item);
+      }
+    }
   }
 }

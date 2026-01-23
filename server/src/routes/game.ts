@@ -4,18 +4,17 @@ import {
   getUserGameState,
   initializeUserGame,
   updateUserGameState,
-  acquireUserLock,
   findUserIdByCharacterId
 } from "../services/gameService";
 import { toClientState } from "../services/stateView";
-import { ensureDailyReset, heal } from "../systems/actions";
-import { exploreTick } from "../systems/events";
+import { heal } from "../systems/actions";
 import { stepUpOnce, needQi } from "../systems/progression";
 import { logLine } from "../services/logger";
 import { equipItem, unequipItem, useConsumable, reorderItems, addItemToInventory } from "../systems/items";
-import { getItemTemplates, itemGenerator } from "../services/itemService";
+import { getAllEquipmentTemplates, getItemTemplates, itemGenerator } from "../services/itemService";
 import { refreshDerivedStats } from "../systems/stats";
 import { getUserById } from "../services/userService";
+import { generateCharacterId } from "../state/defaultState";
 import type { EquipmentSlot, ItemType } from "../types/item";
 
 const router = express.Router();
@@ -34,17 +33,17 @@ router.get("/state", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "未提供认证令牌" });
     }
 
+    const user = await getUserById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "用户不存在" });
+    }
+
     let state = getUserGameState(userId);
 
     // 如果用户还没有初始化游戏，则初始化
     if (!state) {
       // 这里不需要实时推送，传入 null 即可
       state = await initializeUserGame(userId, null);
-    }
-
-    const didReset = ensureDailyReset(state);
-    if (didReset) {
-      await updateUserGameState(userId, state);
     }
 
     // 刷新属性，确保装备属性正确应用
@@ -83,65 +82,6 @@ router.post("/actions/heal", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("疗伤错误:", error);
     res.status(500).json({ error: "疗伤失败" });
-  }
-});
-
-/**
- * 执行探索
- * POST /api/game/actions/tick
- */
-router.post("/actions/tick", async (req: Request, res: Response) => {
-  try {
-    const userId = req.user?.userId;
-    if (!userId) {
-      return res.status(401).json({ error: "未提供认证令牌" });
-    }
-
-    // 使用锁机制防止并发请求
-    let responseSent = false;
-    await acquireUserLock(userId, async () => {
-      if (responseSent) return;
-
-      const state = getUserGameState(userId);
-      if (!state) {
-        responseSent = true;
-        res.status(404).json({ error: "游戏状态未找到" });
-        return;
-      }
-
-      if (!state.alive) {
-        responseSent = true;
-        res.status(400).json({ error: "你已死亡，无法行动" });
-        return;
-      }
-
-      ensureDailyReset(state);
-
-      /** 测试时不消耗次数 */
-
-      // 检查剩余次数（必须在消耗之前检查）
-      // if (state.daily.remainingTicks <= 0) {
-      //   responseSent = true;
-      //   res.status(400).json({ error: "今日行动次数已用尽" });
-      //   return;
-      // }
-
-      // // 消耗一次行动次数（在检查通过后立即消耗，避免并发问题）
-      // state.daily.remainingTicks -= 1;
-
-      // 执行探索
-      exploreTick(state);
-
-      await updateUserGameState(userId, state);
-
-      responseSent = true;
-      res.json({ message: "行动完成", state: toClientState(state) });
-    });
-  } catch (error) {
-    console.error("行动错误:", error);
-    if (!res.headersSent) {
-      res.status(500).json({ error: "行动失败" });
-    }
   }
 });
 
@@ -185,7 +125,7 @@ router.post("/character/create", async (req: Request, res: Response) => {
 
     // 确保角色ID存在（兼容旧数据）
     if (typeof state.characterId !== "number") {
-      state.characterId = Date.now() * 1000 + Math.floor(Math.random() * 1000);
+      state.characterId = generateCharacterId();
     }
 
     // 更新角色名称
@@ -263,7 +203,8 @@ router.post("/items/equip", async (req: Request, res: Response) => {
 
     const success = equipItem(state, itemId);
     if (!success) {
-      return res.status(400).json({ error: "装备失败，请检查物品是否存在或背包是否已满" });
+      await updateUserGameState(userId, state);
+      return res.status(400).json({ error: "装备失败，请检查物品是否存在或背包是否已满", state: toClientState(state) });
     }
 
     await updateUserGameState(userId, state);
@@ -367,7 +308,7 @@ router.post("/items/reorder", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "未提供认证令牌" });
     }
 
-    const { itemIds } = req.body as { itemIds?: (string | null)[] };
+    const { itemIds, allowDiscard } = req.body as { itemIds?: (string | null)[]; allowDiscard?: boolean };
     if (!itemIds || !Array.isArray(itemIds)) {
       return res.status(400).json({ error: "物品ID列表不能为空" });
     }
@@ -377,7 +318,7 @@ router.post("/items/reorder", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "游戏状态未找到" });
     }
 
-    const success = reorderItems(state, itemIds);
+    const success = reorderItems(state, itemIds, Boolean(allowDiscard));
     if (!success) {
       return res.status(400).json({ error: "重排序失败" });
     }
@@ -495,12 +436,14 @@ router.post("/actions/allocate-stats", async (req: Request, res: Response) => {
  */
 router.post("/admin/give-item", requireAdmin, async (req: Request, res: Response) => {
   try {
-    const { targetUserId, targetCharacterId, itemType, slot, level } = req.body as {
+    const { targetUserId, targetCharacterId, itemType, slot, level, templateId, crafted } = req.body as {
       targetUserId?: number;
       targetCharacterId?: number;
       itemType?: ItemType;
       slot?: EquipmentSlot;
       level?: number;
+      templateId?: string;
+      crafted?: boolean;
     };
 
     // 确定目标用户ID：优先使用 targetUserId，如果没有则通过 targetCharacterId 查找
@@ -532,10 +475,34 @@ router.post("/admin/give-item", requireAdmin, async (req: Request, res: Response
     // 确定物品等级（使用目标用户等级或指定等级）
     const itemLevel = level || targetState.level || 1;
 
+    if (crafted !== undefined && typeof crafted !== "boolean") {
+      return res.status(400).json({ error: "打造标记必须为布尔值" });
+    }
+
     // 生成物品
     let item;
     if (itemType === "equipment") {
-      item = itemGenerator.generateEquipment(itemLevel, slot);
+      const sourceOverride = crafted ? "crafted" : undefined;
+      if (templateId) {
+        try {
+          item = itemGenerator.generateEquipmentFromTemplate(templateId, undefined, sourceOverride);
+        } catch (err) {
+          return res.status(400).json({ error: "装备模板不存在" });
+        }
+      } else {
+        const equipmentTemplates = getAllEquipmentTemplates().filter((template) =>
+          slot ? template.slot === slot : true
+        );
+        const preferredTemplates = sourceOverride
+          ? equipmentTemplates.filter((template) => template.source === sourceOverride)
+          : equipmentTemplates;
+        if (preferredTemplates.length > 0) {
+          const randomTemplate = preferredTemplates[Math.floor(Math.random() * preferredTemplates.length)];
+          item = itemGenerator.generateEquipmentFromTemplate(randomTemplate.templateId, undefined, sourceOverride);
+        } else {
+          item = itemGenerator.generateEquipment(itemLevel, slot, sourceOverride);
+        }
+      }
     } else if (itemType === "consumable") {
       item = itemGenerator.generateConsumable(itemLevel);
     } else if (itemType === "material") {

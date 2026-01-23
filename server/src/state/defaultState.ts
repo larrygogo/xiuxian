@@ -1,20 +1,16 @@
-import { TICKS_PER_DAY } from "../config";
 import type { GameState } from "../types/game";
-
-// 统一生成自然日字符串（YYYY-MM-DD），用于每日重置
-function getDateString(date: Date = new Date()): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
 
 /**
  * 生成唯一的角色数字ID
- * 使用时间戳 + 随机数确保唯一性
+ * 设计目标：更短（便于展示/输入），同时尽量降低冲突概率
  */
-function generateCharacterId(): number {
-  return Date.now() * 1000 + Math.floor(Math.random() * 1000);
+export function generateCharacterId(): number {
+  // 10位数字：8位“秒级时间尾号” + 2位随机数
+  // 例：last8Seconds=12345678, rand=07 => 1234567807
+  const seconds = Math.floor(Date.now() / 1000);
+  const last8Seconds = seconds % 100_000_000;
+  const rand2 = Math.floor(Math.random() * 100);
+  return last8Seconds * 100 + rand2;
 }
 
 /**
@@ -56,14 +52,6 @@ export function defaultState(): GameState {
       mdef: 0,
       maxHp: 0,
       maxMp: 0
-    },
-
-    // 每日可行动次数与事件限流
-    daily: {
-      remainingTicks: TICKS_PER_DAY,
-      lastResetDate: getDateString(),
-      beastCount: 0,
-      fortuneCount: 0
     },
 
     alive: true,

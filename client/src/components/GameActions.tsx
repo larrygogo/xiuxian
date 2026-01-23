@@ -1,40 +1,15 @@
-import { useState, useRef } from 'react';
+import { useRef, useState } from 'react';
 import styles from './GameActions.module.css';
 import { Card } from './Card';
-import type { ActionResult, GameState } from '../types/game';
+import type { GameState } from '../types/game';
 
 interface GameActionsProps {
   state: GameState | null;
-  onTick: () => Promise<ActionResult>;
 }
 
-export function GameActions({ state, onTick }: GameActionsProps) {
-  const [loading, setLoading] = useState(false);
+export function GameActions({ state }: GameActionsProps) {
   const [message, setMessage] = useState('');
   const isProcessingRef = useRef(false);
-
-  const remainingTicks = state?.daily?.remainingTicks ?? 0;
-
-  const handleTick = async () => {
-    // 使用 ref 防止重复点击（比 state 更快）
-    if (isProcessingRef.current) {
-      return;
-    }
-    
-    isProcessingRef.current = true;
-    setLoading(true);
-    setMessage('');
-    
-    try {
-      const result = await onTick();
-      if (!result.success) {
-        setMessage(result.error || '行动失败');
-      }
-    } finally {
-      setLoading(false);
-      isProcessingRef.current = false;
-    }
-  };
 
   if (!state) return null;
 
@@ -42,13 +17,21 @@ export function GameActions({ state, onTick }: GameActionsProps) {
     <Card title="操作">
       <div className={styles['actions-grid']}>
         <button
-          onClick={handleTick}
-          disabled={loading || !state.alive || remainingTicks <= 0}
+          type="button"
+          onClick={() => {
+            if (isProcessingRef.current) return;
+            isProcessingRef.current = true;
+            setMessage('探索玩法正在开发中，敬请期待。');
+            window.setTimeout(() => {
+              isProcessingRef.current = false;
+            }, 600);
+          }}
+          disabled={!state.alive}
           className={`${styles['action-button']} ${styles['tick-button']}`}
         >
-          探索一次
+          探索（开发中）
           <span className={styles['button-hint']}>
-            今日剩余 {remainingTicks} 次
+            玩法正在开发
           </span>
         </button>
       </div>

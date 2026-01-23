@@ -1,10 +1,9 @@
 import { getDatabase, saveDatabase } from "../db/init";
 import { defaultState } from "../state/defaultState";
 import { migrateState } from "../state/migrate";
-import { ensureDailyReset } from "../systems/actions";
 import type { GameState, GameStateCallback } from "../types/game";
 
-// 存储每个用户的游戏状态（内存缓存）
+     // 存储每个用户的游戏状态（内存缓存）
 const userGameStates = new Map<number, GameState>();
 
 // 存储每个用户的操作锁（防止并发操作）
@@ -41,12 +40,9 @@ async function loadGameState(userId: number): Promise<GameState> {
       return defaultState();
     }
 
-    candidate.lastTs = result.last_ts || Date.now();
+  candidate.lastTs = result.last_ts || Date.now();
 
-    // 每日次数按自然日校正
-    ensureDailyReset(candidate);
-
-    // 更新最后时间戳
+  // 更新最后时间戳
     candidate.lastTs = Date.now();
 
     return candidate;

@@ -7,7 +7,7 @@ import styles from './Equipment.module.css';
 interface EquipmentProps {
   equipment: EquipmentSlots;
   playerLevel?: number; // 玩家当前等级
-  onUnequip?: (slot: string) => Promise<{ success: boolean; error?: string }>;
+  onUnequip?: (slot: EquipmentSlot) => Promise<{ success: boolean; error?: string }>;
   onUpdate: () => void;
 }
 

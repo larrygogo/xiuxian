@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import styles from './MainStatus.module.css';
-import { stageName, needQi } from '../utils/gameUtils';
+import { needQi } from '../utils/gameUtils';
 import { gameAPI } from '../services/api';
 import type { GameState, ActionResult } from '../types/game';
 
@@ -30,7 +30,7 @@ type StatKey = keyof StatAllocationPayload;
 export function MainStatus({ state, onLevelUp, onAllocateStats }: MainStatusProps) {
   const [levelUpLoading, setLevelUpLoading] = useState(false);
   const [allocationLoading, setAllocationLoading] = useState(false);
-  const [copyButtonText, setCopyButtonText] = useState('📋');
+  const [copyButtonText, setCopyButtonText] = useState('复制');
   const [pendingAllocations, setPendingAllocations] = useState<StatAllocationPayload>({
     str: 0,
     agi: 0,
@@ -41,7 +41,6 @@ export function MainStatus({ state, onLevelUp, onAllocateStats }: MainStatusProp
 
   if (!state) return null;
 
-  const stage = stageName(state);
   const requiredQi = needQi(state);
   const canLevelUp = state.qi >= requiredQi;
   const baseStats = state.baseStats ?? {
@@ -94,9 +93,13 @@ export function MainStatus({ state, onLevelUp, onAllocateStats }: MainStatusProp
     });
   }, [state.statPoints]);
 
+  const getCharacterIdDisplay = (characterId: string): string => {
+    return characterId.replace(/(.{4})/g, '$1 ').trim();
+  };
+
   const handleLevelUp = async () => {
     if (!canLevelUp || levelUpLoading) return;
-    
+
     setLevelUpLoading(true);
     try {
       if (onLevelUp) {
@@ -145,12 +148,24 @@ export function MainStatus({ state, onLevelUp, onAllocateStats }: MainStatusProp
 
   const handleCopyCharacterId = async () => {
     if (!state.characterId) return;
-    
+
     try {
-      await navigator.clipboard.writeText(state.characterId.toString());
-      setCopyButtonText('✓');
+      const idText = state.characterId.toString();
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(idText);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = idText;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+      setCopyButtonText('已复制');
       setTimeout(() => {
-        setCopyButtonText('📋');
+        setCopyButtonText('复制');
       }, 2000);
     } catch (err) {
       console.error('复制失败:', err);
@@ -163,15 +178,15 @@ export function MainStatus({ state, onLevelUp, onAllocateStats }: MainStatusProp
       textArea.select();
       try {
         document.execCommand('copy');
-        setCopyButtonText('✓');
+        setCopyButtonText('已复制');
         setTimeout(() => {
-          setCopyButtonText('📋');
+          setCopyButtonText('复制');
         }, 2000);
       } catch (e) {
         console.error('降级复制也失败:', e);
-        setCopyButtonText('✗');
+        setCopyButtonText('复制失败');
         setTimeout(() => {
-          setCopyButtonText('📋');
+          setCopyButtonText('复制');
         }, 2000);
       }
       document.body.removeChild(textArea);
@@ -181,43 +196,42 @@ export function MainStatus({ state, onLevelUp, onAllocateStats }: MainStatusProp
   return (
     <div className={styles['main-status-card']}>
       <div className={styles['main-status']}>
-        <div className={styles['main-status-top']}>
-          <div className={styles['main-status-name-section']}>
-            <div className={styles['main-status-name']}>{state.name}</div>
-            {state.characterId && (
-              <div className={styles['main-status-character-id']}>
-                <span className={styles['character-id-label']}>角色ID:</span>
-                <span className={styles['character-id-value']}>{state.characterId}</span>
-                <button
-                  type="button"
-                  className={styles['copy-character-id-button']}
-                  onClick={handleCopyCharacterId}
-                  title="复制角色ID"
-                >
-                  {copyButtonText}
-                </button>
-              </div>
-            )}
-          </div>
-          <div className={styles['main-status-realm']}>{stage}</div>
-        </div>
         <div className={styles['main-status-stats']}>
           <div className={styles['stats-group']}>
-            <div className={styles['stats-title']}>基础属性</div>
-            <div className={styles['stats-allocation']}>
-              <div className={styles['stats-allocation-info']}>
-                待分配点数: <span className={styles['stats-allocation-value']}>{remainingPoints}</span>
+            <div className={styles['identity-grid']}>
+              <div className={styles['stats-item']}>
+                <span className={styles['stats-label']}>角色名</span>
+                <div className={styles['stats-value-box']}>
+                  <span className={styles['stats-value']}>{state.name}</span>
+                </div>
               </div>
-              <button
-                type="button"
-                className={styles['stats-allocation-button']}
-                onClick={handleAllocateStats}
-                disabled={!onAllocateStats || allocationLoading || pendingTotal <= 0}
-                title={pendingTotal > 0 ? '确认分配' : '暂无可提交点数'}
-              >
-                {allocationLoading ? '提交中...' : '确认分配'}
-              </button>
+              <div className={styles['stats-item']}>
+                <span className={styles['stats-label']}>等级</span>
+                <div className={styles['stats-value-box']}>
+                  <span className={styles['stats-value']}>{state.level}</span>
+                </div>
+              </div>
+              {state.characterId && (
+                <div className={`${styles['stats-item']} ${styles['identity-id-row']}`}>
+                  <span className={styles['stats-label']}>角色ID</span>
+                  <div className={styles['stats-value-box']}>
+                    <span className={`${styles['stats-value']} ${styles['identity-id-value']}`}>
+                      {getCharacterIdDisplay(state.characterId.toString())}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles['copy-character-id-button']}
+                    onClick={handleCopyCharacterId}
+                    title="复制角色ID"
+                  >
+                    {copyButtonText}
+                  </button>
+                </div>
+              )}
             </div>
+          </div>
+          <div className={styles['stats-group']}>
             <div className={styles['stats-list']}>
               {baseStatItems.map((item) => (
                 <div key={item.key} className={styles['stats-row']}>
@@ -253,9 +267,22 @@ export function MainStatus({ state, onLevelUp, onAllocateStats }: MainStatusProp
                 </div>
               ))}
             </div>
+            <div className={styles['stats-allocation']}>
+              <div className={styles['stats-allocation-info']}>
+                待分配点数: <span className={styles['stats-allocation-value']}>{remainingPoints}</span>
+              </div>
+              <button
+                type="button"
+                className={styles['stats-allocation-button']}
+                onClick={handleAllocateStats}
+                disabled={!onAllocateStats || allocationLoading || pendingTotal <= 0}
+                title={pendingTotal > 0 ? '确认分配' : '暂无可提交点数'}
+              >
+                {allocationLoading ? '提交中...' : '确认分配'}
+              </button>
+            </div>
           </div>
           <div className={styles['stats-group']}>
-            <div className={styles['stats-title']}>战斗属性</div>
             <div className={`${styles['stats-grid']} ${styles['stats-grid-combat']}`}>
               {combatStatItems.map((item) => (
                 <div key={item.key} className={styles['stats-item']}>

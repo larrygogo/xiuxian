@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import type { Item, Equipment, Consumable } from '../types/item';
+import type { EquipmentSlot } from '../types/item';
 import { isEquipment, isConsumable, SLOT_NAMES } from '../types/item';
 import styles from './ItemCard.module.css';
 
@@ -8,9 +9,10 @@ interface ItemCardProps {
   item: Item;
   onEquip?: (itemId: string) => void;
   onUse?: (itemId: string) => void;
-  onUnequip?: (slot: string) => void;
+  onUnequip?: (slot: EquipmentSlot) => void;
   isEquipped?: boolean;
-  slot?: string;
+  slot?: EquipmentSlot;
+  onMouseDown?: (e: React.MouseEvent) => void;
   onClick?: (e?: React.MouseEvent) => void;
   onRightClick?: (e?: React.MouseEvent) => void;
   className?: string;
@@ -37,9 +39,25 @@ function getItemIcon(item: Item): string {
   return '💎';
 }
 
-export function ItemCard({ item, onEquip, onUse, onUnequip, isEquipped, slot, onClick, onRightClick, className, playerLevel }: ItemCardProps) {
+export function ItemCard({ item, onEquip, onUse, onUnequip, isEquipped, slot, onMouseDown, onClick, onRightClick, className, playerLevel }: ItemCardProps) {
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+
+  const STAT_NAMES: Record<string, string> = {
+    str: '力道',
+    agi: '身法',
+    vit: '体魄',
+    int: '灵识',
+    spi: '根骨',
+    hit: '命中',
+    pdmg: '物伤',
+    pdef: '物防',
+    spd: '速度',
+    mdmg: '法伤',
+    mdef: '法防',
+    maxHp: '生命上限',
+    maxMp: '法力上限'
+  };
 
   const handleClick = (e: React.MouseEvent) => {
     console.log('ItemCard handleClick 被调用, item:', item.name, 'onClick存在:', !!onClick);
@@ -88,7 +106,7 @@ export function ItemCard({ item, onEquip, onUse, onUnequip, isEquipped, slot, on
   const updateTooltipPosition = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const tooltipWidth = 250; // 预估工具提示宽度
-    const tooltipHeight = 200; // 预估工具提示高度
+    const tooltipHeight = 260; // 预估工具提示高度（包含装备属性/绿字）
     const spacing = 10;
     
     let x = rect.right + spacing;
@@ -115,45 +133,61 @@ export function ItemCard({ item, onEquip, onUse, onUnequip, isEquipped, slot, on
     if (!isEquipment(item)) return null;
 
     const equipment = item as Equipment;
-    const stats: string[] = [];
 
-    if (equipment.baseStats) {
-      Object.entries(equipment.baseStats).forEach(([key, value]) => {
-        if (value && value > 0) {
-          const statNames: Record<string, string> = {
-            str: '力道',
-            agi: '身法',
-            vit: '体魄',
-            int: '灵识',
-            spi: '根骨'
-          };
-          stats.push(`${statNames[key] || key} +${value}`);
+    const combatOrder = ['pdmg', 'mdmg', 'pdef', 'mdef', 'hit', 'spd', 'maxHp', 'maxMp'] as const;
+    const baseOrder = ['str', 'agi', 'vit', 'int', 'spi'] as const;
+
+    const combatStats: string[] = [];
+    const baseAffixes: { text: string; negative: boolean }[] = [];
+
+    const formatDelta = (value: number) => (value > 0 ? `+${value}` : `${value}`);
+
+    if (equipment.combatStats) {
+      for (const key of combatOrder) {
+        const value = (equipment.combatStats as any)[key] as number | undefined;
+        if (!value || value <= 0) continue;
+        combatStats.push(`${STAT_NAMES[key] || key} +${value}`);
+      }
+      // 兜底：把未知字段也展示出来
+      Object.entries(equipment.combatStats).forEach(([key, value]) => {
+        if (combatOrder.includes(key as any)) return;
+        if (!value || (typeof value === 'number' && value <= 0)) return;
+        if (typeof value === 'number') {
+          combatStats.push(`${STAT_NAMES[key] || key} +${value}`);
         }
       });
     }
 
-    if (equipment.combatStats) {
-      Object.entries(equipment.combatStats).forEach(([key, value]) => {
-        // 跳过无效值
-        if (!value || value <= 0) return;
-        const statNames: Record<string, string> = {
-          hit: '命中',
-          pdmg: '物伤',
-          pdef: '物防',
-          spd: '速度',
-          mdmg: '法伤',
-          mdef: '法防',
-          maxHp: '生命上限',
-          maxMp: '法力上限'
-        };
-        stats.push(`${statNames[key] || key} +${value}`);
+    if (equipment.baseStats) {
+      for (const key of baseOrder) {
+        const value = (equipment.baseStats as any)[key] as number | undefined;
+        if (!value || value === 0) continue;
+        baseAffixes.push({ text: `${STAT_NAMES[key] || key} ${formatDelta(value)}`, negative: value < 0 });
+      }
+      Object.entries(equipment.baseStats).forEach(([key, value]) => {
+        if (baseOrder.includes(key as any)) return;
+        if (!value || (typeof value === 'number' && value === 0)) return;
+        if (typeof value === 'number') {
+          baseAffixes.push({ text: `${STAT_NAMES[key] || key} ${formatDelta(value)}`, negative: value < 0 });
+        }
       });
     }
 
-    return stats.length > 0 ? (
+    return combatStats.length > 0 || baseAffixes.length > 0 ? (
       <div className={styles['item-stats']}>
-        {stats.map((stat, idx) => (
-          <div key={idx} className={styles['item-stat']}>{stat}</div>
+        {combatStats.map((stat, idx) => (
+          <div key={`combat-${idx}`} className={styles['item-stat']}>{stat}</div>
+        ))}
+        {baseAffixes.length > 0 && (
+          <div className={styles['item-affix-divider']} />
+        )}
+        {baseAffixes.map((affix, idx) => (
+          <div
+            key={`affix-${idx}`}
+            className={`${styles['item-stat']} ${styles['item-stat-affix']} ${affix.negative ? styles['item-stat-affix-negative'] : ''}`}
+          >
+            {affix.text}
+          </div>
         ))}
       </div>
     ) : null;
@@ -191,16 +225,18 @@ export function ItemCard({ item, onEquip, onUse, onUnequip, isEquipped, slot, on
           {item.name}
         </span>
       </div>
-      <div className={styles['tooltip-level']}>等级 {item.level}</div>
+      <div
+        className={`${styles['tooltip-level']} ${
+          isEquipment(item) && playerLevel !== undefined && playerLevel < item.requiredLevel
+            ? styles['tooltip-level-warning']
+            : ''
+        }`}
+      >
+        等级 {item.level}
+      </div>
       {isEquipment(item) && (
         <>
           <div className={styles['tooltip-slot']}>槽位: {SLOT_NAMES[item.slot]}</div>
-          <div className={styles['tooltip-required-level']}>
-            需求等级: {item.requiredLevel}
-            {playerLevel !== undefined && playerLevel < item.requiredLevel && (
-              <span className={styles['tooltip-level-warning']}> (等级不足)</span>
-            )}
-          </div>
         </>
       )}
       {isConsumable(item) && item.stackSize > 1 && (
@@ -218,6 +254,7 @@ export function ItemCard({ item, onEquip, onUse, onUnequip, isEquipped, slot, on
     <>
       <div
         className={`${styles['item-card']} ${isEquipped ? styles['equipped'] : ''} ${className || ''}`}
+        onMouseDown={onMouseDown}
         onClick={handleClick}
         onContextMenu={handleContextMenu}
         onMouseEnter={handleMouseEnter}

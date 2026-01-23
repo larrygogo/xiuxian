@@ -1,56 +1,5 @@
-import { TICKS_PER_DAY } from "../config";
 import { logLine } from "../services/logger";
 import type { GameState } from "../types/game";
-
-// 获取当前自然日字符串（YYYY-MM-DD）
-function getDateString(date: Date = new Date()): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-/**
- * 按自然日重置每日次数与计数
- */
-export function ensureDailyReset(state: GameState): boolean {
-  let didReset = false;
-
-  // 如果 daily 结构缺失，立即补齐并视为已重置
-  if (!state.daily || typeof state.daily !== "object") {
-    state.daily = {
-      remainingTicks: TICKS_PER_DAY,
-      lastResetDate: getDateString(),
-      beastCount: 0,
-      fortuneCount: 0
-    };
-    return true;
-  }
-
-  const today = getDateString();
-
-  // 兜底字段，防止旧存档缺失
-  if (typeof state.daily.remainingTicks !== "number") {
-    state.daily.remainingTicks = TICKS_PER_DAY;
-    didReset = true;
-  }
-  if (typeof state.daily.lastResetDate !== "string") {
-    state.daily.lastResetDate = today;
-    didReset = true;
-  }
-
-  // 日期变化则重置每日次数与计数
-  if (state.daily.lastResetDate !== today) {
-    state.daily.remainingTicks = TICKS_PER_DAY;
-    state.daily.lastResetDate = today;
-    state.daily.beastCount = 0;
-    state.daily.fortuneCount = 0;
-    logLine("新的一天开始，今日次数已重置。", state);
-    didReset = true;
-  }
-
-  return didReset;
-}
 
 /**
  * 处理角色死亡

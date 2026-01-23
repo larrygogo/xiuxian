@@ -4,10 +4,6 @@ export interface User {
   isAdmin?: boolean;
 }
 
-export interface DailyState {
-  remainingTicks?: number;
-}
-
 export interface BaseStats {
   str: number;
   agi: number;
@@ -41,7 +37,6 @@ export interface GameState {
   lingshi?: number;
   statPoints?: number;
   alive: boolean;
-  daily?: DailyState;
   baseStats?: BaseStats;
   combatStats?: CombatStats;
   eventLog?: string[];

@@ -101,18 +101,22 @@ button::before {
   transition: width 0.6s, height 0.6s;
 }
 
-button:hover::before {
+button:hover:not(:disabled)::before {
   width: 300px;
   height: 300px;
 }
 
-button:hover {
+button:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 8px 20px var(--ink-shadow);
 }
 
-button:active {
+button:active:not(:disabled) {
   transform: translateY(0);
+}
+
+button:disabled {
+  cursor: not-allowed;
 }
 
 input {

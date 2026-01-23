@@ -13,13 +13,31 @@ import type {
 import { ItemGenerator } from "./ItemGenerator";
 
 // 装备模板定义
+type CombatStatType = keyof CombatStats;
+
+interface StatRange {
+  type: CombatStatType;
+  min: number;
+  max: number;
+}
+
+type GearSource = "system" | "crafted";
+
 interface EquipmentTemplate {
   templateId: string;
   name: string;
   description?: string;
   slot: EquipmentSlot;
-  combatStatTypes: (keyof CombatStats)[];
-  combatValueRange: [number, number];
+  source: GearSource;
+  combatStats: StatRange[];
+  baseAffix?: {
+    stats: Array<keyof BaseStats>;
+    min: number;
+    max: number;
+    count?: number;
+    chance?: number;
+    negativeChance?: number;
+  };
 }
 
 // 消耗品模板
@@ -39,14 +57,37 @@ interface MaterialTemplate {
 }
 
 // 物品配置
+interface TierBase {
+  pdmg: number;
+  mdmg: number;
+  pdef: number;
+  mdef: number;
+  spd: number;
+  hit: number;
+  maxHp: number;
+  maxMp: number;
+}
+
 interface ItemConfig {
-  // 配置字段已移除，保留接口以便将来扩展
+  secondary: {
+    systemChance: number;
+    craftedChance: number;
+    subStatMultiplier: number;
+    minMultiplier: number;
+    maxMultiplier: number;
+  };
+  crafted: {
+    maxMultiplier: number;
+    minMultiplier: number;
+  };
+  tierBase: Record<string, TierBase>;
 }
 
 // 装备数据
 interface EquipmentData {
   weapons: EquipmentTemplate[];
   armor: EquipmentTemplate[];
+  baseAffixConfig?: Partial<Record<EquipmentSlot, EquipmentTemplate["baseAffix"]>>;
 }
 
 // 加载 JSON 数据
@@ -83,7 +124,18 @@ const DATA_DIR = getDataDir();
 function loadEquipmentData(): EquipmentData {
   const filePath = join(DATA_DIR, "equipment.json");
   const data = readFileSync(filePath, "utf-8");
-  return JSON.parse(data) as EquipmentData;
+  const parsed = JSON.parse(data) as EquipmentData;
+  if (parsed.baseAffixConfig) {
+    for (const template of [...parsed.weapons, ...parsed.armor]) {
+      const cfg = parsed.baseAffixConfig[template.slot];
+      if (cfg) {
+        template.baseAffix = cfg;
+      }
+    }
+  }
+  const config = getItemConfig();
+  validateEquipmentData(parsed, config);
+  return parsed;
 }
 
 function loadConsumableData(): ConsumableTemplate[] {
@@ -148,10 +200,192 @@ export function getItemConfig(): ItemConfig {
   return itemConfigCache;
 }
 
+const COMBAT_STAT_KEYS: CombatStatType[] = [
+  "hit",
+  "pdmg",
+  "pdef",
+  "spd",
+  "mdmg",
+  "mdef",
+  "maxHp",
+  "maxMp"
+];
+
+function getTierFromTemplateId(templateId: string): number | null {
+  const match = templateId.match(/_(\d{3})$/);
+  if (!match) return null;
+  const parsed = Number.parseInt(match[1], 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return null;
+  if (parsed === 1) return 1;
+  if (parsed % 5 !== 0) return null;
+  return parsed / 5 + 1;
+}
+
+function clampSecondaryRange(min: number, max: number): [number, number] {
+  const safeMin = Math.max(1, min);
+  const safeMax = Math.max(safeMin, max);
+  return [safeMin, safeMax];
+}
+
+function getExpectedRange(
+  tierBase: TierBase,
+  statType: CombatStatType,
+  isSecondary: boolean,
+  config: ItemConfig
+): [number, number] {
+  const baseValue = tierBase[statType];
+  const minMultiplier = config.secondary.minMultiplier;
+  const maxMultiplier = config.secondary.maxMultiplier;
+  const effectiveBase = isSecondary
+    ? baseValue * config.secondary.subStatMultiplier
+    : baseValue;
+  const min = Math.floor(effectiveBase * minMultiplier);
+  const max = Math.floor(effectiveBase * maxMultiplier);
+  if (isSecondary) {
+    return clampSecondaryRange(min, max);
+  }
+  return [min, max];
+}
+
+function getStatRole(slot: EquipmentSlot, type: CombatStatType): "primary" | "secondary" | "invalid" {
+  switch (slot) {
+    case "weapon":
+      return type === "pdmg" || type === "mdmg" ? "primary" : "invalid";
+    case "helmet":
+      if (type === "pdef") return "primary";
+      return type === "maxHp" || type === "hit" ? "secondary" : "invalid";
+    case "armor":
+      return type === "pdef" || type === "maxHp" ? "primary" : "invalid";
+    case "leggings":
+      if (type === "mdef") return "primary";
+      return type === "maxHp" || type === "pdef" ? "secondary" : "invalid";
+    case "boots":
+      return type === "spd" ? "primary" : "invalid";
+    case "accessory":
+      if (type === "hit" || type === "maxMp") return "primary";
+      return type === "mdef" ? "secondary" : "invalid";
+    default:
+      return "invalid";
+  }
+}
+
+function validateEquipmentData(data: EquipmentData, config: ItemConfig): void {
+  const templates = [...data.weapons, ...data.armor];
+  templates.forEach((template) => {
+    const { templateId, slot, source, combatStats } = template;
+    if (!templateId) {
+      throw new Error("装备模板缺少 templateId");
+    }
+    if (!slot) {
+      throw new Error(`装备模板缺少 slot: ${templateId}`);
+    }
+    if (source !== "system" && source !== "crafted") {
+      throw new Error(`装备模板 source 非法: ${templateId}`);
+    }
+    const expectedTier = getTierFromTemplateId(templateId);
+    if (expectedTier === null) {
+      throw new Error(`装备模板 templateId 不含合法等级段: ${templateId}`);
+    }
+    const tierBase = config.tierBase[String(expectedTier)];
+    if (!tierBase) {
+      throw new Error(`装备模板 tier 未配置: ${templateId}`);
+    }
+    if (!combatStats || combatStats.length === 0) {
+      throw new Error(`装备模板 combatStats 为空: ${templateId}`);
+    }
+    const seenTypes = new Set<CombatStatType>();
+    combatStats.forEach((stat) => {
+      if (!COMBAT_STAT_KEYS.includes(stat.type)) {
+        throw new Error(`装备模板 combatStats.type 非法: ${templateId}`);
+      }
+      if (seenTypes.has(stat.type)) {
+        throw new Error(`装备模板 combatStats.type 重复: ${templateId}`);
+      }
+      seenTypes.add(stat.type);
+      if (!Number.isFinite(stat.min) || !Number.isFinite(stat.max)) {
+        throw new Error(`装备模板 combatStats 数值非法: ${templateId}`);
+      }
+      if (stat.min > stat.max) {
+        throw new Error(`装备模板 combatStats min > max: ${templateId}`);
+      }
+      const role = getStatRole(slot, stat.type);
+      if (role === "invalid") {
+        throw new Error(`装备模板 combatStats 与槽位不匹配: ${templateId}`);
+      }
+      const [expectedMin, expectedMax] = getExpectedRange(tierBase, stat.type, role === "secondary", config);
+      // 运行时以规则计算为准，避免手工维护 JSON 中的大量数值范围
+      stat.min = expectedMin;
+      stat.max = expectedMax;
+    });
+
+    switch (slot) {
+      case "weapon": {
+        if (combatStats.length !== 1) {
+          throw new Error(`武器模板必须只有一条属性: ${templateId}`);
+        }
+        break;
+      }
+      case "boots": {
+        if (combatStats.length !== 1 || combatStats[0].type !== "spd") {
+          throw new Error(`靴子模板必须只有速度属性: ${templateId}`);
+        }
+        break;
+      }
+      case "armor": {
+        if (combatStats.length !== 2 || !seenTypes.has("pdef") || !seenTypes.has("maxHp")) {
+          throw new Error(`护甲模板必须包含 pdef 与 maxHp: ${templateId}`);
+        }
+        break;
+      }
+      case "helmet": {
+        if (!seenTypes.has("pdef")) {
+          throw new Error(`头盔模板必须包含 pdef: ${templateId}`);
+        }
+        if (combatStats.length > 2) {
+          throw new Error(`头盔模板最多两条属性: ${templateId}`);
+        }
+        break;
+      }
+      case "leggings": {
+        if (!seenTypes.has("mdef")) {
+          throw new Error(`护腿模板必须包含 mdef: ${templateId}`);
+        }
+        if (combatStats.length > 2) {
+          throw new Error(`护腿模板最多两条属性: ${templateId}`);
+        }
+        break;
+      }
+      case "accessory": {
+        const hasPrimary = seenTypes.has("hit") || seenTypes.has("maxMp");
+        if (!hasPrimary) {
+          throw new Error(`饰品模板必须包含 hit 或 maxMp: ${templateId}`);
+        }
+        if (seenTypes.has("hit") && seenTypes.has("maxMp")) {
+          throw new Error(`饰品模板只能有一个主属性: ${templateId}`);
+        }
+        if (combatStats.length > 2) {
+          throw new Error(`饰品模板最多两条属性: ${templateId}`);
+        }
+        break;
+      }
+      default:
+        break;
+    }
+  });
+}
+
 // 获取所有装备模板（武器+防具）
 export function getAllEquipmentTemplates(): EquipmentTemplate[] {
   const data = getEquipmentData();
   return [...data.weapons, ...data.armor];
+}
+
+export function getRequiredLevelFromTemplateId(templateId: string): number {
+  const match = templateId.match(/_(\d{3})$/);
+  if (!match) return 1;
+  const parsed = Number.parseInt(match[1], 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return 1;
+  return parsed === 1 ? 0 : parsed;
 }
 
 // 注意：generateItemId, generateQuality, randomInRange 等辅助函数已移至 ItemGenerator 类中
@@ -193,9 +427,18 @@ export function generateRandomItem(level: number, type?: ItemType): Item {
  * 获取物品模板列表（用于客户端显示）
  */
 export function getItemTemplates() {
-  const equipmentData = getEquipmentData();
   return {
-    equipment: getAllEquipmentTemplates(),
+    equipment: getAllEquipmentTemplates().map((template) => {
+      return {
+        templateId: template.templateId,
+        slot: template.slot,
+        source: template.source,
+        combatStats: template.combatStats,
+        name: template.name,
+        description: template.description,
+        requiredLevel: getRequiredLevelFromTemplateId(template.templateId)
+      };
+    }),
     consumables: getConsumableData(),
     materials: getMaterialData()
   };

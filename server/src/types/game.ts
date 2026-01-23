@@ -19,14 +19,6 @@ export interface CombatStats {
   maxMp: number; // 最大法力
 }
 
-// 每日行动计数与限流状态
-export interface DailyState {
-  remainingTicks: number; // 今日剩余行动次数
-  lastResetDate: string; // 上次重置日期
-  beastCount: number; // 今日妖兽遭遇次数
-  fortuneCount: number; // 今日奇遇次数
-}
-
 import type { EquipmentSlots, Item } from "./item";
 
 // 游戏主状态对象（用于存档与运行）
@@ -43,7 +35,6 @@ export interface GameState {
   statPoints: number; // 待分配属性点
   baseStats: BaseStats; // 基础属性
   combatStats: CombatStats; // 战斗属性
-  daily: DailyState; // 每日计数状态
   alive: boolean; // 是否存活
   lastTs: number; // 最近一次更新时间戳
   eventLog: string[]; // 事件日志

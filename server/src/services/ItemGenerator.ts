@@ -12,17 +12,38 @@ import {
   getEquipmentData,
   getConsumableData,
   getMaterialData,
-  getAllEquipmentTemplates
+  getAllEquipmentTemplates,
+  getRequiredLevelFromTemplateId,
+  getItemConfig
 } from "./itemService";
+import { getEquipmentDescription, getEquipmentName } from "./equipmentLore";
 
 // 装备模板定义（从itemService.ts复制）
+type CombatStatType = keyof CombatStats;
+
+interface StatRange {
+  type: CombatStatType;
+  min: number;
+  max: number;
+}
+
+type GearSource = "system" | "crafted";
+
 interface EquipmentTemplate {
   templateId: string;
   name: string;
   description?: string;
   slot: EquipmentSlot;
-  combatStatTypes: (keyof CombatStats)[];
-  combatValueRange: [number, number];
+  source: GearSource;
+  combatStats: StatRange[];
+  baseAffix?: {
+    stats: Array<keyof BaseStats>;
+    min: number;
+    max: number;
+    count?: number;
+    chance?: number;
+    negativeChance?: number;
+  };
 }
 
 // 消耗品模板
@@ -39,6 +60,38 @@ interface MaterialTemplate {
   templateId: string;
   name: string;
   description?: string;
+}
+
+function getStatRole(slot: EquipmentSlot, type: CombatStatType): "primary" | "secondary" | "invalid" {
+  switch (slot) {
+    case "weapon":
+      return type === "pdmg" || type === "mdmg" ? "primary" : "invalid";
+    case "helmet":
+      if (type === "pdef") return "primary";
+      return type === "maxHp" || type === "hit" ? "secondary" : "invalid";
+    case "armor":
+      return type === "pdef" || type === "maxHp" ? "primary" : "invalid";
+    case "leggings":
+      if (type === "mdef") return "primary";
+      return type === "maxHp" || type === "pdef" ? "secondary" : "invalid";
+    case "boots":
+      return type === "spd" ? "primary" : "invalid";
+    case "accessory":
+      if (type === "hit" || type === "maxMp") return "primary";
+      return type === "mdef" ? "secondary" : "invalid";
+    default:
+      return "invalid";
+  }
+}
+
+function shouldSkipSecondary(template: EquipmentTemplate, config: ReturnType<typeof getItemConfig>): boolean {
+  if (template.slot !== "helmet" && template.slot !== "leggings" && template.slot !== "accessory") {
+    return false;
+  }
+  const chance = template.source === "crafted"
+    ? config.secondary.craftedChance
+    : config.secondary.systemChance;
+  return Math.random() > chance;
 }
 
 // 批量生成选项
@@ -72,13 +125,44 @@ export class ItemGenerator {
    * @returns 装备等级段（1, 5, 10, 15, ..., 100）
    */
   private getEquipmentLevelTier(level: number): number {
-    // 确保等级至少为1
     const safeLevel = Math.max(1, level);
-    // 将等级映射到最近的5的倍数（向下取整）
-    // 1-4级 -> 1级装备，5-9级 -> 5级装备，10-14级 -> 10级装备，以此类推
-    const tier = Math.floor((safeLevel - 1) / 5) * 5 + 1;
-    // 确保不超过100级
-    return Math.min(tier, 100);
+    // 1-4级 -> 1级装备；5-9级 -> 5级装备；10-14级 -> 10级装备 ...
+    // 注意：装备模板ID使用 001/005/010/...（不是 001/006/011/...）
+    const tier = safeLevel < 5 ? 1 : Math.floor(safeLevel / 5) * 5;
+    return Math.min(Math.max(1, tier), 100);
+  }
+
+  private rollBaseAffixes(template: EquipmentTemplate, source: GearSource): Partial<BaseStats> {
+    // 规则：只有打造装备才会出现绿字；具体可加属性/上下限由 equipment.json 决定
+    if (source !== "crafted") return {};
+    const cfg = template.baseAffix;
+    if (!cfg || !Array.isArray(cfg.stats) || cfg.stats.length === 0) return {};
+    const chance = typeof cfg.chance === "number" ? cfg.chance : 0.8;
+    if (Math.random() >= chance) return {};
+
+    const min = Math.floor(cfg.min);
+    const max = Math.floor(cfg.max);
+    const safeMin = Number.isFinite(min) ? min : 1;
+    const safeMax = Number.isFinite(max) ? Math.max(safeMin, max) : safeMin;
+    const count = typeof cfg.count === "number" ? Math.max(1, Math.floor(cfg.count)) : 2;
+    const negativeChance = typeof cfg.negativeChance === "number" ? cfg.negativeChance : 0.18;
+
+    const picked = new Set<keyof BaseStats>();
+    while (picked.size < Math.min(count, cfg.stats.length)) {
+      const k = cfg.stats[Math.floor(Math.random() * cfg.stats.length)];
+      picked.add(k);
+    }
+
+    const baseStats: Partial<BaseStats> = {};
+    for (const key of picked) {
+      const magnitude = this.randomInRange(safeMin, safeMax);
+      const sign = Math.random() < negativeChance ? -1 : 1;
+      const value = magnitude * sign;
+      if (value !== 0) {
+        baseStats[key] = value;
+      }
+    }
+    return baseStats;
   }
 
   /**
@@ -86,7 +170,7 @@ export class ItemGenerator {
    * @param level 物品等级
    * @param slot 装备槽位（可选）
    */
-  generateEquipment(level: number, slot?: EquipmentSlot): Equipment {
+  generateEquipment(level: number, slot?: EquipmentSlot, sourceOverride?: GearSource): Equipment {
     // 根据等级获取对应的装备等级段
     const tier = this.getEquipmentLevelTier(level);
     const tierStr = tier.toString().padStart(3, '0'); // 001, 005, 010, etc.
@@ -95,11 +179,11 @@ export class ItemGenerator {
     let templates: EquipmentTemplate[];
     if (slot) {
       templates = getAllEquipmentTemplates().filter(
-        t => t.slot === slot && t.templateId.endsWith(`_${tierStr}`)
+        t => t.slot === slot && t.templateId.endsWith(`_${tierStr}`) && (!sourceOverride || t.source === sourceOverride)
       );
     } else {
       templates = getAllEquipmentTemplates().filter(
-        t => t.templateId.endsWith(`_${tierStr}`)
+        t => t.templateId.endsWith(`_${tierStr}`) && (!sourceOverride || t.source === sourceOverride)
       );
     }
 
@@ -110,11 +194,11 @@ export class ItemGenerator {
         const currentTierStr = currentTier.toString().padStart(3, '0');
         if (slot) {
           templates = getAllEquipmentTemplates().filter(
-            t => t.slot === slot && t.templateId.endsWith(`_${currentTierStr}`)
+            t => t.slot === slot && t.templateId.endsWith(`_${currentTierStr}`) && (!sourceOverride || t.source === sourceOverride)
           );
         } else {
           templates = getAllEquipmentTemplates().filter(
-            t => t.templateId.endsWith(`_${currentTierStr}`)
+            t => t.templateId.endsWith(`_${currentTierStr}`) && (!sourceOverride || t.source === sourceOverride)
           );
         }
         // 如果当前tier是1，不能再减了，否则会变成负数
@@ -144,44 +228,80 @@ export class ItemGenerator {
 
     const template = templates[Math.floor(Math.random() * templates.length)];
 
-    // 根据等级计算属性
-    const levelScale = 1 + (level - 1) * 0.1;
+    // 需求等级以模板等级为准（001 -> 0级）
+    const requiredLevel = getRequiredLevelFromTemplateId(template.templateId);
+
+    return this.buildEquipmentFromTemplate(template, level, requiredLevel, sourceOverride);
+  }
+
+  /**
+   * 通过模板生成指定装备
+   */
+  generateEquipmentFromTemplate(templateId: string, level?: number, sourceOverride?: GearSource): Equipment {
+    const template = getAllEquipmentTemplates().find((t) => t.templateId === templateId);
+    if (!template) {
+      throw new Error("装备模板不存在");
+    }
+    const requiredLevel = getRequiredLevelFromTemplateId(templateId);
+    const finalLevel = level ?? requiredLevel;
+    return this.buildEquipmentFromTemplate(template, finalLevel, requiredLevel, sourceOverride);
+  }
+
+  private buildEquipmentFromTemplate(
+    template: EquipmentTemplate,
+    level: number,
+    requiredLevel: number,
+    sourceOverride?: GearSource
+  ): Equipment {
     const combatStats: Partial<CombatStats> = {};
+    const config = getItemConfig();
+    const source: GearSource = sourceOverride ?? template.source;
 
     // 生成战斗属性
-    for (let i = 0; i < template.combatStatTypes.length; i++) {
-      const statType = template.combatStatTypes[i];
-      const [min, max] = template.combatValueRange;
-      
-      // 根据槽位和属性类型调整范围
-      // 对于次要属性（第二个属性），使用较小的范围
-      let value: number;
-      if (i === 0) {
-        // 第一个属性（主要属性）：使用完整范围
-        value = Math.floor((this.randomInRange(min, max) * levelScale));
-      } else {
-        // 第二个属性（次要属性）：使用较小范围（约为主属性的40-50%）
-        const smallMin = Math.max(1, Math.floor(min * 0.4));
-        const smallMax = Math.floor(max * 0.5);
-        value = Math.floor((this.randomInRange(smallMin, smallMax) * levelScale));
+    for (const stat of template.combatStats) {
+      const role = getStatRole(template.slot, stat.type);
+      if (role === "invalid") {
+        continue;
       }
-      
-      const currentValue = combatStats[statType];
+      if (role === "secondary" && shouldSkipSecondary({ ...template, source }, config)) {
+        continue;
+      }
+      const min = Math.floor(stat.min * config.crafted.minMultiplier);
+      const max = source === "crafted"
+        ? Math.floor(stat.max * config.crafted.maxMultiplier)
+        : stat.max;
+      const safeMax = Math.max(min, max);
+      const value = this.randomInRange(min, safeMax);
+
+      const currentValue = combatStats[stat.type];
       if (typeof currentValue === "number") {
-        (combatStats as any)[statType] = currentValue + value;
+        (combatStats as any)[stat.type] = currentValue + value;
       } else {
-        (combatStats as any)[statType] = value;
+        (combatStats as any)[stat.type] = value;
       }
     }
 
-    const name = template.name;
-    // 优先使用模板中的描述，如果不存在或为空则使用默认描述
-    const description = (template.description && template.description.trim()) 
-      ? template.description 
-      : `${name}，适合${level}级修士使用。`;
+    const combatTypes = template.combatStats.map((s) => s.type);
+    const tier = (() => {
+      const match = template.templateId.match(/_(\d{3})$/);
+      if (!match) return 1;
+      const parsed = Number.parseInt(match[1], 10);
+      if (!Number.isFinite(parsed) || parsed <= 0) return 1;
+      if (parsed === 1) return 1;
+      if (parsed % 5 !== 0) return 1;
+      return parsed / 5 + 1;
+    })();
+    const name = template.name && template.name.trim()
+      ? template.name
+      : getEquipmentName(template.slot, tier, combatTypes);
+    const description = template.description && template.description.trim()
+      ? template.description
+      : getEquipmentDescription(template.slot, tier, combatTypes);
 
-    // 需求等级等于装备等级段
-    const requiredLevel = tier;
+    const baseStats = this.rollBaseAffixes(template, source);
+    const finalDescription = source === "crafted" && !description.includes("打造")
+      ? `${description}\n（打造装备）`
+      : description;
 
     return {
       id: this.generateItemId(),
@@ -191,9 +311,9 @@ export class ItemGenerator {
       level,
       slot: template.slot,
       requiredLevel,
-      baseStats: {},
+      baseStats,
       combatStats,
-      description
+      description: finalDescription
     };
   }
 

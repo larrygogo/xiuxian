@@ -3,6 +3,7 @@ import type { AxiosError } from 'axios';
 import { gameAPI } from '../services/api';
 import { connectSocket, disconnectSocket } from '../services/socket';
 import type { ActionResult, GameState } from '../types/game';
+import type { EquipmentSlot } from '../types/item';
 
 interface ApiError {
   error?: string;
@@ -11,6 +12,7 @@ interface ApiError {
 interface GameStateResponse {
   state: GameState;
   message?: string;
+  error?: string;
 }
 
 interface StatAllocationPayload {
@@ -104,21 +106,6 @@ export function useGameState(userId: string | null | undefined) {
     }
   };
 
-  const tick = async (): Promise<ActionResult> => {
-    try {
-      const response = await gameAPI.tick();
-      const data = response.data as GameStateResponse;
-      setState(data.state);
-      return { success: true, message: data.message };
-    } catch (err: unknown) {
-      const message = (err as AxiosError<ApiError>).response?.data?.error || '行动失败';
-      return {
-        success: false,
-        error: message,
-      };
-    }
-  };
-
   const createCharacter = async (name: string): Promise<ActionResult> => {
     try {
       const response = await gameAPI.createCharacter(name);
@@ -156,7 +143,12 @@ export function useGameState(userId: string | null | undefined) {
       setState(data.state);
       return { success: true, message: data.message };
     } catch (err: unknown) {
-      const message = (err as AxiosError<ApiError>).response?.data?.error || '装备失败';
+      const axiosError = err as AxiosError<ApiError>;
+      const data = axiosError.response?.data as GameStateResponse | undefined;
+      if (data?.state) {
+        setState(data.state);
+      }
+      const message = data?.error || '装备失败';
       return {
         success: false,
         error: message,
@@ -164,7 +156,7 @@ export function useGameState(userId: string | null | undefined) {
     }
   };
 
-  const unequipItem = async (slot: string): Promise<ActionResult> => {
+  const unequipItem = async (slot: EquipmentSlot): Promise<ActionResult> => {
     try {
       const response = await gameAPI.unequipItem(slot);
       const data = response.data as GameStateResponse;
@@ -229,7 +221,6 @@ export function useGameState(userId: string | null | undefined) {
     loading, 
     error, 
     heal, 
-    tick, 
     createCharacter, 
     renameCharacter, 
     equipItem,
