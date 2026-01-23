@@ -240,7 +240,7 @@ export function ItemCard({ item, onEquip, onUse, onUnequip, isEquipped, slot, on
         </>
       )}
       {isConsumable(item) && item.stackSize > 1 && (
-        <div className={styles['tooltip-stack']}>堆叠: {item.stackSize}</div>
+        <div className={styles['tooltip-stack']}>数量: {item.stackSize}</div>
       )}
       {renderStats()}
       {renderEffect()}
@@ -263,7 +263,7 @@ export function ItemCard({ item, onEquip, onUse, onUnequip, isEquipped, slot, on
       >
         <div className={styles['item-icon']}>{getItemIcon(item)}</div>
         {isConsumable(item) && item.stackSize > 1 && (
-          <div className={styles['item-stack']}>x{item.stackSize}</div>
+          <div className={styles['item-stack']}>{item.stackSize}</div>
         )}
       </div>
       {typeof document !== 'undefined' && createPortal(tooltipContent, document.body)}

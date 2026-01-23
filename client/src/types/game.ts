@@ -36,7 +36,6 @@ export interface GameState {
   qi: number;
   lingshi?: number;
   statPoints?: number;
-  alive: boolean;
   baseStats?: BaseStats;
   combatStats?: CombatStats;
   eventLog?: string[];

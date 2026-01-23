@@ -10,8 +10,8 @@ import { toClientState } from "../services/stateView";
 import { heal } from "../systems/actions";
 import { stepUpOnce, needQi } from "../systems/progression";
 import { logLine } from "../services/logger";
-import { equipItem, unequipItem, useConsumable, reorderItems, addItemToInventory } from "../systems/items";
-import { getAllEquipmentTemplates, getItemTemplates, itemGenerator } from "../services/itemService";
+import { equipItem, unequipItem, useConsumable, reorderItems, addItemToInventory, mergeStackableItems } from "../systems/items";
+import { getAllEquipmentTemplates, getConsumableData, getItemTemplates, getMaterialData, itemGenerator } from "../services/itemService";
 import { refreshDerivedStats } from "../systems/stats";
 import { getUserById } from "../services/userService";
 import { generateCharacterId } from "../state/defaultState";
@@ -318,7 +318,9 @@ router.post("/items/reorder", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "游戏状态未找到" });
     }
 
-    const success = reorderItems(state, itemIds, Boolean(allowDiscard));
+    const actorName = state.name && state.name.trim().length > 0 ? state.name : "无名修士";
+    const actorLabel = `${actorName} (${state.characterId})`;
+    const success = reorderItems(state, itemIds, Boolean(allowDiscard), actorLabel);
     if (!success) {
       return res.status(400).json({ error: "重排序失败" });
     }
@@ -328,6 +330,43 @@ router.post("/items/reorder", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("重排序物品错误:", error);
     res.status(500).json({ error: "重排序物品失败" });
+  }
+});
+
+/**
+ * 合并同类堆叠物品
+ * POST /api/game/items/merge
+ */
+router.post("/items/merge", async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "未提供认证令牌" });
+    }
+
+    const { fromItemId, toItemId } = req.body as { fromItemId?: string; toItemId?: string };
+    if (!fromItemId || !toItemId) {
+      return res.status(400).json({ error: "物品ID不能为空" });
+    }
+
+    const state = getUserGameState(userId);
+    if (!state) {
+      return res.status(404).json({ error: "游戏状态未找到" });
+    }
+
+    const result = mergeStackableItems(state, fromItemId, toItemId);
+    if (result.error) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    if (result.merged) {
+      await updateUserGameState(userId, state);
+    }
+
+    res.json({ message: result.merged ? "合并成功" : "无法合并", merged: result.merged, state: toClientState(state) });
+  } catch (error) {
+    console.error("合并物品错误:", error);
+    res.status(500).json({ error: "合并物品失败" });
   }
 });
 
@@ -347,7 +386,7 @@ router.post("/actions/levelup", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "游戏状态未找到" });
     }
 
-    if (!state.alive) {
+    if (state.hp <= 0) {
       return res.status(400).json({ error: "你已死亡，无法升级" });
     }
 
@@ -384,7 +423,7 @@ router.post("/actions/allocate-stats", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "游戏状态未找到" });
     }
 
-    if (!state.alive) {
+    if (state.hp <= 0) {
       return res.status(400).json({ error: "你已死亡，无法分配属性点" });
     }
 
@@ -436,14 +475,18 @@ router.post("/actions/allocate-stats", async (req: Request, res: Response) => {
  */
 router.post("/admin/give-item", requireAdmin, async (req: Request, res: Response) => {
   try {
-    const { targetUserId, targetCharacterId, itemType, slot, level, templateId, crafted } = req.body as {
+    const { targetUserId, targetCharacterId, itemType, slot, level, templateId, crafted, consumables, materials, equipments, amount } = req.body as {
       targetUserId?: number;
       targetCharacterId?: number;
-      itemType?: ItemType;
+      itemType?: ItemType | "lingshi";
       slot?: EquipmentSlot;
       level?: number;
       templateId?: string;
       crafted?: boolean;
+      consumables?: Array<{ templateId?: string; quantity?: number }>;
+      materials?: Array<{ templateId?: string; quantity?: number }>;
+      equipments?: Array<{ templateId?: string; quantity?: number }>;
+      amount?: number;
     };
 
     // 确定目标用户ID：优先使用 targetUserId，如果没有则通过 targetCharacterId 查找
@@ -479,11 +522,167 @@ router.post("/admin/give-item", requireAdmin, async (req: Request, res: Response
       return res.status(400).json({ error: "打造标记必须为布尔值" });
     }
 
+    const hasConsumableList = Array.isArray(consumables) && consumables.length > 0;
+    const hasMaterialList = Array.isArray(materials) && materials.length > 0;
+    const hasEquipmentList = Array.isArray(equipments) && equipments.length > 0;
+    const listCount = [hasConsumableList, hasMaterialList, hasEquipmentList].filter(Boolean).length;
+
+    if (listCount > 1) {
+      return res.status(400).json({ error: "一次只能提供一种批量列表" });
+    }
+
+    if (hasConsumableList && itemType && itemType !== "consumable") {
+      return res.status(400).json({ error: "赠送消耗品列表时，物品类型必须为 consumable" });
+    }
+    if (hasMaterialList && itemType && itemType !== "material") {
+      return res.status(400).json({ error: "赠送材料列表时，物品类型必须为 material" });
+    }
+    if (hasEquipmentList && itemType && itemType !== "equipment") {
+      return res.status(400).json({ error: "赠送装备列表时，物品类型必须为 equipment" });
+    }
+
+    const resolvedItemType: ItemType | "lingshi" | undefined = hasConsumableList
+      ? "consumable"
+      : hasMaterialList
+        ? "material"
+        : hasEquipmentList
+          ? "equipment"
+          : itemType;
+
+    const adminLogPrefix = (() => {
+      const ts = new Date().toLocaleString();
+      return {
+        event: `[${ts}] 系统赠送获得 `,
+        console: (() => {
+          const actorName = targetState.name && targetState.name.trim().length > 0 ? targetState.name : "无名修士";
+          const actorLabel = `${actorName}(${targetState.characterId})`;
+          return `[${ts}] ${actorLabel}：系统赠送获得 `;
+        })()
+      };
+    })();
+
+    let itemsToLog: Array<{ name: string; quantity: number }> = [];
+    let responseMessage = "";
+    let responseItems: Array<{ templateId: string; name: string; quantity: number }> | undefined;
+
+    const tryAddToInventory = (
+      inventory: Array<unknown>,
+      entry: { templateId: string; type: string; stackSize: number },
+      maxStackMap?: Map<string, number>
+    ) => {
+      const inventorySize = 20;
+      while (inventory.length < inventorySize) {
+        inventory.push(null);
+      }
+      inventory.splice(inventorySize);
+
+      const existingItem = inventory.find((slot: unknown) => {
+        if (!slot || typeof slot !== "object") return false;
+        const typed = slot as { templateId?: string; type?: string };
+        return typed.templateId === entry.templateId && typed.type === entry.type;
+      }) as { stackSize?: number } | undefined;
+
+      if (existingItem && typeof existingItem.stackSize === "number" && entry.type !== "material") {
+        const maxStack = entry.type === "consumable"
+          ? (maxStackMap?.get(entry.templateId) ?? 99)
+          : 99;
+        if (existingItem.stackSize + entry.stackSize <= maxStack) {
+          existingItem.stackSize += entry.stackSize;
+          return true;
+        }
+      }
+
+      const emptyIndex = inventory.findIndex((slot) => slot === null);
+      if (emptyIndex === -1) {
+        return false;
+      }
+      inventory[emptyIndex] = entry;
+      return true;
+    };
+
     // 生成物品
     let item;
-    if (itemType === "equipment") {
+    if (resolvedItemType === "equipment") {
       const sourceOverride = crafted ? "crafted" : undefined;
-      if (templateId) {
+      if (hasEquipmentList) {
+        const templates = getAllEquipmentTemplates();
+        const templateMap = new Map(templates.map((template) => [template.templateId, template]));
+        const plannedTemplateIds: string[] = [];
+
+        for (let i = 0; i < equipments.length; i += 1) {
+          const entry = equipments[i];
+          const entryTemplateId = entry?.templateId?.trim();
+          const quantity = Number(entry?.quantity ?? 1);
+
+          if (!entryTemplateId) {
+            return res.status(400).json({ error: `第 ${i + 1} 个装备缺少 templateId` });
+          }
+          if (!Number.isFinite(quantity) || quantity <= 0) {
+            return res.status(400).json({ error: `第 ${i + 1} 个装备数量无效` });
+          }
+          if (!templateMap.has(entryTemplateId)) {
+            return res.status(400).json({ error: `装备模板不存在：${entryTemplateId}` });
+          }
+
+          const repeat = Math.floor(quantity);
+          for (let j = 0; j < repeat; j += 1) {
+            plannedTemplateIds.push(entryTemplateId);
+          }
+        }
+
+        const inventorySnapshot = JSON.parse(JSON.stringify(targetState.inventory ?? [])) as Array<unknown>;
+        const canAddAll = plannedTemplateIds.every(() => {
+          const emptyIndex = inventorySnapshot.findIndex(slot => slot === null);
+          if (emptyIndex === -1) {
+            return false;
+          }
+          inventorySnapshot[emptyIndex] = { type: "equipment" };
+          return true;
+        });
+
+        if (!canAddAll) {
+          return res.status(400).json({ error: "目标用户背包已满，无法添加物品" });
+        }
+
+        const eventLogStart = targetState.eventLog?.length ?? 0;
+        const summaryMap = new Map<string, { templateId: string; name: string; quantity: number }>();
+
+        for (const entryTemplateId of plannedTemplateIds) {
+          const generated = itemGenerator.generateEquipmentFromTemplate(entryTemplateId, undefined, sourceOverride);
+          const success = addItemToInventory(targetState, generated);
+          if (!success) {
+            return res.status(400).json({ error: "目标用户背包已满，无法添加物品" });
+          }
+
+          const existing = summaryMap.get(generated.templateId);
+          if (existing) {
+            existing.quantity += 1;
+          } else {
+            summaryMap.set(generated.templateId, {
+              templateId: generated.templateId,
+              name: generated.name,
+              quantity: 1
+            });
+          }
+
+          itemsToLog.push({ name: generated.name, quantity: 1 });
+        }
+
+        if (!targetState.eventLog) {
+          targetState.eventLog = [];
+        }
+
+        for (let i = 0; i < itemsToLog.length; i += 1) {
+          const logIndex = eventLogStart + i;
+          const entry = itemsToLog[i];
+          const quantityLabel = entry.quantity > 1 ? ` x${entry.quantity}` : "";
+          targetState.eventLog[logIndex] = `${adminLogPrefix.event}${entry.name}${quantityLabel}。`;
+          console.log(`${adminLogPrefix.console}${entry.name}${quantityLabel}。`);
+        }
+
+        responseItems = Array.from(summaryMap.values());
+        responseMessage = `成功赠送装备列表给用户 ${targetUser.username} (用户ID: ${finalTargetUserId}, 角色ID: ${targetState.characterId})`;
+      } else if (templateId) {
         try {
           item = itemGenerator.generateEquipmentFromTemplate(templateId, undefined, sourceOverride);
         } catch (err) {
@@ -503,32 +702,253 @@ router.post("/admin/give-item", requireAdmin, async (req: Request, res: Response
           item = itemGenerator.generateEquipment(itemLevel, slot, sourceOverride);
         }
       }
-    } else if (itemType === "consumable") {
-      item = itemGenerator.generateConsumable(itemLevel);
-    } else if (itemType === "material") {
-      item = itemGenerator.generateMaterial(itemLevel);
-    } else {
-      item = itemGenerator.generateRandomItem(itemLevel, itemType);
-    }
+    } else if (resolvedItemType === "consumable") {
+      if (hasConsumableList) {
+        const templates = getConsumableData();
+        const templateMap = new Map(templates.map((template) => [template.templateId, template]));
+        const maxStackMap = new Map(templates.map((template) => [template.templateId, template.maxStack || 99]));
+        const plannedStacks: Array<{ templateId: string; stackSize: number }> = [];
 
-    // 添加到目标用户背包
-    const success = addItemToInventory(targetState, item);
-    if (!success) {
-      return res.status(400).json({ error: "目标用户背包已满，无法添加物品" });
-    }
+        for (let i = 0; i < consumables.length; i += 1) {
+          const entry = consumables[i];
+          const entryTemplateId = entry?.templateId?.trim();
+          const quantity = Number(entry?.quantity);
 
-    // 替换最后一条日志（addItemToInventory 添加的"获得"消息）为更详细的日志
-    if (targetState.eventLog && targetState.eventLog.length > 0) {
-      const lastLog = targetState.eventLog[targetState.eventLog.length - 1];
-      // 如果最后一条日志是"获得"消息，替换它
-      if (lastLog && lastLog.includes(`获得 ${item.name}`)) {
-        const userDisplayName = targetState.name && targetState.name !== "无名修士" 
-          ? `${targetState.name}(${targetUser.username})` 
-          : targetUser.username;
-        const ts = new Date().toLocaleString();
-        targetState.eventLog[targetState.eventLog.length - 1] = `[${ts}] 管理员赠送：${userDisplayName} 获得 ${item.name}。`;
-        console.log(`[${ts}] 管理员赠送：${userDisplayName} 获得 ${item.name}。`);
+          if (!entryTemplateId) {
+            return res.status(400).json({ error: `第 ${i + 1} 个消耗品缺少 templateId` });
+          }
+          if (!Number.isFinite(quantity) || quantity <= 0) {
+            return res.status(400).json({ error: `第 ${i + 1} 个消耗品数量无效` });
+          }
+
+          const template = templateMap.get(entryTemplateId);
+          if (!template) {
+            return res.status(400).json({ error: `消耗品模板不存在：${entryTemplateId}` });
+          }
+
+          const maxStack = template.maxStack || 99;
+          let remaining = Math.floor(quantity);
+          while (remaining > 0) {
+            const stackSize = Math.min(maxStack, remaining);
+            plannedStacks.push({ templateId: entryTemplateId, stackSize });
+            remaining -= stackSize;
+          }
+        }
+
+        const plannedItems: Array<ReturnType<typeof itemGenerator.generateConsumable>> = [];
+        for (const stack of plannedStacks) {
+          const template = templateMap.get(stack.templateId);
+          if (!template) {
+            return res.status(400).json({ error: `消耗品模板不存在：${stack.templateId}` });
+          }
+          const preview = itemGenerator.generateConsumable(itemLevel);
+          plannedItems.push({
+            ...preview,
+            templateId: template.templateId,
+            name: template.name,
+            effect: { ...template.effect },
+            stackSize: stack.stackSize,
+            description: template.description || preview.description
+          });
+        }
+
+        const inventorySnapshot = JSON.parse(JSON.stringify(targetState.inventory ?? [])) as Array<unknown>;
+        const canAddAll = plannedItems.every((plannedItem) =>
+          tryAddToInventory(inventorySnapshot, {
+            templateId: plannedItem.templateId,
+            type: plannedItem.type,
+            stackSize: plannedItem.stackSize
+          }, maxStackMap)
+        );
+        if (!canAddAll) {
+          return res.status(400).json({ error: "目标用户背包已满，无法添加物品" });
+        }
+
+        const eventLogStart = targetState.eventLog?.length ?? 0;
+        const summaryMap = new Map<string, { templateId: string; name: string; quantity: number }>();
+
+        for (const grantItem of plannedItems) {
+          const success = addItemToInventory(targetState, grantItem);
+          if (!success) {
+            return res.status(400).json({ error: "目标用户背包已满，无法添加物品" });
+          }
+
+          const existing = summaryMap.get(grantItem.templateId);
+          if (existing) {
+            existing.quantity += grantItem.stackSize;
+          } else {
+            summaryMap.set(grantItem.templateId, {
+              templateId: grantItem.templateId,
+              name: grantItem.name,
+              quantity: grantItem.stackSize
+            });
+          }
+
+          const displayName = grantItem.level
+            ? `${grantItem.name}（${grantItem.level}级）`
+            : grantItem.name;
+          itemsToLog.push({ name: displayName, quantity: grantItem.stackSize });
+        }
+
+        if (!targetState.eventLog) {
+          targetState.eventLog = [];
+        }
+
+        for (let i = 0; i < itemsToLog.length; i += 1) {
+          const logIndex = eventLogStart + i;
+          const entry = itemsToLog[i];
+          const quantityLabel = entry.quantity > 1 ? ` x${entry.quantity}` : "";
+          targetState.eventLog[logIndex] = `${adminLogPrefix.event}${entry.name}${quantityLabel}。`;
+          console.log(`${adminLogPrefix.console}${entry.name}${quantityLabel}。`);
+        }
+
+        responseItems = Array.from(summaryMap.values());
+        responseMessage = `成功赠送消耗品列表给用户 ${targetUser.username} (用户ID: ${finalTargetUserId}, 角色ID: ${targetState.characterId})`;
+      } else {
+        item = itemGenerator.generateConsumable(itemLevel);
       }
+    } else if (resolvedItemType === "material") {
+      if (hasMaterialList) {
+        const templates = getMaterialData();
+        const templateMap = new Map(templates.map((template) => [template.templateId, template]));
+        const plannedStacks: Array<{ templateId: string; stackSize: number }> = [];
+
+        for (let i = 0; i < materials.length; i += 1) {
+          const entry = materials[i];
+          const entryTemplateId = entry?.templateId?.trim();
+          const quantity = Number(entry?.quantity);
+
+          if (!entryTemplateId) {
+            return res.status(400).json({ error: `第 ${i + 1} 个材料缺少 templateId` });
+          }
+          if (!Number.isFinite(quantity) || quantity <= 0) {
+            return res.status(400).json({ error: `第 ${i + 1} 个材料数量无效` });
+          }
+
+          const template = templateMap.get(entryTemplateId);
+          if (!template) {
+            return res.status(400).json({ error: `材料模板不存在：${entryTemplateId}` });
+          }
+
+          const count = Math.floor(quantity);
+          for (let j = 0; j < count; j += 1) {
+            plannedStacks.push({ templateId: entryTemplateId, stackSize: 1 });
+          }
+        }
+
+        const plannedItems: Array<ReturnType<typeof itemGenerator.generateMaterial>> = [];
+        for (const stack of plannedStacks) {
+          const template = templateMap.get(stack.templateId);
+          if (!template) {
+            return res.status(400).json({ error: `材料模板不存在：${stack.templateId}` });
+          }
+          const preview = itemGenerator.generateMaterial(itemLevel);
+          plannedItems.push({
+            ...preview,
+            templateId: template.templateId,
+            name: template.name,
+            stackSize: stack.stackSize,
+            description: template.description || preview.description,
+            level: template.level ?? preview.level
+          });
+        }
+
+        const inventorySnapshot = JSON.parse(JSON.stringify(targetState.inventory ?? [])) as Array<unknown>;
+        const canAddAll = plannedItems.every((plannedItem) =>
+          tryAddToInventory(inventorySnapshot, {
+            templateId: plannedItem.templateId,
+            type: plannedItem.type,
+            stackSize: plannedItem.stackSize
+          })
+        );
+        if (!canAddAll) {
+          return res.status(400).json({ error: "目标用户背包已满，无法添加物品" });
+        }
+
+        const eventLogStart = targetState.eventLog?.length ?? 0;
+        const summaryMap = new Map<string, { templateId: string; name: string; quantity: number }>();
+
+        for (const grantItem of plannedItems) {
+          const success = addItemToInventory(targetState, grantItem);
+          if (!success) {
+            return res.status(400).json({ error: "目标用户背包已满，无法添加物品" });
+          }
+
+          const existing = summaryMap.get(grantItem.templateId);
+          if (existing) {
+            existing.quantity += grantItem.stackSize;
+          } else {
+            summaryMap.set(grantItem.templateId, {
+              templateId: grantItem.templateId,
+              name: grantItem.name,
+              quantity: grantItem.stackSize
+            });
+          }
+
+          itemsToLog.push({ name: grantItem.name, quantity: grantItem.stackSize });
+        }
+
+        if (!targetState.eventLog) {
+          targetState.eventLog = [];
+        }
+
+        for (let i = 0; i < itemsToLog.length; i += 1) {
+          const logIndex = eventLogStart + i;
+          const entry = itemsToLog[i];
+          const quantityLabel = entry.quantity > 1 ? ` x${entry.quantity}` : "";
+          targetState.eventLog[logIndex] = `${adminLogPrefix.event}${entry.name}${quantityLabel}。`;
+          console.log(`${adminLogPrefix.console}${entry.name}${quantityLabel}。`);
+        }
+
+        responseItems = Array.from(summaryMap.values());
+        responseMessage = `成功赠送材料列表给用户 ${targetUser.username} (用户ID: ${finalTargetUserId}, 角色ID: ${targetState.characterId})`;
+      } else {
+        item = itemGenerator.generateMaterial(itemLevel);
+      }
+    } else if (resolvedItemType === "lingshi") {
+      const parsedAmount = Number(amount);
+      if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+        return res.status(400).json({ error: "灵石数量必须为正整数" });
+      }
+
+      const grantAmount = Math.floor(parsedAmount);
+      const oldLingshi = targetState.lingshi ?? 0;
+      targetState.lingshi = oldLingshi + grantAmount;
+
+      const actorName = targetState.name && targetState.name.trim().length > 0 ? targetState.name : "无名修士";
+      const actorLabel = `${actorName}(${targetState.characterId})`;
+      const eventMessage = `系统赠送获得 ${grantAmount} 灵石（${oldLingshi} → ${targetState.lingshi}）。`;
+      logLine(eventMessage, targetState, `${actorLabel}：${eventMessage}`);
+
+      responseMessage = `成功赠送 ${grantAmount} 灵石给用户 ${targetUser.username} (用户ID: ${finalTargetUserId}, 角色ID: ${targetState.characterId})`;
+    } else {
+      item = itemGenerator.generateRandomItem(itemLevel, resolvedItemType);
+    }
+
+    if (item) {
+      // 添加到目标用户背包
+      const success = addItemToInventory(targetState, item);
+      if (!success) {
+        return res.status(400).json({ error: "目标用户背包已满，无法添加物品" });
+      }
+
+      // 替换最后一条日志（addItemToInventory 添加的"获得"消息）为更详细的日志
+      if (targetState.eventLog && targetState.eventLog.length > 0) {
+        const lastLog = targetState.eventLog[targetState.eventLog.length - 1];
+        // 如果最后一条日志是"获得"消息，替换它
+        if (lastLog && lastLog.includes(`获得 ${item.name}`)) {
+          targetState.eventLog[targetState.eventLog.length - 1] = `${adminLogPrefix.event}${item.name}。`;
+          console.log(`${adminLogPrefix.console}${item.name}。`);
+        }
+      }
+
+      itemsToLog = [{ name: item.name, quantity: 1 }];
+      responseMessage = `成功赠送 ${item.name} 给用户 ${targetUser.username} (用户ID: ${finalTargetUserId}, 角色ID: ${targetState.characterId})`;
+      responseItems = [{
+        templateId: item.templateId,
+        name: item.name,
+        quantity: 1
+      }];
     }
 
     // 刷新属性（如果装备了物品可能会影响属性）
@@ -537,14 +957,27 @@ router.post("/admin/give-item", requireAdmin, async (req: Request, res: Response
     // 保存状态并推送更新
     await updateUserGameState(finalTargetUserId, targetState);
 
-    res.json({
-      message: `成功赠送 ${item.name} 给用户 ${targetUser.username} (用户ID: ${finalTargetUserId}, 角色ID: ${targetState.characterId})`,
-      item: {
+    const responsePayload: {
+      message: string;
+      items?: Array<{ templateId: string; name: string; quantity: number }>;
+      item?: { id: string; name: string; type: ItemType };
+    } = {
+      message: responseMessage
+    };
+
+    if (responseItems) {
+      responsePayload.items = responseItems;
+    }
+
+    if (item) {
+      responsePayload.item = {
         id: item.id,
         name: item.name,
         type: item.type
-      }
-    });
+      };
+    }
+
+    res.json(responsePayload);
   } catch (error) {
     console.error("赠送物品错误:", error);
     res.status(500).json({ error: "赠送物品失败" });
@@ -599,10 +1032,10 @@ router.post("/admin/give-exp", requireAdmin, async (req: Request, res: Response)
     targetState.qi += amount;
 
     // 记录日志
-    const userDisplayName = targetState.name && targetState.name !== "无名修士" 
-      ? `${targetState.name}(${targetUser.username})` 
-      : targetUser.username;
-    logLine(`管理员赠送：${userDisplayName} 获得 ${amount} 点灵气（${oldQi} → ${targetState.qi}）。`, targetState);
+    const actorName = targetState.name && targetState.name.trim().length > 0 ? targetState.name : "无名修士";
+    const actorLabel = `${actorName}(${targetState.characterId})`;
+    const eventMessage = `系统赠送获得 ${amount} 点灵气（${oldQi} → ${targetState.qi}）。`;
+    logLine(eventMessage, targetState, `${actorLabel}：${eventMessage}`);
 
     // 保存状态并推送更新
     await updateUserGameState(finalTargetUserId, targetState);

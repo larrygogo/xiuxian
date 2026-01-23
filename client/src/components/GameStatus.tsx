@@ -113,7 +113,7 @@ export function GameStatus({ state, onRename, onHeal }: GameStatusProps) {
               <span className={styles['value']}>{state.hp} / {state.maxHp}</span>
               <button
                 onClick={handleHeal}
-                disabled={healLoading || !state.alive || state.hp >= state.maxHp || state.qi < 15}
+                disabled={healLoading || state.hp <= 0 || state.hp >= state.maxHp || state.qi < 15}
                 className={styles['heal-inline-button']}
                 title="消耗灵气恢复生命"
               >
@@ -193,7 +193,7 @@ export function GameStatus({ state, onRename, onHeal }: GameStatusProps) {
             <span className={styles['value']}>{state.hp} / {state.maxHp}</span>
             <button
               onClick={handleHeal}
-              disabled={healLoading || !state.alive || state.hp >= state.maxHp || state.qi < 15}
+              disabled={healLoading || state.hp <= 0 || state.hp >= state.maxHp || state.qi < 15}
               className={styles['heal-inline-button']}
               title="消耗灵气恢复生命"
             >

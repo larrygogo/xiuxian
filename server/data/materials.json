@@ -1,12 +1,68 @@
 [
   {
-    "templateId": "material_iron",
+    "templateId": "material_iron_001",
     "name": "精铁",
-    "description": "经过提炼的精制铁块，是锻造装备的重要材料。"
+    "description": "经过提炼的精制铁块，可用于锻造装备。",
+    "level": 1
   },
   {
-    "templateId": "material_crystal",
-    "name": "灵石",
-    "description": "凝聚天地灵气的晶石，是修仙者修炼和交易的珍贵资源。"
+    "templateId": "material_iron_010",
+    "name": "精铁",
+    "description": "经过提炼的精制铁块，可用于锻造装备。",
+    "level": 10
+  },
+  {
+    "templateId": "material_iron_020",
+    "name": "精铁",
+    "description": "经过提炼的精制铁块，可用于锻造装备。",
+    "level": 20
+  },
+  {
+    "templateId": "material_iron_030",
+    "name": "精铁",
+    "description": "经过提炼的精制铁块，可用于锻造装备。",
+    "level": 30
+  },
+  {
+    "templateId": "material_iron_040",
+    "name": "精铁",
+    "description": "经过提炼的精制铁块，可用于锻造装备。",
+    "level": 40
+  },
+  {
+    "templateId": "material_iron_050",
+    "name": "精铁",
+    "description": "经过提炼的精制铁块，可用于锻造装备。",
+    "level": 50
+  },
+  {
+    "templateId": "material_iron_060",
+    "name": "精铁",
+    "description": "经过提炼的精制铁块，可用于锻造装备。",
+    "level": 60
+  },
+  {
+    "templateId": "material_iron_070",
+    "name": "精铁",
+    "description": "经过提炼的精制铁块，可用于锻造装备。",
+    "level": 70
+  },
+  {
+    "templateId": "material_iron_080",
+    "name": "精铁",
+    "description": "经过提炼的精制铁块，可用于锻造装备。",
+    "level": 80
+  },
+  {
+    "templateId": "material_iron_090",
+    "name": "精铁",
+    "description": "经过提炼的精制铁块，可用于锻造装备。",
+    "level": 90
+  },
+  {
+    "templateId": "material_iron_100",
+    "name": "精铁",
+    "description": "经过提炼的精制铁块，可用于锻造装备。",
+    "level": 100
   }
 ]

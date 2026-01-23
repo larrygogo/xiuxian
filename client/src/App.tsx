@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from './hooks/useAuth';
 import { useGameState } from './hooks/useGameState';
 import { Login } from './components/Login';
@@ -9,6 +9,8 @@ import { EventLog } from './components/EventLog';
 import { ControlModal } from './components/ControlModal';
 import { Inventory } from './components/Inventory';
 import { AdminGiveItem } from './components/AdminGiveItem';
+import { BattleView } from './battle/BattleView';
+import { battleAPI } from './services/api';
 import bagIcon from './assets/bag-icon.png';
 import styles from './App.module.css';
 import { needQi } from './utils/gameUtils';
@@ -21,6 +23,8 @@ function App() {
   const { state, loading: gameLoading, error, createCharacter, equipItem, unequipItem, useItem, levelUp, allocateStats, refresh } = useGameState(user?.id);
   const [openPanels, setOpenPanels] = useState<Panel[]>([]);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [battleRoomId, setBattleRoomId] = useState<string | null>(null);
+  const [creatingBattle, setCreatingBattle] = useState(false);
   const modalManagerRef = useRef(new ModalManager());
   const modalCardRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -33,6 +37,36 @@ function App() {
   const hpPercent = state && state.maxHp ? Math.min(100, (state.hp / state.maxHp) * 100) : 0;
   const mpPercent = state && state.maxMp ? Math.min(100, ((state.mp ?? 0) / state.maxMp) * 100) : 0;
   const qiPercent = state && requiredQi ? Math.min(100, (state.qi / requiredQi) * 100) : 0;
+
+  const handleBattleExit = useCallback(() => {
+    setBattleRoomId(null);
+  }, []);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    if (battleRoomId) return;
+
+    let cancelled = false;
+
+    const loadActiveBattle = async () => {
+      try {
+        const response = await battleAPI.getActiveRoom();
+        const payload = response.data as { room?: { roomId: string } | null };
+        const activeRoomId = payload.room?.roomId;
+        if (!cancelled && activeRoomId) {
+          setBattleRoomId(activeRoomId);
+        }
+      } catch (error) {
+        console.error('获取活跃战斗房间失败:', error);
+      }
+    };
+
+    loadActiveBattle();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, battleRoomId]);
 
   const handleOpenPanel = (panel: PanelType) => {
     setOpenPanels(modalManagerRef.current.openPanel(panel));
@@ -106,6 +140,33 @@ function App() {
     };
   }, [draggingId]);
 
+  // 处理进入战斗
+  const handleEnterBattle = async () => {
+    if (!user?.id || creatingBattle) return;
+
+    setCreatingBattle(true);
+    try {
+      // 创建战斗房间（使用默认地图和当前玩家）
+      const response = await battleAPI.createRoom({
+        mapId: 'map_forest_1', // 默认地图
+        playerIds: [Number(user.id)]
+      });
+
+      const { room } = response.data as { room: { roomId: string } };
+      setBattleRoomId(room.roomId);
+    } catch (error: any) {
+      console.error('创建战斗房间失败:', error);
+      alert(error.response?.data?.error || '创建战斗房间失败');
+    } finally {
+      setCreatingBattle(false);
+    }
+  };
+
+  // 退出战斗
+  const handleExitBattle = () => {
+    setBattleRoomId(null);
+  };
+
   useEffect(() => {
     modalManagerRef.current.reset();
     setOpenPanels([]);
@@ -159,29 +220,31 @@ function App() {
     <MessageProvider>
       <div className={styles['game-frame']}>
         <div className={styles['app-container']}>
-          <div className={styles['top-left-status']}>
-            <div className={styles['avatar-placeholder']} aria-hidden="true" />
-            <div className={styles['header-bars']}>
-              <div className={styles['header-bar']}>
-                <span className={styles['bar-label']}>生命</span>
-                <div className={styles['bar-track']}>
-                  <div className={`${styles['bar-fill']} ${styles['bar-hp']}`} style={{ width: `${hpPercent}%` }} />
+          {!battleRoomId && (
+            <div className={styles['top-left-status']}>
+              <div className={styles['avatar-placeholder']} aria-hidden="true" />
+              <div className={styles['header-bars']}>
+                <div className={styles['header-bar']}>
+                  <span className={styles['bar-label']}>生命</span>
+                  <div className={styles['bar-track']}>
+                    <div className={`${styles['bar-fill']} ${styles['bar-hp']}`} style={{ width: `${hpPercent}%` }} />
+                  </div>
                 </div>
-              </div>
-              <div className={styles['header-bar']}>
-                <span className={styles['bar-label']}>法力</span>
-                <div className={styles['bar-track']}>
-                  <div className={`${styles['bar-fill']} ${styles['bar-mp']}`} style={{ width: `${mpPercent}%` }} />
+                <div className={styles['header-bar']}>
+                  <span className={styles['bar-label']}>法力</span>
+                  <div className={styles['bar-track']}>
+                    <div className={`${styles['bar-fill']} ${styles['bar-mp']}`} style={{ width: `${mpPercent}%` }} />
+                  </div>
                 </div>
-              </div>
-              <div className={styles['header-bar']}>
-                <span className={styles['bar-label']}>灵气</span>
-                <div className={styles['bar-track']}>
-                  <div className={`${styles['bar-fill']} ${styles['bar-qi']}`} style={{ width: `${qiPercent}%` }} />
+                <div className={styles['header-bar']}>
+                  <span className={styles['bar-label']}>灵气</span>
+                  <div className={styles['bar-track']}>
+                    <div className={`${styles['bar-fill']} ${styles['bar-qi']}`} style={{ width: `${qiPercent}%` }} />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
           <div className={styles['app-content']}>
             {gameLoading ? (
               <div className={styles['loading-message']}>加载游戏状态...</div>
@@ -203,10 +266,29 @@ function App() {
                 }
                 return result;
               }} />
+            ) : battleRoomId ? (
+              <div className={styles['battle-container']}>
+                <BattleView
+                  roomId={battleRoomId}
+                  onRoomMissing={handleBattleExit}
+                  onBattleEnd={handleBattleExit}
+                  headerRight={({ battleEnded }) => (
+                    <button
+                      type="button"
+                      onClick={handleExitBattle}
+                      className={styles['exit-battle-button']}
+                      disabled={!battleEnded}
+                      title={battleEnded ? '退出战斗' : '战斗未结束，无法退出'}
+                    >
+                      退出战斗
+                    </button>
+                  )}
+                />
+              </div>
             ) : (
               <>
                 <EventLog state={state} variant="system-chat" title="系统频道" />
-                <GameActions state={state} />
+                <GameActions state={state} onEnterBattle={handleEnterBattle} />
                 <div className={styles['control-zone']}>
                   <div className={styles['control-title']}>控制区域</div>
                   <div className={styles['control-buttons']}>

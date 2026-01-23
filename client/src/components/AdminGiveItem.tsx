@@ -19,9 +19,25 @@ interface EquipmentTemplate {
   requiredLevel?: number;
 }
 
+interface ConsumableTemplate {
+  templateId: string;
+  name: string;
+  description?: string;
+  maxStack: number;
+}
+
+interface MaterialTemplate {
+  templateId: string;
+  name: string;
+  description?: string;
+  level?: number;
+}
+
 interface ItemTemplatesResponse {
   templates?: {
     equipment: EquipmentTemplate[];
+    consumables: ConsumableTemplate[];
+    materials: MaterialTemplate[];
   };
 }
 
@@ -41,8 +57,17 @@ export function AdminGiveItem({ onSuccess }: AdminGiveItemProps) {
   const [itemType, setItemType] = useState<string>('');
   const [templateId, setTemplateId] = useState<string>('');
   const [equipmentTemplates, setEquipmentTemplates] = useState<EquipmentTemplate[]>([]);
+  const [consumableTemplates, setConsumableTemplates] = useState<ConsumableTemplate[]>([]);
+  const [materialTemplates, setMaterialTemplates] = useState<MaterialTemplate[]>([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
   const [isCrafted, setIsCrafted] = useState(false);
+  const [consumableList, setConsumableList] = useState<Array<{ templateId: string; quantity: string }>>([
+    { templateId: '', quantity: '1' }
+  ]);
+  const [materialList, setMaterialList] = useState<Array<{ templateId: string; quantity: string }>>([
+    { templateId: '', quantity: '1' }
+  ]);
+  const [lingshiAmount, setLingshiAmount] = useState('100');
   
   // 经验相关状态
   const [expTargetId, setExpTargetId] = useState('');
@@ -53,12 +78,17 @@ export function AdminGiveItem({ onSuccess }: AdminGiveItemProps) {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    if (itemType !== 'equipment' || equipmentTemplates.length > 0 || templatesLoading) return;
+    const needsTemplates = itemType === 'equipment' || itemType === 'consumable' || itemType === 'material';
+    if (!needsTemplates || templatesLoading || (equipmentTemplates.length > 0 && consumableTemplates.length > 0 && materialTemplates.length > 0)) {
+      return;
+    }
     setTemplatesLoading(true);
     gameAPI.getItemTemplates()
       .then((response) => {
         const data = response.data as ItemTemplatesResponse;
         const templates = data.templates?.equipment || [];
+        const consumables = data.templates?.consumables || [];
+        const materials = data.templates?.materials || [];
         const normalized = templates.map((template) => ({
           ...template,
           requiredLevel: template.requiredLevel ?? getRequiredLevelFromTemplateId(template.templateId)
@@ -69,14 +99,52 @@ export function AdminGiveItem({ onSuccess }: AdminGiveItemProps) {
           return a.name.localeCompare(b.name, 'zh-Hans-CN');
         });
         setEquipmentTemplates(normalized);
+        const sortedConsumables = [...consumables].sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN'));
+        setConsumableTemplates(sortedConsumables);
+        const sortedMaterials = [...materials].sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN'));
+        setMaterialTemplates(sortedMaterials);
       })
       .catch(() => {
         setEquipmentTemplates([]);
+        setConsumableTemplates([]);
+        setMaterialTemplates([]);
       })
       .finally(() => {
         setTemplatesLoading(false);
       });
-  }, [equipmentTemplates.length, itemType, templatesLoading]);
+  }, [consumableTemplates.length, equipmentTemplates.length, itemType, materialTemplates.length, templatesLoading]);
+
+  const updateConsumableEntry = (index: number, field: 'templateId' | 'quantity', value: string) => {
+    setConsumableList((prev) =>
+      prev.map((entry, entryIndex) =>
+        entryIndex === index ? { ...entry, [field]: value } : entry
+      )
+    );
+  };
+
+  const addConsumableEntry = () => {
+    setConsumableList((prev) => [...prev, { templateId: '', quantity: '1' }]);
+  };
+
+  const removeConsumableEntry = (index: number) => {
+    setConsumableList((prev) => prev.filter((_, entryIndex) => entryIndex !== index));
+  };
+
+  const updateMaterialEntry = (index: number, field: 'templateId' | 'quantity', value: string) => {
+    setMaterialList((prev) =>
+      prev.map((entry, entryIndex) =>
+        entryIndex === index ? { ...entry, [field]: value } : entry
+      )
+    );
+  };
+
+  const addMaterialEntry = () => {
+    setMaterialList((prev) => [...prev, { templateId: '', quantity: '1' }]);
+  };
+
+  const removeMaterialEntry = (index: number) => {
+    setMaterialList((prev) => prev.filter((_, entryIndex) => entryIndex !== index));
+  };
 
   const handleItemSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -97,13 +165,73 @@ export function AdminGiveItem({ onSuccess }: AdminGiveItemProps) {
         itemType?: string;
         templateId?: string;
         crafted?: boolean;
+        consumables?: Array<{ templateId: string; quantity: number }>;
+        amount?: number;
+        materials?: Array<{ templateId: string; quantity: number }>;
       } = {
         targetCharacterId: idValue
       };
 
       if (itemType) payload.itemType = itemType;
-      if (templateId) payload.templateId = templateId;
+      if (templateId && itemType === 'equipment') payload.templateId = templateId;
       if (itemType === 'equipment') payload.crafted = isCrafted;
+      if (itemType === 'consumable') {
+        const entries = consumableList
+          .map((entry) => ({
+            templateId: entry.templateId.trim(),
+            quantity: Number.parseInt(entry.quantity, 10)
+          }))
+          .filter((entry) => entry.templateId.length > 0);
+
+        if (entries.length === 0) {
+          setError('请至少选择一个消耗品');
+          setLoading(false);
+          return;
+        }
+
+        const invalidIndex = entries.findIndex((entry) => !Number.isFinite(entry.quantity) || entry.quantity <= 0);
+        if (invalidIndex !== -1) {
+          setError(`第 ${invalidIndex + 1} 个消耗品数量无效`);
+          setLoading(false);
+          return;
+        }
+
+        payload.consumables = entries;
+      }
+
+      if (itemType === 'material') {
+        const entries = materialList
+          .map((entry) => ({
+            templateId: entry.templateId.trim(),
+            quantity: Number.parseInt(entry.quantity, 10)
+          }))
+          .filter((entry) => entry.templateId.length > 0);
+
+        if (entries.length === 0) {
+          setError('请至少选择一个材料');
+          setLoading(false);
+          return;
+        }
+
+        const invalidIndex = entries.findIndex((entry) => !Number.isFinite(entry.quantity) || entry.quantity <= 0);
+        if (invalidIndex !== -1) {
+          setError(`第 ${invalidIndex + 1} 个材料数量无效`);
+          setLoading(false);
+          return;
+        }
+
+        payload.materials = entries;
+      }
+
+      if (itemType === 'lingshi') {
+        const amountValue = Number.parseInt(lingshiAmount, 10);
+        if (!Number.isFinite(amountValue) || amountValue <= 0) {
+          setError('请输入有效的灵石数量');
+          setLoading(false);
+          return;
+        }
+        payload.amount = amountValue;
+      }
 
       const response = await gameAPI.giveItem(payload);
       const data = response.data as { message?: string; item?: { name: string } };
@@ -218,6 +346,7 @@ export function AdminGiveItem({ onSuccess }: AdminGiveItemProps) {
           <option value="equipment">装备</option>
           <option value="consumable">消耗品</option>
           <option value="material">材料</option>
+          <option value="lingshi">灵石</option>
         </select>
       </div>
 
@@ -252,6 +381,119 @@ export function AdminGiveItem({ onSuccess }: AdminGiveItemProps) {
             </label>
           </div>
         </>
+      )}
+
+      {itemType === 'material' && (
+        <div className={styles['consumable-list']}>
+          <div className={styles['consumable-header']}>
+            <span>材料列表</span>
+            <button
+              type="button"
+              className={styles['inline-button']}
+              onClick={addMaterialEntry}
+              disabled={templatesLoading}
+            >
+              添加条目
+            </button>
+          </div>
+          {materialList.map((entry, index) => (
+            <div className={styles['consumable-row']} key={`material-${index}`}>
+              <select
+                value={entry.templateId}
+                onChange={(e) => updateMaterialEntry(index, 'templateId', e.target.value)}
+                disabled={templatesLoading}
+              >
+                <option value="">选择材料</option>
+                {materialTemplates.map((template) => (
+                  <option key={template.templateId} value={template.templateId}>
+                    {template.level ? `${template.name}（${template.level}级）` : template.name}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={entry.quantity}
+                onChange={(e) => updateMaterialEntry(index, 'quantity', e.target.value)}
+                placeholder="数量"
+              />
+              {materialList.length > 1 && (
+                <button
+                  type="button"
+                  className={styles['inline-button']}
+                  onClick={() => removeMaterialEntry(index)}
+                >
+                  删除
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {itemType === 'lingshi' && (
+        <div className={styles['form-group']}>
+          <label htmlFor="lingshiAmount">灵石数量 *</label>
+          <input
+            id="lingshiAmount"
+            type="number"
+            min="1"
+            step="1"
+            value={lingshiAmount}
+            onChange={(e) => setLingshiAmount(e.target.value)}
+            placeholder="输入灵石数量"
+          />
+        </div>
+      )}
+
+      {itemType === 'consumable' && (
+        <div className={styles['consumable-list']}>
+          <div className={styles['consumable-header']}>
+            <span>消耗品列表</span>
+            <button
+              type="button"
+              className={styles['inline-button']}
+              onClick={addConsumableEntry}
+              disabled={templatesLoading}
+            >
+              添加条目
+            </button>
+          </div>
+          {consumableList.map((entry, index) => (
+            <div className={styles['consumable-row']} key={`consumable-${index}`}>
+              <select
+                value={entry.templateId}
+                onChange={(e) => updateConsumableEntry(index, 'templateId', e.target.value)}
+                disabled={templatesLoading}
+              >
+                <option value="">选择消耗品</option>
+                {consumableTemplates.map((template) => (
+                  <option key={template.templateId} value={template.templateId}>
+                    {template.name}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={entry.quantity}
+                onChange={(e) => updateConsumableEntry(index, 'quantity', e.target.value)}
+                placeholder="数量"
+              />
+              {consumableList.length > 1 && (
+                <button
+                  type="button"
+                  className={styles['inline-button']}
+                  onClick={() => removeConsumableEntry(index)}
+                >
+                  删除
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
       )}
 
       {error && <div className={styles['error-message']}>{error}</div>}

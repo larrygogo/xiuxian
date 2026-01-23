@@ -53,8 +53,6 @@ export function defaultState(): GameState {
       maxHp: 0,
       maxMp: 0
     },
-
-    alive: true,
     lastTs: Date.now(),
 
     // 事件日志（最多保留最近100条）

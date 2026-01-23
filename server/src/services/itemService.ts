@@ -54,6 +54,7 @@ interface MaterialTemplate {
   templateId: string;
   name: string;
   description?: string;
+  level?: number;
 }
 
 // 物品配置
@@ -217,8 +218,8 @@ function getTierFromTemplateId(templateId: string): number | null {
   const parsed = Number.parseInt(match[1], 10);
   if (!Number.isFinite(parsed) || parsed <= 0) return null;
   if (parsed === 1) return 1;
-  if (parsed % 5 !== 0) return null;
-  return parsed / 5 + 1;
+  if (parsed % 10 !== 0) return null;
+  return parsed;
 }
 
 function clampSecondaryRange(min: number, max: number): [number, number] {

@@ -29,5 +29,45 @@
       "duration": 5
     },
     "maxStack": 20
+  },
+  {
+    "templateId": "potion_hp_002",
+    "name": "回生丹",
+    "description": "可恢复中等生命值的丹药。",
+    "effect": {
+      "type": "heal",
+      "value": 80
+    },
+    "maxStack": 99
+  },
+  {
+    "templateId": "potion_hp_003",
+    "name": "生肌丹",
+    "description": "可恢复大量生命值的丹药。",
+    "effect": {
+      "type": "heal",
+      "value": 120
+    },
+    "maxStack": 99
+  },
+  {
+    "templateId": "potion_mp_002",
+    "name": "回元丹",
+    "description": "可恢复中等法力值的丹药。",
+    "effect": {
+      "type": "mana",
+      "value": 50
+    },
+    "maxStack": 99
+  },
+  {
+    "templateId": "potion_mp_003",
+    "name": "凝神丹",
+    "description": "可恢复大量法力值的丹药。",
+    "effect": {
+      "type": "mana",
+      "value": 80
+    },
+    "maxStack": 99
   }
 ]

@@ -16,9 +16,11 @@ export function handleDeath(state: GameState, deathMessage?: string): void {
   state.mp = 0;
   state.qi = Math.max(0, state.qi - qiLoss);
   state.lingshi = Math.max(0, state.lingshi - lingshiLoss);
-  state.alive = false;
   
-  const message = deathMessage || `你身死道消，修仙路断。保留1点生命，法力耗尽，灵气 -${qiLoss}，灵石 -${lingshiLoss}。`;
+  const penaltyDetail = `保留1点生命，法力耗尽，灵气 -${qiLoss}，灵石 -${lingshiLoss}。`;
+  const message = deathMessage
+    ? `${deathMessage}${deathMessage.endsWith("。") ? "" : "。"}${penaltyDetail}`
+    : `你身死道消，修仙路断。${penaltyDetail}`;
   logLine(message, state);
 }
 

@@ -1,0 +1,32 @@
+[
+  {
+    "mapId": "map_forest_1",
+    "name": "幽暗森林",
+    "levelRange": [1, 10],
+    "monsterPool": [
+      { "monsterId": "mob_wolf", "weight": 50 },
+      { "monsterId": "mob_bandit", "weight": 30 },
+      { "monsterId": "mob_snake", "weight": 20 }
+    ]
+  },
+  {
+    "mapId": "map_mountain_1",
+    "name": "荒山野岭",
+    "levelRange": [5, 15],
+    "monsterPool": [
+      { "monsterId": "mob_bandit", "weight": 40 },
+      { "monsterId": "mob_bear", "weight": 35 },
+      { "monsterId": "mob_corpse", "weight": 25 }
+    ]
+  },
+  {
+    "mapId": "map_dungeon_1",
+    "name": "地下洞窟",
+    "levelRange": [10, 20],
+    "monsterPool": [
+      { "monsterId": "mob_corpse", "weight": 30 },
+      { "monsterId": "mob_bear", "weight": 40 },
+      { "monsterId": "mob_bandit", "weight": 30 }
+    ]
+  }
+]

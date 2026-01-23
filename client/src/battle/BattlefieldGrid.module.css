@@ -1,0 +1,228 @@
+.battlefieldGrid {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.gridContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: 100%;
+}
+
+.playerArea,
+.monsterArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: 50%;
+  border-radius: 14px;
+  border: 1.5px solid var(--ink-border);
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 14px 30px var(--ink-shadow);
+  padding: 12px;
+}
+
+.areaLabel {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  text-align: center;
+  color: var(--ink-text);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.playerArea .areaLabel {
+  color: #2e5f8a;
+}
+
+.monsterArea .areaLabel {
+  color: #7a2f2f;
+}
+
+.combatantGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.gridSlot {
+  min-width: 0;
+  min-height: 0;
+}
+
+.combatantCard {
+  width: 100%;
+  height: 100%;
+  min-height: 68px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1.5px solid var(--ink-border);
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+  gap: 8px;
+  box-shadow:
+    0 10px 22px var(--ink-shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.combatantCard.player {
+  border-color: rgba(46, 95, 138, 0.45);
+  background: linear-gradient(135deg, rgba(227, 242, 253, 0.75), rgba(255, 255, 255, 0.6));
+}
+
+.combatantCard.monster {
+  border-color: rgba(122, 47, 47, 0.35);
+  background: linear-gradient(135deg, rgba(255, 235, 238, 0.75), rgba(255, 255, 255, 0.6));
+}
+
+.combatantCard.clickable {
+  cursor: pointer;
+}
+
+.combatantCard.clickable:hover {
+  border-color: rgba(211, 47, 47, 0.75);
+  box-shadow:
+    0 18px 38px var(--ink-shadow-strong),
+    0 0 0 3px rgba(211, 47, 47, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  transform: translateY(-2px) scale(1.01);
+}
+
+.combatantCard.selected {
+  border-color: rgba(160, 104, 35, 0.75);
+  box-shadow:
+    0 18px 38px var(--ink-shadow-strong),
+    0 0 0 3px rgba(160, 104, 35, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.combatantCard.inactive {
+  opacity: 0.5;
+  filter: grayscale(100%);
+}
+
+.combatantContent {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.combatantInfo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.combatantName {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.combatantLevel {
+  font-size: 12px;
+  color: var(--ink-text-muted);
+}
+
+.combatantStats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.hpBar {
+  width: 100%;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.10);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.hpFill {
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+.hpText {
+  font-size: 11px;
+  color: var(--ink-text-muted);
+  white-space: nowrap;
+}
+
+.statusBadge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  color: rgba(255, 255, 255, 0.95);
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  z-index: 1;
+  box-shadow: 0 10px 22px var(--ink-shadow);
+}
+
+.badgeDefending {
+  background: linear-gradient(135deg, rgba(46, 95, 138, 0.9), rgba(25, 118, 210, 0.85));
+}
+
+.badgeDead {
+  background: linear-gradient(135deg, rgba(60, 55, 49, 0.95), rgba(24, 22, 20, 0.9));
+}
+
+.badgeEscaped {
+  background: linear-gradient(135deg, rgba(47, 90, 58, 0.9), rgba(76, 175, 80, 0.8));
+}
+
+.emptySlot {
+  width: 100%;
+  height: 100%;
+  min-height: 68px;
+  border: 1.5px dashed rgba(0, 0, 0, 0.18);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.divider {
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.12) 30%, rgba(0, 0, 0, 0.12) 70%, transparent 100%);
+  margin: 6px 0;
+  flex-shrink: 0;
+}
+
+@media (max-width: 520px) {
+  .combatantGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .combatantCard {
+    transition: none;
+  }
+}

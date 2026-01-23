@@ -16,27 +16,12 @@
       ]
     },
     {
-      "templateId": "weapon_005",
-      "name": "玄铁重剑",
-      "description": "由玄铁打造的重剑，剑身厚重。",
-      "slot": "weapon",
-      "source": "system",
-      "tier": 2,
-      "combatStats": [
-        {
-          "type": "mdmg",
-          "min": 11,
-          "max": 14
-        }
-      ]
-    },
-    {
       "templateId": "weapon_010",
       "name": "灵木法杖",
       "description": "用灵木制成的法杖，纹理清晰。",
       "slot": "weapon",
       "source": "system",
-      "tier": 3,
+      "tier": 10,
       "combatStats": [
         {
           "type": "pdmg",
@@ -46,27 +31,12 @@
       ]
     },
     {
-      "templateId": "weapon_015",
-      "name": "紫金剑",
-      "description": "紫金锻造的宝剑，剑光如电。",
-      "slot": "weapon",
-      "source": "system",
-      "tier": 4,
-      "combatStats": [
-        {
-          "type": "mdmg",
-          "min": 18,
-          "max": 25
-        }
-      ]
-    },
-    {
       "templateId": "weapon_020",
       "name": "寒冰法杖",
       "description": "蕴含寒冰之力的法杖，杖身微寒。",
       "slot": "weapon",
       "source": "system",
-      "tier": 5,
+      "tier": 20,
       "combatStats": [
         {
           "type": "pdmg",
@@ -76,27 +46,12 @@
       ]
     },
     {
-      "templateId": "weapon_025",
-      "name": "赤焰刀",
-      "description": "燃烧着赤焰的战刀，刀背如火。",
-      "slot": "weapon",
-      "source": "system",
-      "tier": 6,
-      "combatStats": [
-        {
-          "type": "mdmg",
-          "min": 34,
-          "max": 46
-        }
-      ]
-    },
-    {
       "templateId": "weapon_030",
       "name": "雷霆法杖",
       "description": "缠绕雷霆的法杖，表面留有焦痕。",
       "slot": "weapon",
       "source": "system",
-      "tier": 7,
+      "tier": 30,
       "combatStats": [
         {
           "type": "pdmg",
@@ -106,27 +61,12 @@
       ]
     },
     {
-      "templateId": "weapon_035",
-      "name": "龙鳞剑",
-      "description": "以龙鳞锻造的神剑，鳞纹清晰。",
-      "slot": "weapon",
-      "source": "system",
-      "tier": 8,
-      "combatStats": [
-        {
-          "type": "mdmg",
-          "min": 56,
-          "max": 75
-        }
-      ]
-    },
-    {
       "templateId": "weapon_040",
       "name": "星辰法杖",
       "description": "汇聚星辰之力的法杖，暗光流转。",
       "slot": "weapon",
       "source": "system",
-      "tier": 9,
+      "tier": 40,
       "combatStats": [
         {
           "type": "pdmg",
@@ -136,27 +76,12 @@
       ]
     },
     {
-      "templateId": "weapon_045",
-      "name": "破军刀",
-      "description": "战场上的破军之刃，刀身旧痕犹在。",
-      "slot": "weapon",
-      "source": "system",
-      "tier": 10,
-      "combatStats": [
-        {
-          "type": "mdmg",
-          "min": 85,
-          "max": 116
-        }
-      ]
-    },
-    {
       "templateId": "weapon_050",
       "name": "九幽法杖",
       "description": "来自九幽的法杖，色泽幽深。",
       "slot": "weapon",
       "source": "system",
-      "tier": 11,
+      "tier": 50,
       "combatStats": [
         {
           "type": "pdmg",
@@ -166,27 +91,12 @@
       ]
     },
     {
-      "templateId": "weapon_055",
-      "name": "天罡剑",
-      "description": "天罡之力加持的宝剑，剑脊刻纹。",
-      "slot": "weapon",
-      "source": "system",
-      "tier": 12,
-      "combatStats": [
-        {
-          "type": "mdmg",
-          "min": 123,
-          "max": 166
-        }
-      ]
-    },
-    {
       "templateId": "weapon_060",
       "name": "太虚法杖",
       "description": "太虚之力凝聚的法杖，杖端素净。",
       "slot": "weapon",
       "source": "system",
-      "tier": 13,
+      "tier": 60,
       "combatStats": [
         {
           "type": "pdmg",
@@ -196,27 +106,12 @@
       ]
     },
     {
-      "templateId": "weapon_065",
-      "name": "斩仙刀",
-      "description": "可斩仙人的神刀，刀纹森然。",
-      "slot": "weapon",
-      "source": "system",
-      "tier": 14,
-      "combatStats": [
-        {
-          "type": "mdmg",
-          "min": 168,
-          "max": 227
-        }
-      ]
-    },
-    {
       "templateId": "weapon_070",
       "name": "混元法杖",
       "description": "混元一气所化的法杖，纹路浑圆。",
       "slot": "weapon",
       "source": "system",
-      "tier": 15,
+      "tier": 70,
       "combatStats": [
         {
           "type": "pdmg",
@@ -226,27 +121,12 @@
       ]
     },
     {
-      "templateId": "weapon_075",
-      "name": "诛神剑",
-      "description": "可诛杀神明的圣剑，剑身沉静。",
-      "slot": "weapon",
-      "source": "system",
-      "tier": 16,
-      "combatStats": [
-        {
-          "type": "mdmg",
-          "min": 221,
-          "max": 299
-        }
-      ]
-    },
-    {
       "templateId": "weapon_080",
       "name": "造化法杖",
       "description": "蕴含造化之力的法杖，镶嵌暗石。",
       "slot": "weapon",
       "source": "system",
-      "tier": 17,
+      "tier": 80,
       "combatStats": [
         {
           "type": "pdmg",
@@ -256,27 +136,12 @@
       ]
     },
     {
-      "templateId": "weapon_085",
-      "name": "开天刀",
-      "description": "可开天辟地的神刀，刀面厚重。",
-      "slot": "weapon",
-      "source": "system",
-      "tier": 18,
-      "combatStats": [
-        {
-          "type": "mdmg",
-          "min": 280,
-          "max": 379
-        }
-      ]
-    },
-    {
       "templateId": "weapon_090",
       "name": "鸿蒙法杖",
       "description": "鸿蒙初开时的法杖，气息古朴。",
       "slot": "weapon",
       "source": "system",
-      "tier": 19,
+      "tier": 90,
       "combatStats": [
         {
           "type": "pdmg",
@@ -286,27 +151,12 @@
       ]
     },
     {
-      "templateId": "weapon_095",
-      "name": "混沌剑",
-      "description": "混沌之力所化的神剑，光泽难辨。",
-      "slot": "weapon",
-      "source": "system",
-      "tier": 20,
-      "combatStats": [
-        {
-          "type": "mdmg",
-          "min": 347,
-          "max": 470
-        }
-      ]
-    },
-    {
       "templateId": "weapon_100",
       "name": "大道法杖",
       "description": "大道至简的法杖，杖身留一线纹。",
       "slot": "weapon",
       "source": "system",
-      "tier": 21,
+      "tier": 100,
       "combatStats": [
         {
           "type": "pdmg",
@@ -356,32 +206,12 @@
       ]
     },
     {
-      "templateId": "helmet_005",
-      "name": "皮帽",
-      "description": "用兽皮制成的帽子，边缘磨亮。",
-      "slot": "helmet",
-      "source": "system",
-      "tier": 2,
-      "combatStats": [
-        {
-          "type": "pdef",
-          "min": 2,
-          "max": 3
-        },
-        {
-          "type": "hit",
-          "min": 3,
-          "max": 4
-        }
-      ]
-    },
-    {
       "templateId": "helmet_010",
       "name": "铁盔",
       "description": "铁制的头盔，内衬更换多次。",
       "slot": "helmet",
       "source": "system",
-      "tier": 3,
+      "tier": 10,
       "combatStats": [
         {
           "type": "pdef",
@@ -390,26 +220,6 @@
         },
         {
           "type": "maxHp",
-          "min": 4,
-          "max": 6
-        }
-      ]
-    },
-    {
-      "templateId": "helmet_015",
-      "name": "灵木冠",
-      "description": "用灵木制成的头冠，木香隐约。",
-      "slot": "helmet",
-      "source": "system",
-      "tier": 4,
-      "combatStats": [
-        {
-          "type": "pdef",
-          "min": 4,
-          "max": 5
-        },
-        {
-          "type": "hit",
           "min": 4,
           "max": 6
         }
@@ -421,7 +231,7 @@
       "description": "紫金锻造的头盔，镜面微黯。",
       "slot": "helmet",
       "source": "system",
-      "tier": 5,
+      "tier": 20,
       "combatStats": [
         {
           "type": "pdef",
@@ -436,32 +246,12 @@
       ]
     },
     {
-      "templateId": "helmet_025",
-      "name": "寒冰冠",
-      "description": "蕴含寒冰之力的头冠，霜纹细致。",
-      "slot": "helmet",
-      "source": "system",
-      "tier": 6,
-      "combatStats": [
-        {
-          "type": "pdef",
-          "min": 5,
-          "max": 8
-        },
-        {
-          "type": "hit",
-          "min": 5,
-          "max": 8
-        }
-      ]
-    },
-    {
       "templateId": "helmet_030",
       "name": "雷霆盔",
       "description": "缠绕雷霆的头盔，边角焦黑。",
       "slot": "helmet",
       "source": "system",
-      "tier": 7,
+      "tier": 30,
       "combatStats": [
         {
           "type": "pdef",
@@ -476,32 +266,12 @@
       ]
     },
     {
-      "templateId": "helmet_035",
-      "name": "龙鳞盔",
-      "description": "以龙鳞制成的头盔，鳞片整齐。",
-      "slot": "helmet",
-      "source": "system",
-      "tier": 8,
-      "combatStats": [
-        {
-          "type": "pdef",
-          "min": 7,
-          "max": 10
-        },
-        {
-          "type": "hit",
-          "min": 7,
-          "max": 9
-        }
-      ]
-    },
-    {
       "templateId": "helmet_040",
       "name": "星辰冠",
       "description": "汇聚星辰之力的头冠，嵌石微亮。",
       "slot": "helmet",
       "source": "system",
-      "tier": 9,
+      "tier": 40,
       "combatStats": [
         {
           "type": "pdef",
@@ -516,32 +286,12 @@
       ]
     },
     {
-      "templateId": "helmet_045",
-      "name": "破军盔",
-      "description": "战场上的破军头盔，内侧刻痕犹在。",
-      "slot": "helmet",
-      "source": "system",
-      "tier": 10,
-      "combatStats": [
-        {
-          "type": "pdef",
-          "min": 9,
-          "max": 12
-        },
-        {
-          "type": "hit",
-          "min": 8,
-          "max": 11
-        }
-      ]
-    },
-    {
       "templateId": "helmet_050",
       "name": "九幽冠",
       "description": "来自九幽的头冠，色泽深沉。",
       "slot": "helmet",
       "source": "system",
-      "tier": 11,
+      "tier": 50,
       "combatStats": [
         {
           "type": "pdef",
@@ -556,32 +306,12 @@
       ]
     },
     {
-      "templateId": "helmet_055",
-      "name": "天罡盔",
-      "description": "天罡之力加持的头盔，脊线挺直。",
-      "slot": "helmet",
-      "source": "system",
-      "tier": 12,
-      "combatStats": [
-        {
-          "type": "pdef",
-          "min": 11,
-          "max": 14
-        },
-        {
-          "type": "hit",
-          "min": 9,
-          "max": 12
-        }
-      ]
-    },
-    {
       "templateId": "helmet_060",
       "name": "太虚冠",
       "description": "太虚之力凝聚的头冠，冠沿素净。",
       "slot": "helmet",
       "source": "system",
-      "tier": 13,
+      "tier": 60,
       "combatStats": [
         {
           "type": "pdef",
@@ -596,32 +326,12 @@
       ]
     },
     {
-      "templateId": "helmet_065",
-      "name": "斩仙盔",
-      "description": "可斩仙人的头盔，表面磨痕清晰。",
-      "slot": "helmet",
-      "source": "system",
-      "tier": 14,
-      "combatStats": [
-        {
-          "type": "pdef",
-          "min": 12,
-          "max": 17
-        },
-        {
-          "type": "hit",
-          "min": 10,
-          "max": 14
-        }
-      ]
-    },
-    {
       "templateId": "helmet_070",
       "name": "混元冠",
       "description": "混元一气所化的头冠，纹路浑圆。",
       "slot": "helmet",
       "source": "system",
-      "tier": 15,
+      "tier": 70,
       "combatStats": [
         {
           "type": "pdef",
@@ -636,32 +346,12 @@
       ]
     },
     {
-      "templateId": "helmet_075",
-      "name": "诛神盔",
-      "description": "可诛杀神明的头盔，旧修痕明显。",
-      "slot": "helmet",
-      "source": "system",
-      "tier": 16,
-      "combatStats": [
-        {
-          "type": "pdef",
-          "min": 14,
-          "max": 19
-        },
-        {
-          "type": "hit",
-          "min": 11,
-          "max": 16
-        }
-      ]
-    },
-    {
       "templateId": "helmet_080",
       "name": "造化冠",
       "description": "蕴含造化之力的头冠，冠缘细纹。",
       "slot": "helmet",
       "source": "system",
-      "tier": 17,
+      "tier": 80,
       "combatStats": [
         {
           "type": "pdef",
@@ -676,32 +366,12 @@
       ]
     },
     {
-      "templateId": "helmet_085",
-      "name": "开天盔",
-      "description": "可开天辟地的头盔，光泽如石。",
-      "slot": "helmet",
-      "source": "system",
-      "tier": 18,
-      "combatStats": [
-        {
-          "type": "pdef",
-          "min": 16,
-          "max": 21
-        },
-        {
-          "type": "hit",
-          "min": 13,
-          "max": 17
-        }
-      ]
-    },
-    {
       "templateId": "helmet_090",
       "name": "鸿蒙冠",
       "description": "鸿蒙初开时的头冠，云纹隐现。",
       "slot": "helmet",
       "source": "system",
-      "tier": 19,
+      "tier": 90,
       "combatStats": [
         {
           "type": "pdef",
@@ -716,32 +386,12 @@
       ]
     },
     {
-      "templateId": "helmet_095",
-      "name": "混沌盔",
-      "description": "混沌之力所化的头盔，色泽难辨。",
-      "slot": "helmet",
-      "source": "system",
-      "tier": 20,
-      "combatStats": [
-        {
-          "type": "pdef",
-          "min": 17,
-          "max": 24
-        },
-        {
-          "type": "hit",
-          "min": 14,
-          "max": 19
-        }
-      ]
-    },
-    {
       "templateId": "helmet_100",
       "name": "大道冠",
       "description": "大道至简的头冠，仅留一圈淡纹。",
       "slot": "helmet",
       "source": "system",
-      "tier": 21,
+      "tier": 100,
       "combatStats": [
         {
           "type": "pdef",
@@ -776,32 +426,12 @@
       ]
     },
     {
-      "templateId": "armor_005",
-      "name": "皮甲",
-      "description": "用兽皮制成的护甲，油泽尚在。",
-      "slot": "armor",
-      "source": "system",
-      "tier": 2,
-      "combatStats": [
-        {
-          "type": "pdef",
-          "min": 2,
-          "max": 3
-        },
-        {
-          "type": "maxHp",
-          "min": 11,
-          "max": 16
-        }
-      ]
-    },
-    {
       "templateId": "armor_010",
       "name": "铁甲",
       "description": "铁制的护甲，铆钉排列整齐。",
       "slot": "armor",
       "source": "system",
-      "tier": 3,
+      "tier": 10,
       "combatStats": [
         {
           "type": "pdef",
@@ -816,32 +446,12 @@
       ]
     },
     {
-      "templateId": "armor_015",
-      "name": "灵木甲",
-      "description": "用灵木制成的护甲，纹理温润。",
-      "slot": "armor",
-      "source": "system",
-      "tier": 4,
-      "combatStats": [
-        {
-          "type": "pdef",
-          "min": 4,
-          "max": 5
-        },
-        {
-          "type": "maxHp",
-          "min": 15,
-          "max": 20
-        }
-      ]
-    },
-    {
       "templateId": "armor_020",
       "name": "紫金甲",
       "description": "紫金锻造的护甲，光泽内敛。",
       "slot": "armor",
       "source": "system",
-      "tier": 5,
+      "tier": 20,
       "combatStats": [
         {
           "type": "pdef",
@@ -856,32 +466,12 @@
       ]
     },
     {
-      "templateId": "armor_025",
-      "name": "寒冰甲",
-      "description": "蕴含寒冰之力的护甲，霜纹细致。",
-      "slot": "armor",
-      "source": "system",
-      "tier": 6,
-      "combatStats": [
-        {
-          "type": "pdef",
-          "min": 5,
-          "max": 8
-        },
-        {
-          "type": "maxHp",
-          "min": 18,
-          "max": 25
-        }
-      ]
-    },
-    {
       "templateId": "armor_030",
       "name": "雷霆甲",
       "description": "缠绕雷霆的护甲，肩处焦痕。",
       "slot": "armor",
       "source": "system",
-      "tier": 7,
+      "tier": 30,
       "combatStats": [
         {
           "type": "pdef",
@@ -896,32 +486,12 @@
       ]
     },
     {
-      "templateId": "armor_035",
-      "name": "龙鳞甲",
-      "description": "以龙鳞制成的护甲，鳞片细密。",
-      "slot": "armor",
-      "source": "system",
-      "tier": 8,
-      "combatStats": [
-        {
-          "type": "pdef",
-          "min": 7,
-          "max": 10
-        },
-        {
-          "type": "maxHp",
-          "min": 22,
-          "max": 29
-        }
-      ]
-    },
-    {
       "templateId": "armor_040",
       "name": "星辰甲",
       "description": "汇聚星辰之力的护甲，微光浮动。",
       "slot": "armor",
       "source": "system",
-      "tier": 9,
+      "tier": 40,
       "combatStats": [
         {
           "type": "pdef",
@@ -936,32 +506,12 @@
       ]
     },
     {
-      "templateId": "armor_045",
-      "name": "破军甲",
-      "description": "战场上的破军护甲，旧纹仍在。",
-      "slot": "armor",
-      "source": "system",
-      "tier": 10,
-      "combatStats": [
-        {
-          "type": "pdef",
-          "min": 9,
-          "max": 12
-        },
-        {
-          "type": "maxHp",
-          "min": 25,
-          "max": 34
-        }
-      ]
-    },
-    {
       "templateId": "armor_050",
       "name": "九幽甲",
       "description": "来自九幽的护甲，色泽深沉。",
       "slot": "armor",
       "source": "system",
-      "tier": 11,
+      "tier": 50,
       "combatStats": [
         {
           "type": "pdef",
@@ -976,32 +526,12 @@
       ]
     },
     {
-      "templateId": "armor_055",
-      "name": "天罡甲",
-      "description": "天罡之力加持的护甲，纹路刚直。",
-      "slot": "armor",
-      "source": "system",
-      "tier": 12,
-      "combatStats": [
-        {
-          "type": "pdef",
-          "min": 11,
-          "max": 14
-        },
-        {
-          "type": "maxHp",
-          "min": 28,
-          "max": 39
-        }
-      ]
-    },
-    {
       "templateId": "armor_060",
       "name": "太虚甲",
       "description": "太虚之力凝聚的护甲，背面云纹。",
       "slot": "armor",
       "source": "system",
-      "tier": 13,
+      "tier": 60,
       "combatStats": [
         {
           "type": "pdef",
@@ -1016,32 +546,12 @@
       ]
     },
     {
-      "templateId": "armor_065",
-      "name": "斩仙甲",
-      "description": "可斩仙人的护甲，边缘无多破损。",
-      "slot": "armor",
-      "source": "system",
-      "tier": 14,
-      "combatStats": [
-        {
-          "type": "pdef",
-          "min": 12,
-          "max": 17
-        },
-        {
-          "type": "maxHp",
-          "min": 32,
-          "max": 43
-        }
-      ]
-    },
-    {
       "templateId": "armor_070",
       "name": "混元甲",
       "description": "混元一气所化的护甲，扣环沉稳。",
       "slot": "armor",
       "source": "system",
-      "tier": 15,
+      "tier": 70,
       "combatStats": [
         {
           "type": "pdef",
@@ -1056,32 +566,12 @@
       ]
     },
     {
-      "templateId": "armor_075",
-      "name": "诛神甲",
-      "description": "可诛杀神明的护甲，旧修痕明显。",
-      "slot": "armor",
-      "source": "system",
-      "tier": 16,
-      "combatStats": [
-        {
-          "type": "pdef",
-          "min": 14,
-          "max": 19
-        },
-        {
-          "type": "maxHp",
-          "min": 35,
-          "max": 48
-        }
-      ]
-    },
-    {
       "templateId": "armor_080",
       "name": "造化甲",
       "description": "蕴含造化之力的护甲，胸前古字。",
       "slot": "armor",
       "source": "system",
-      "tier": 17,
+      "tier": 80,
       "combatStats": [
         {
           "type": "pdef",
@@ -1096,32 +586,12 @@
       ]
     },
     {
-      "templateId": "armor_085",
-      "name": "开天甲",
-      "description": "可开天辟地的护甲，触之有砂纹。",
-      "slot": "armor",
-      "source": "system",
-      "tier": 18,
-      "combatStats": [
-        {
-          "type": "pdef",
-          "min": 16,
-          "max": 21
-        },
-        {
-          "type": "maxHp",
-          "min": 39,
-          "max": 52
-        }
-      ]
-    },
-    {
       "templateId": "armor_090",
       "name": "鸿蒙甲",
       "description": "鸿蒙初开时的护甲，纹章隐约可见。",
       "slot": "armor",
       "source": "system",
-      "tier": 19,
+      "tier": 90,
       "combatStats": [
         {
           "type": "pdef",
@@ -1136,32 +606,12 @@
       ]
     },
     {
-      "templateId": "armor_095",
-      "name": "混沌甲",
-      "description": "混沌之力所化的护甲，光泽难辨。",
-      "slot": "armor",
-      "source": "system",
-      "tier": 20,
-      "combatStats": [
-        {
-          "type": "pdef",
-          "min": 17,
-          "max": 24
-        },
-        {
-          "type": "maxHp",
-          "min": 42,
-          "max": 57
-        }
-      ]
-    },
-    {
       "templateId": "armor_100",
       "name": "大道甲",
       "description": "大道至简的护甲，只留一线缝纹。",
       "slot": "armor",
       "source": "system",
-      "tier": 21,
+      "tier": 100,
       "combatStats": [
         {
           "type": "pdef",
@@ -1196,32 +646,12 @@
       ]
     },
     {
-      "templateId": "leggings_005",
-      "name": "皮裤",
-      "description": "用兽皮制成的裤子，边缘磨亮。",
-      "slot": "leggings",
-      "source": "system",
-      "tier": 2,
-      "combatStats": [
-        {
-          "type": "mdef",
-          "min": 2,
-          "max": 3
-        },
-        {
-          "type": "pdef",
-          "min": 1,
-          "max": 1
-        }
-      ]
-    },
-    {
       "templateId": "leggings_010",
       "name": "铁护腿",
       "description": "铁制的护腿，关节处打磨细致。",
       "slot": "leggings",
       "source": "system",
-      "tier": 3,
+      "tier": 10,
       "combatStats": [
         {
           "type": "mdef",
@@ -1236,32 +666,12 @@
       ]
     },
     {
-      "templateId": "leggings_015",
-      "name": "灵木护腿",
-      "description": "用灵木制成的护腿，纹理温润。",
-      "slot": "leggings",
-      "source": "system",
-      "tier": 4,
-      "combatStats": [
-        {
-          "type": "mdef",
-          "min": 4,
-          "max": 5
-        },
-        {
-          "type": "pdef",
-          "min": 1,
-          "max": 2
-        }
-      ]
-    },
-    {
       "templateId": "leggings_020",
       "name": "紫金护腿",
       "description": "紫金锻造的护腿，色泽明净。",
       "slot": "leggings",
       "source": "system",
-      "tier": 5,
+      "tier": 20,
       "combatStats": [
         {
           "type": "mdef",
@@ -1276,32 +686,12 @@
       ]
     },
     {
-      "templateId": "leggings_025",
-      "name": "寒冰护腿",
-      "description": "蕴含寒冰之力的护腿，霜纹细密。",
-      "slot": "leggings",
-      "source": "system",
-      "tier": 6,
-      "combatStats": [
-        {
-          "type": "mdef",
-          "min": 5,
-          "max": 8
-        },
-        {
-          "type": "pdef",
-          "min": 2,
-          "max": 2
-        }
-      ]
-    },
-    {
       "templateId": "leggings_030",
       "name": "雷霆护腿",
       "description": "缠绕雷霆的护腿，边缘留有焦痕。",
       "slot": "leggings",
       "source": "system",
-      "tier": 7,
+      "tier": 30,
       "combatStats": [
         {
           "type": "mdef",
@@ -1316,32 +706,12 @@
       ]
     },
     {
-      "templateId": "leggings_035",
-      "name": "龙鳞护腿",
-      "description": "以龙鳞制成的护腿，鳞片细密。",
-      "slot": "leggings",
-      "source": "system",
-      "tier": 8,
-      "combatStats": [
-        {
-          "type": "mdef",
-          "min": 7,
-          "max": 10
-        },
-        {
-          "type": "pdef",
-          "min": 2,
-          "max": 3
-        }
-      ]
-    },
-    {
       "templateId": "leggings_040",
       "name": "星辰护腿",
       "description": "汇聚星辰之力的护腿，微光隐现。",
       "slot": "leggings",
       "source": "system",
-      "tier": 9,
+      "tier": 40,
       "combatStats": [
         {
           "type": "mdef",
@@ -1356,32 +726,12 @@
       ]
     },
     {
-      "templateId": "leggings_045",
-      "name": "破军护腿",
-      "description": "战场上的破军护腿，旧扣尚存。",
-      "slot": "leggings",
-      "source": "system",
-      "tier": 10,
-      "combatStats": [
-        {
-          "type": "mdef",
-          "min": 9,
-          "max": 12
-        },
-        {
-          "type": "pdef",
-          "min": 3,
-          "max": 4
-        }
-      ]
-    },
-    {
       "templateId": "leggings_050",
       "name": "九幽护腿",
       "description": "来自九幽的护腿，色泽深沉。",
       "slot": "leggings",
       "source": "system",
-      "tier": 11,
+      "tier": 50,
       "combatStats": [
         {
           "type": "mdef",
@@ -1396,32 +746,12 @@
       ]
     },
     {
-      "templateId": "leggings_055",
-      "name": "天罡护腿",
-      "description": "天罡之力加持的护腿，纹理刚正。",
-      "slot": "leggings",
-      "source": "system",
-      "tier": 12,
-      "combatStats": [
-        {
-          "type": "mdef",
-          "min": 11,
-          "max": 14
-        },
-        {
-          "type": "pdef",
-          "min": 3,
-          "max": 5
-        }
-      ]
-    },
-    {
       "templateId": "leggings_060",
       "name": "太虚护腿",
       "description": "太虚之力凝聚的护腿，纹理清浅。",
       "slot": "leggings",
       "source": "system",
-      "tier": 13,
+      "tier": 60,
       "combatStats": [
         {
           "type": "mdef",
@@ -1436,32 +766,12 @@
       ]
     },
     {
-      "templateId": "leggings_065",
-      "name": "斩仙护腿",
-      "description": "可斩仙人的护腿，护片简洁。",
-      "slot": "leggings",
-      "source": "system",
-      "tier": 14,
-      "combatStats": [
-        {
-          "type": "mdef",
-          "min": 12,
-          "max": 17
-        },
-        {
-          "type": "pdef",
-          "min": 4,
-          "max": 6
-        }
-      ]
-    },
-    {
       "templateId": "leggings_070",
       "name": "混元护腿",
       "description": "混元一气所化的护腿，弧线流畅。",
       "slot": "leggings",
       "source": "system",
-      "tier": 15,
+      "tier": 70,
       "combatStats": [
         {
           "type": "mdef",
@@ -1476,32 +786,12 @@
       ]
     },
     {
-      "templateId": "leggings_075",
-      "name": "诛神护腿",
-      "description": "可诛杀神明的护腿，旧修痕明显。",
-      "slot": "leggings",
-      "source": "system",
-      "tier": 16,
-      "combatStats": [
-        {
-          "type": "mdef",
-          "min": 14,
-          "max": 19
-        },
-        {
-          "type": "pdef",
-          "min": 5,
-          "max": 6
-        }
-      ]
-    },
-    {
       "templateId": "leggings_080",
       "name": "造化护腿",
       "description": "蕴含造化之力的护腿，裤脚细纹。",
       "slot": "leggings",
       "source": "system",
-      "tier": 17,
+      "tier": 80,
       "combatStats": [
         {
           "type": "mdef",
@@ -1516,32 +806,12 @@
       ]
     },
     {
-      "templateId": "leggings_085",
-      "name": "开天护腿",
-      "description": "可开天辟地的护腿，纹路粗犷。",
-      "slot": "leggings",
-      "source": "system",
-      "tier": 18,
-      "combatStats": [
-        {
-          "type": "mdef",
-          "min": 16,
-          "max": 21
-        },
-        {
-          "type": "pdef",
-          "min": 5,
-          "max": 7
-        }
-      ]
-    },
-    {
       "templateId": "leggings_090",
       "name": "鸿蒙护腿",
       "description": "鸿蒙初开时的护腿，色泽青灰。",
       "slot": "leggings",
       "source": "system",
-      "tier": 19,
+      "tier": 90,
       "combatStats": [
         {
           "type": "mdef",
@@ -1556,32 +826,12 @@
       ]
     },
     {
-      "templateId": "leggings_095",
-      "name": "混沌护腿",
-      "description": "混沌之力所化的护腿，雾纹隐现。",
-      "slot": "leggings",
-      "source": "system",
-      "tier": 20,
-      "combatStats": [
-        {
-          "type": "mdef",
-          "min": 17,
-          "max": 24
-        },
-        {
-          "type": "pdef",
-          "min": 6,
-          "max": 8
-        }
-      ]
-    },
-    {
       "templateId": "leggings_100",
       "name": "大道护腿",
       "description": "大道至简的护腿，只留一处旧补。",
       "slot": "leggings",
       "source": "system",
-      "tier": 21,
+      "tier": 100,
       "combatStats": [
         {
           "type": "mdef",
@@ -1611,27 +861,12 @@
       ]
     },
     {
-      "templateId": "boots_005",
-      "name": "皮靴",
-      "description": "用兽皮制成的靴子，扣带泛旧。",
-      "slot": "boots",
-      "source": "system",
-      "tier": 2,
-      "combatStats": [
-        {
-          "type": "spd",
-          "min": 18,
-          "max": 25
-        }
-      ]
-    },
-    {
       "templateId": "boots_010",
       "name": "铁靴",
       "description": "铁制的靴子，底纹清晰。",
       "slot": "boots",
       "source": "system",
-      "tier": 3,
+      "tier": 10,
       "combatStats": [
         {
           "type": "spd",
@@ -1641,27 +876,12 @@
       ]
     },
     {
-      "templateId": "boots_015",
-      "name": "灵木靴",
-      "description": "用灵木制成的靴子，鞋面带香。",
-      "slot": "boots",
-      "source": "system",
-      "tier": 4,
-      "combatStats": [
-        {
-          "type": "spd",
-          "min": 22,
-          "max": 29
-        }
-      ]
-    },
-    {
       "templateId": "boots_020",
       "name": "紫金靴",
       "description": "紫金锻造的靴子，边缘细刻。",
       "slot": "boots",
       "source": "system",
-      "tier": 5,
+      "tier": 20,
       "combatStats": [
         {
           "type": "spd",
@@ -1671,27 +891,12 @@
       ]
     },
     {
-      "templateId": "boots_025",
-      "name": "寒冰靴",
-      "description": "蕴含寒冰之力的靴子，鞋面有霜纹。",
-      "slot": "boots",
-      "source": "system",
-      "tier": 6,
-      "combatStats": [
-        {
-          "type": "spd",
-          "min": 25,
-          "max": 34
-        }
-      ]
-    },
-    {
       "templateId": "boots_030",
       "name": "雷霆靴",
       "description": "缠绕雷霆的靴子，线纹微焦。",
       "slot": "boots",
       "source": "system",
-      "tier": 7,
+      "tier": 30,
       "combatStats": [
         {
           "type": "spd",
@@ -1701,27 +906,12 @@
       ]
     },
     {
-      "templateId": "boots_035",
-      "name": "龙鳞靴",
-      "description": "以龙鳞制成的靴子，鳞片紧密。",
-      "slot": "boots",
-      "source": "system",
-      "tier": 8,
-      "combatStats": [
-        {
-          "type": "spd",
-          "min": 28,
-          "max": 39
-        }
-      ]
-    },
-    {
       "templateId": "boots_040",
       "name": "星辰靴",
       "description": "汇聚星辰之力的靴子，暗光浮动。",
       "slot": "boots",
       "source": "system",
-      "tier": 9,
+      "tier": 40,
       "combatStats": [
         {
           "type": "spd",
@@ -1731,27 +921,12 @@
       ]
     },
     {
-      "templateId": "boots_045",
-      "name": "破军靴",
-      "description": "战场上的破军靴子，内衬修补多次。",
-      "slot": "boots",
-      "source": "system",
-      "tier": 10,
-      "combatStats": [
-        {
-          "type": "spd",
-          "min": 32,
-          "max": 43
-        }
-      ]
-    },
-    {
       "templateId": "boots_050",
       "name": "九幽靴",
       "description": "来自九幽的靴子，色泽深沉。",
       "slot": "boots",
       "source": "system",
-      "tier": 11,
+      "tier": 50,
       "combatStats": [
         {
           "type": "spd",
@@ -1761,27 +936,12 @@
       ]
     },
     {
-      "templateId": "boots_055",
-      "name": "天罡靴",
-      "description": "天罡之力加持的靴子，鞋跟磨痕明显。",
-      "slot": "boots",
-      "source": "system",
-      "tier": 12,
-      "combatStats": [
-        {
-          "type": "spd",
-          "min": 35,
-          "max": 48
-        }
-      ]
-    },
-    {
       "templateId": "boots_060",
       "name": "太虚靴",
       "description": "太虚之力凝聚的靴子，鞋带结成古式。",
       "slot": "boots",
       "source": "system",
-      "tier": 13,
+      "tier": 60,
       "combatStats": [
         {
           "type": "spd",
@@ -1791,27 +951,12 @@
       ]
     },
     {
-      "templateId": "boots_065",
-      "name": "斩仙靴",
-      "description": "可斩仙人的靴子，鞋头硬朗。",
-      "slot": "boots",
-      "source": "system",
-      "tier": 14,
-      "combatStats": [
-        {
-          "type": "spd",
-          "min": 39,
-          "max": 52
-        }
-      ]
-    },
-    {
       "templateId": "boots_070",
       "name": "混元靴",
       "description": "混元一气所化的靴子，弧线流畅。",
       "slot": "boots",
       "source": "system",
-      "tier": 15,
+      "tier": 70,
       "combatStats": [
         {
           "type": "spd",
@@ -1821,27 +966,12 @@
       ]
     },
     {
-      "templateId": "boots_075",
-      "name": "诛神靴",
-      "description": "可诛杀神明的靴子，扣环刻旧字。",
-      "slot": "boots",
-      "source": "system",
-      "tier": 16,
-      "combatStats": [
-        {
-          "type": "spd",
-          "min": 42,
-          "max": 57
-        }
-      ]
-    },
-    {
       "templateId": "boots_080",
       "name": "造化靴",
       "description": "蕴含造化之力的靴子，鞋底有古印。",
       "slot": "boots",
       "source": "system",
-      "tier": 17,
+      "tier": 80,
       "combatStats": [
         {
           "type": "spd",
@@ -1851,27 +981,12 @@
       ]
     },
     {
-      "templateId": "boots_085",
-      "name": "开天靴",
-      "description": "可开天辟地的靴子，底纹宽厚。",
-      "slot": "boots",
-      "source": "system",
-      "tier": 18,
-      "combatStats": [
-        {
-          "type": "spd",
-          "min": 45,
-          "max": 62
-        }
-      ]
-    },
-    {
       "templateId": "boots_090",
       "name": "鸿蒙靴",
       "description": "鸿蒙初开时的靴子，鞋面纹理如云。",
       "slot": "boots",
       "source": "system",
-      "tier": 19,
+      "tier": 90,
       "combatStats": [
         {
           "type": "spd",
@@ -1881,27 +996,12 @@
       ]
     },
     {
-      "templateId": "boots_095",
-      "name": "混沌靴",
-      "description": "混沌之力所化的靴子，触感粗粝。",
-      "slot": "boots",
-      "source": "system",
-      "tier": 20,
-      "combatStats": [
-        {
-          "type": "spd",
-          "min": 49,
-          "max": 66
-        }
-      ]
-    },
-    {
       "templateId": "boots_100",
       "name": "大道靴",
       "description": "大道至简的靴子，素面无饰。",
       "slot": "boots",
       "source": "system",
-      "tier": 21,
+      "tier": 100,
       "combatStats": [
         {
           "type": "spd",
@@ -1931,32 +1031,12 @@
       ]
     },
     {
-      "templateId": "accessory_005",
-      "name": "灵玉",
-      "description": "蕴含灵气的玉石，边角被磨亮。",
-      "slot": "accessory",
-      "source": "system",
-      "tier": 2,
-      "combatStats": [
-        {
-          "type": "maxMp",
-          "min": 11,
-          "max": 16
-        },
-        {
-          "type": "mdef",
-          "min": 1,
-          "max": 1
-        }
-      ]
-    },
-    {
       "templateId": "accessory_010",
       "name": "法珠",
       "description": "能够凝聚灵息的法珠，内纹隐约。",
       "slot": "accessory",
       "source": "system",
-      "tier": 3,
+      "tier": 10,
       "combatStats": [
         {
           "type": "hit",
@@ -1967,26 +1047,6 @@
           "type": "mdef",
           "min": 1,
           "max": 1
-        }
-      ]
-    },
-    {
-      "templateId": "accessory_015",
-      "name": "灵晶",
-      "description": "蕴含灵气的晶石，光下闪动。",
-      "slot": "accessory",
-      "source": "system",
-      "tier": 4,
-      "combatStats": [
-        {
-          "type": "maxMp",
-          "min": 15,
-          "max": 20
-        },
-        {
-          "type": "mdef",
-          "min": 1,
-          "max": 2
         }
       ]
     },
@@ -1996,7 +1056,7 @@
       "description": "紫金制成的符箓，墨迹未褪。",
       "slot": "accessory",
       "source": "system",
-      "tier": 5,
+      "tier": 20,
       "combatStats": [
         {
           "type": "hit",
@@ -2006,26 +1066,6 @@
         {
           "type": "mdef",
           "min": 1,
-          "max": 2
-        }
-      ]
-    },
-    {
-      "templateId": "accessory_025",
-      "name": "寒冰珠",
-      "description": "蕴含寒冰之力的法珠，触之微凉。",
-      "slot": "accessory",
-      "source": "system",
-      "tier": 6,
-      "combatStats": [
-        {
-          "type": "maxMp",
-          "min": 18,
-          "max": 25
-        },
-        {
-          "type": "mdef",
-          "min": 2,
           "max": 2
         }
       ]
@@ -2036,32 +1076,12 @@
       "description": "缠绕雷霆的符箓，符角焦黑。",
       "slot": "accessory",
       "source": "system",
-      "tier": 7,
+      "tier": 30,
       "combatStats": [
         {
           "type": "hit",
           "min": 18,
           "max": 25
-        },
-        {
-          "type": "mdef",
-          "min": 2,
-          "max": 3
-        }
-      ]
-    },
-    {
-      "templateId": "accessory_035",
-      "name": "龙鳞珠",
-      "description": "以龙鳞制成的法珠，纹理细密。",
-      "slot": "accessory",
-      "source": "system",
-      "tier": 8,
-      "combatStats": [
-        {
-          "type": "maxMp",
-          "min": 22,
-          "max": 29
         },
         {
           "type": "mdef",
@@ -2076,7 +1096,7 @@
       "description": "汇聚星辰之力的符箓，符面点光。",
       "slot": "accessory",
       "source": "system",
-      "tier": 9,
+      "tier": 40,
       "combatStats": [
         {
           "type": "hit",
@@ -2091,32 +1111,12 @@
       ]
     },
     {
-      "templateId": "accessory_045",
-      "name": "破军珠",
-      "description": "战场上的破军法珠，旧绳仍系。",
-      "slot": "accessory",
-      "source": "system",
-      "tier": 10,
-      "combatStats": [
-        {
-          "type": "maxMp",
-          "min": 25,
-          "max": 34
-        },
-        {
-          "type": "mdef",
-          "min": 3,
-          "max": 4
-        }
-      ]
-    },
-    {
       "templateId": "accessory_050",
       "name": "九幽符",
       "description": "来自九幽的符箓，符角微卷。",
       "slot": "accessory",
       "source": "system",
-      "tier": 11,
+      "tier": 50,
       "combatStats": [
         {
           "type": "hit",
@@ -2127,26 +1127,6 @@
           "type": "mdef",
           "min": 3,
           "max": 4
-        }
-      ]
-    },
-    {
-      "templateId": "accessory_055",
-      "name": "天罡珠",
-      "description": "天罡之力加持的法珠，纹路似阵。",
-      "slot": "accessory",
-      "source": "system",
-      "tier": 12,
-      "combatStats": [
-        {
-          "type": "maxMp",
-          "min": 28,
-          "max": 39
-        },
-        {
-          "type": "mdef",
-          "min": 3,
-          "max": 5
         }
       ]
     },
@@ -2156,7 +1136,7 @@
       "description": "太虚之力凝聚的符箓，折痕规整。",
       "slot": "accessory",
       "source": "system",
-      "tier": 13,
+      "tier": 60,
       "combatStats": [
         {
           "type": "hit",
@@ -2171,32 +1151,12 @@
       ]
     },
     {
-      "templateId": "accessory_065",
-      "name": "斩仙珠",
-      "description": "可斩仙人的法珠，内纹如刃。",
-      "slot": "accessory",
-      "source": "system",
-      "tier": 14,
-      "combatStats": [
-        {
-          "type": "maxMp",
-          "min": 32,
-          "max": 43
-        },
-        {
-          "type": "mdef",
-          "min": 4,
-          "max": 6
-        }
-      ]
-    },
-    {
       "templateId": "accessory_070",
       "name": "混元符",
       "description": "混元一气所化的符箓，背面圆纹。",
       "slot": "accessory",
       "source": "system",
-      "tier": 15,
+      "tier": 70,
       "combatStats": [
         {
           "type": "hit",
@@ -2206,26 +1166,6 @@
         {
           "type": "mdef",
           "min": 4,
-          "max": 6
-        }
-      ]
-    },
-    {
-      "templateId": "accessory_075",
-      "name": "诛神珠",
-      "description": "可诛杀神明的法珠，旧盒仍在。",
-      "slot": "accessory",
-      "source": "system",
-      "tier": 16,
-      "combatStats": [
-        {
-          "type": "maxMp",
-          "min": 35,
-          "max": 48
-        },
-        {
-          "type": "mdef",
-          "min": 5,
           "max": 6
         }
       ]
@@ -2236,32 +1176,12 @@
       "description": "蕴含造化之力的符箓，符尾细穗。",
       "slot": "accessory",
       "source": "system",
-      "tier": 17,
+      "tier": 80,
       "combatStats": [
         {
           "type": "hit",
           "min": 35,
           "max": 48
-        },
-        {
-          "type": "mdef",
-          "min": 5,
-          "max": 7
-        }
-      ]
-    },
-    {
-      "templateId": "accessory_085",
-      "name": "开天珠",
-      "description": "可开天辟地的法珠，纹理粗犷。",
-      "slot": "accessory",
-      "source": "system",
-      "tier": 18,
-      "combatStats": [
-        {
-          "type": "maxMp",
-          "min": 39,
-          "max": 52
         },
         {
           "type": "mdef",
@@ -2276,7 +1196,7 @@
       "description": "鸿蒙初开时的符箓，符面留轻痕。",
       "slot": "accessory",
       "source": "system",
-      "tier": 19,
+      "tier": 90,
       "combatStats": [
         {
           "type": "hit",
@@ -2291,32 +1211,12 @@
       ]
     },
     {
-      "templateId": "accessory_095",
-      "name": "混沌珠",
-      "description": "混沌之力所化的法珠，暗影浮动。",
-      "slot": "accessory",
-      "source": "system",
-      "tier": 20,
-      "combatStats": [
-        {
-          "type": "maxMp",
-          "min": 42,
-          "max": 57
-        },
-        {
-          "type": "mdef",
-          "min": 6,
-          "max": 8
-        }
-      ]
-    },
-    {
       "templateId": "accessory_100",
       "name": "大道符",
       "description": "大道至简的符箓，墨色沉稳。",
       "slot": "accessory",
       "source": "system",
-      "tier": 21,
+      "tier": 100,
       "combatStats": [
         {
           "type": "hit",

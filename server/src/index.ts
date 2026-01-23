@@ -7,6 +7,9 @@ import { JWT_SECRET, PORT } from "./config";
 import { initDatabase } from "./db/init";
 import authRoutes from "./routes/auth";
 import gameRoutes from "./routes/game";
+import battleRoutes from "./battle/controller/BattleController";
+import { BattleGateway } from "./battle/ws/BattleGateway";
+import { BattleTimeoutService } from "./battle/service/BattleTimeoutService";
 import { initializeUserGame, getUserGameState, setUserStateCallback } from "./services/gameService";
 import { toClientState } from "./services/stateView";
 import type { AuthTokenPayload } from "./types/auth";
@@ -20,10 +23,29 @@ type AuthedSocket = Socket & {
 const app = express();
 const server = http.createServer(app);
 
+const allowedOrigins = new Set(
+  [process.env.CLIENT_URL, "http://localhost:5173", "http://127.0.0.1:5173"].filter(
+    (value): value is string => Boolean(value)
+  )
+);
+
+const isOriginAllowed = (origin?: string): boolean => {
+  if (!origin) {
+    return true;
+  }
+  return allowedOrigins.has(origin);
+};
+
 // 配置 CORS（WebSocket）
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: (origin, callback) => {
+      if (isOriginAllowed(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("CORS origin not allowed"));
+      }
+    },
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -31,7 +53,13 @@ const io = new Server(server, {
 
 // 配置 CORS（HTTP）
 const corsOptions = {
-  origin: process.env.CLIENT_URL || "http://localhost:5173",
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    if (isOriginAllowed(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("CORS origin not allowed"));
+    }
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
@@ -41,11 +69,13 @@ const corsOptions = {
 
 // 应用 CORS 与 JSON 解析中间件
 app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 app.use(express.json());
 
 // 路由
 app.use("/api/auth", authRoutes);
 app.use("/api/game", gameRoutes);
+app.use("/api/battle", battleRoutes);
 
 // 健康检查
 app.get("/health", (_req, res) => {
@@ -124,6 +154,21 @@ io.on("connection", async (socket: Socket) => {
       // cleanupUserGame(userId);
     }
   });
+});
+
+// 初始化战斗超时服务
+const battleTimeoutService = new BattleTimeoutService();
+
+// 初始化战斗 WebSocket 网关
+const battleGateway = new BattleGateway(io, battleTimeoutService);
+
+// 将 battleGateway 附加到 app，以便路由可以访问
+  (app as any).battleGateway = battleGateway;
+  (app as any).battleTimeoutService = battleTimeoutService;
+
+// 优雅关闭时清理所有定时器
+process.on("SIGTERM", () => {
+  battleTimeoutService.clearAllTimeouts();
 });
 
 // 启动服务器

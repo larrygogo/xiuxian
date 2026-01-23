@@ -5,9 +5,10 @@ import type { GameState } from '../types/game';
 
 interface GameActionsProps {
   state: GameState | null;
+  onEnterBattle?: () => void;
 }
 
-export function GameActions({ state }: GameActionsProps) {
+export function GameActions({ state, onEnterBattle }: GameActionsProps) {
   const [message, setMessage] = useState('');
   const isProcessingRef = useRef(false);
 
@@ -26,12 +27,27 @@ export function GameActions({ state }: GameActionsProps) {
               isProcessingRef.current = false;
             }, 600);
           }}
-          disabled={!state.alive}
+          disabled={state.hp <= 0}
           className={`${styles['action-button']} ${styles['tick-button']}`}
         >
           探索（开发中）
           <span className={styles['button-hint']}>
             玩法正在开发
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (onEnterBattle) {
+              onEnterBattle();
+            }
+          }}
+          disabled={state.hp <= 0}
+          className={`${styles['action-button']} ${styles['battle-button']}`}
+        >
+          进入战斗
+          <span className={styles['button-hint']}>
+            开始战斗
           </span>
         </button>
       </div>

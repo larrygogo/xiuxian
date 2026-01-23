@@ -60,6 +60,7 @@ interface MaterialTemplate {
   templateId: string;
   name: string;
   description?: string;
+  level?: number;
 }
 
 function getStatRole(slot: EquipmentSlot, type: CombatStatType): "primary" | "secondary" | "invalid" {
@@ -352,11 +353,22 @@ export class ItemGenerator {
    */
   generateMaterial(level: number): Material {
     const templates = getMaterialData();
-    const template = templates[Math.floor(Math.random() * templates.length)];
+    const leveledTemplates = templates
+      .filter((template) => typeof template.level === "number")
+      .sort((a, b) => (a.level ?? 0) - (b.level ?? 0));
+    const pool = leveledTemplates.length > 0 ? leveledTemplates : templates;
+    let template = pool[Math.floor(Math.random() * pool.length)];
+
+    if (leveledTemplates.length > 0) {
+      const candidate = leveledTemplates
+        .filter((entry) => (entry.level ?? 0) <= level)
+        .pop();
+      template = candidate ?? leveledTemplates[0];
+    }
 
     // 优先使用模板中的描述，如果不存在或为空则使用默认描述
-    const description = (template.description && template.description.trim()) 
-      ? template.description 
+    const description = (template.description && template.description.trim())
+      ? template.description
       : `${template.name}，可用于合成或强化。`;
 
     return {
@@ -364,8 +376,8 @@ export class ItemGenerator {
       templateId: template.templateId,
       name: template.name,
       type: "material",
-      level,
-      stackSize: this.randomInRange(1, 5),
+      level: template.level ?? level,
+      stackSize: 1,
       description
     };
   }

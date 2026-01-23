@@ -35,7 +35,6 @@ export interface GameState {
   statPoints: number; // 待分配属性点
   baseStats: BaseStats; // 基础属性
   combatStats: CombatStats; // 战斗属性
-  alive: boolean; // 是否存活
   lastTs: number; // 最近一次更新时间戳
   eventLog: string[]; // 事件日志
   inventory: (Item | null)[]; // 背包物品列表（固定20个位置，null表示空位置）

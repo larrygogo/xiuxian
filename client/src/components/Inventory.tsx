@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { ItemCard } from './ItemCard';
 import { gameAPI } from '../services/api';
 import type { Item, EquipmentSlots, EquipmentSlot } from '../types/item';
-import { SLOT_NAMES, isConsumable, isEquipment } from '../types/item';
+import { SLOT_NAMES, isConsumable, isEquipment, isMaterial } from '../types/item';
 import styles from './Inventory.module.css';
 import { useMessage } from './MessageProvider';
 
@@ -157,6 +157,26 @@ export function Inventory({ items, lingshi, equipment, playerLevel, onEquip, onU
       const newSlots = [...slots];
       
       if (toItem) {
+        const canTryMerge =
+          isConsumable(fromItem) &&
+          isConsumable(toItem) &&
+          fromItem.templateId === toItem.templateId;
+
+        if (canTryMerge) {
+          const mergeResponse = await gameAPI.mergeItems({
+            fromItemId: fromItem.id,
+            toItemId: toItem.id
+          });
+          const merged = Boolean((mergeResponse.data as { merged?: boolean }).merged);
+          if (merged) {
+            const updateResult = onUpdate();
+            if (updateResult instanceof Promise) {
+              await updateResult;
+            }
+            return true;
+          }
+        }
+
         // 交换位置
         newSlots[toIndex] = fromItem;
         newSlots[fromIndex] = toItem;
@@ -327,9 +347,12 @@ export function Inventory({ items, lingshi, equipment, playerLevel, onEquip, onU
         await moveOrSwapItems(fromIndex, target.index);
       }
     } else {
+      const quantityLabel = (isConsumable(item) || isMaterial(item)) && item.stackSize > 1
+        ? `（数量 ${item.stackSize}）`
+        : '';
       const confirmed = await message.confirm(
         <span>
-          要销毁 <span style={{ fontWeight: 700, color: "#f57c00" }}>{item.name}</span> 吗？
+          要销毁 <span style={{ fontWeight: 700, color: "#f57c00" }}>{item.name}</span>{quantityLabel} 吗？
         </span>
       );
       if (confirmed === true) {

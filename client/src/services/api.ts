@@ -66,10 +66,35 @@ export const gameAPI = {
   getItemTemplates: () => api.get('/api/game/items/templates'),
   reorderItems: (itemIds: (string | null)[], allowDiscard = false) =>
     api.post('/api/game/items/reorder', { itemIds, allowDiscard }),
-  giveItem: (payload: { targetUserId?: number; targetCharacterId?: number; itemType?: string; slot?: string; level?: number; templateId?: string; crafted?: boolean }) =>
+  mergeItems: (payload: { fromItemId: string; toItemId: string }) =>
+    api.post('/api/game/items/merge', payload),
+  giveItem: (payload: {
+    targetUserId?: number;
+    targetCharacterId?: number;
+    itemType?: string;
+    slot?: string;
+    level?: number;
+    templateId?: string;
+    crafted?: boolean;
+    consumables?: Array<{ templateId: string; quantity: number }>;
+    amount?: number;
+    materials?: Array<{ templateId: string; quantity: number }>;
+    equipments?: Array<{ templateId: string; quantity: number }>;
+  }) =>
     api.post('/api/game/admin/give-item', payload),
   giveExp: (payload: { targetUserId?: number; targetCharacterId?: number; amount: number }) =>
     api.post('/api/game/admin/give-exp', payload),
+};
+
+export const battleAPI = {
+  createRoom: (payload: { mapId: string; playerIds: number[] }) =>
+    api.post('/api/battle/rooms', payload),
+  getActiveRoom: () => api.get('/api/battle/rooms/active'),
+  getRoom: (roomId: string) => api.get(`/api/battle/rooms/${roomId}`),
+  getRoomState: (roomId: string) => api.get(`/api/battle/rooms/${roomId}/state`),
+  joinRoom: (roomId: string) => api.post(`/api/battle/rooms/${roomId}/join`),
+  submitCommand: (roomId: string, payload: { turn: number; type: string; targetId?: string }) =>
+    api.post(`/api/battle/rooms/${roomId}/command`, payload),
 };
 
 export default api;

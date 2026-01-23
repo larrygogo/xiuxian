@@ -33,11 +33,11 @@ export function migrateState(state: unknown): GameState | null {
   if (typeof s.maxMp !== "number") s.maxMp = 50;
   if (typeof s.statPoints !== "number") s.statPoints = 0;
 
-  if (typeof s.alive !== "boolean") s.alive = true;
   if (typeof s.lastTs !== "number") s.lastTs = Date.now();
 
+  const legacyAlive = (state as { alive?: boolean }).alive;
   // 修复已死亡的玩家：应用新的死亡惩罚逻辑
-  if (s.alive === false) {
+  if (legacyAlive === false) {
     // 战斗死亡惩罚：保留1HP，清空MP，扣除3%灵气和10%灵石
     const qiLoss = Math.floor((s.qi || 0) * 0.03);
     const lingshiLoss = Math.floor((s.lingshi || 0) * 0.1);
@@ -46,7 +46,9 @@ export function migrateState(state: unknown): GameState | null {
     s.mp = 0;
     s.qi = Math.max(0, (s.qi || 0) - qiLoss);
     s.lingshi = Math.max(0, (s.lingshi || 0) - lingshiLoss);
-    s.alive = true;
+  }
+  if ("alive" in s) {
+    delete (s as Record<string, unknown>).alive;
   }
 
   // 事件日志兜底

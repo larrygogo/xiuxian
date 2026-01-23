@@ -1,5 +1,5 @@
 import { logLine } from "../services/logger";
-import { generateRandomItem } from "../services/itemService";
+import { generateRandomItem, getConsumableData } from "../services/itemService";
 import { refreshDerivedStats } from "./stats";
 import type { GameState, CombatStats } from "../types/game";
 import type { Item, Equipment, Consumable, Material, EquipmentSlot } from "../types/item";
@@ -7,6 +7,32 @@ import { isEquipment, isConsumable, isMaterial } from "../types/item";
 
 // 背包固定大小（20个位置）
 const INVENTORY_SIZE = 20;
+const DEFAULT_MAX_STACK = 99;
+let consumableMaxStackCache: Map<string, number> | null = null;
+
+function getActorLabel(state: GameState): string {
+  const actorName = state.name && state.name.trim().length > 0 ? state.name : "无名修士";
+  const actorId = state.characterId ?? "未知ID";
+  return `${actorName}(${actorId})`;
+}
+
+function logAction(state: GameState, message: string): void {
+  logLine(message, state, `${getActorLabel(state)}：${message}`);
+}
+
+function logActionWithActor(state: GameState, message: string, actorLabel?: string): void {
+  const actor = actorLabel || getActorLabel(state);
+  logLine(message, state, `${actor}：${message}`);
+}
+
+function getConsumableMaxStack(templateId: string): number {
+  if (!consumableMaxStackCache) {
+    consumableMaxStackCache = new Map(
+      getConsumableData().map((template) => [template.templateId, template.maxStack])
+    );
+  }
+  return consumableMaxStackCache.get(templateId) ?? DEFAULT_MAX_STACK;
+}
 
 /**
  * 添加物品到背包
@@ -24,24 +50,17 @@ export function addItemToInventory(state: GameState, item: Item): boolean {
   state.inventory = state.inventory.slice(0, INVENTORY_SIZE);
 
   // 如果是可堆叠物品，尝试合并到现有堆叠
-  if (isConsumable(item) || isMaterial(item)) {
+  if (isConsumable(item)) {
     const existingItem = state.inventory.find(
       invItem => invItem !== null && invItem.templateId === item.templateId
     );
 
     if (existingItem) {
       if (isConsumable(existingItem) && isConsumable(item)) {
-        const maxStack = 99;
+        const maxStack = getConsumableMaxStack(item.templateId);
         if (existingItem.stackSize + item.stackSize <= maxStack) {
           existingItem.stackSize += item.stackSize;
-          logLine(`获得 ${item.name} x${item.stackSize}（堆叠至 ${existingItem.stackSize}）。`, state);
-          return true;
-        }
-      } else if (isMaterial(existingItem) && isMaterial(item)) {
-        const maxStack = 99;
-        if (existingItem.stackSize + item.stackSize <= maxStack) {
-          existingItem.stackSize += item.stackSize;
-          logLine(`获得 ${item.name} x${item.stackSize}（堆叠至 ${existingItem.stackSize}）。`, state);
+          logAction(state, `获得 ${item.name} x${item.stackSize}（堆叠至 ${existingItem.stackSize}）。`);
           return true;
         }
       }
@@ -55,7 +74,7 @@ export function addItemToInventory(state: GameState, item: Item): boolean {
   }
 
   state.inventory[emptyIndex] = item;
-  logLine(`获得 ${item.name}。`, state);
+  logAction(state, `获得 ${item.name}。`);
   return true;
 }
 
@@ -79,6 +98,67 @@ export function removeItemFromInventory(state: GameState, itemId: string): Item 
 }
 
 /**
+ * 合并同类可堆叠物品（消耗品/材料）
+ */
+export function mergeStackableItems(
+  state: GameState,
+  fromItemId: string,
+  toItemId: string
+): { merged: boolean; error?: string } {
+  if (!state.inventory) {
+    state.inventory = Array(INVENTORY_SIZE).fill(null);
+  }
+
+  const fromIndex = state.inventory.findIndex(item => item !== null && item.id === fromItemId);
+  const toIndex = state.inventory.findIndex(item => item !== null && item.id === toItemId);
+
+  if (fromIndex === -1 || toIndex === -1) {
+    return { merged: false, error: "物品不存在" };
+  }
+
+  if (fromIndex === toIndex) {
+    return { merged: false };
+  }
+
+  const fromItem = state.inventory[fromIndex];
+  const toItem = state.inventory[toIndex];
+
+  if (!fromItem || !toItem) {
+    return { merged: false, error: "物品不存在" };
+  }
+
+  const bothConsumable = isConsumable(fromItem) && isConsumable(toItem);
+  if (!bothConsumable) {
+    return { merged: false };
+  }
+
+  if (fromItem.templateId !== toItem.templateId) {
+    return { merged: false };
+  }
+
+  const maxStack = getConsumableMaxStack(fromItem.templateId);
+
+  if (toItem.stackSize >= maxStack || fromItem.stackSize <= 0) {
+    return { merged: false };
+  }
+
+  const transferable = Math.min(maxStack - toItem.stackSize, fromItem.stackSize);
+  if (transferable <= 0) {
+    return { merged: false };
+  }
+
+  toItem.stackSize += transferable;
+  fromItem.stackSize -= transferable;
+
+  if (fromItem.stackSize <= 0) {
+    state.inventory[fromIndex] = null;
+  }
+
+  logAction(state, `合并 ${toItem.name} ${transferable} 个（${toItem.stackSize - transferable} -> ${toItem.stackSize}）。`);
+  return { merged: true };
+}
+
+/**
  * 装备物品
  * 如果槽位已有装备，会先卸下旧装备到背包
  */
@@ -97,7 +177,7 @@ export function equipItem(state: GameState, itemId: string): boolean {
 
   // 检查玩家等级是否满足装备需求等级
   if (state.level < item.requiredLevel) {
-    logLine(`无法装备 ${item.name}：需要等级 ${item.requiredLevel}，当前等级 ${state.level}。`, state);
+    logAction(state, `无法装备 ${item.name}：需要等级 ${item.requiredLevel}，当前等级 ${state.level}。`);
     return false;
   }
 
@@ -113,13 +193,13 @@ export function equipItem(state: GameState, itemId: string): boolean {
       return false;
     }
     state.inventory[emptyIndex] = oldEquipment;
-    logLine(`卸下 ${oldEquipment.name}。`, state);
+    logAction(state, `卸下 ${oldEquipment.name}。`);
   }
 
   // 从背包移除并装备
   removeItemFromInventory(state, itemId);
   state.equipment[slot] = item;
-  logLine(`装备 ${item.name}。`, state);
+  logAction(state, `装备 ${item.name}。`);
 
   // 刷新属性（装备会影响战斗属性）
   refreshDerivedStats(state);
@@ -153,7 +233,7 @@ export function unequipItem(state: GameState, slot: EquipmentSlot): boolean {
   // 从装备槽移除并放回背包
   delete state.equipment[slot];
   state.inventory[emptyIndex] = equipment;
-  logLine(`卸下 ${equipment.name}。`, state);
+  logAction(state, `卸下 ${equipment.name}。`);
 
   // 刷新属性
   refreshDerivedStats(state);
@@ -184,7 +264,7 @@ export function useConsumable(state: GameState, itemId: string): boolean {
         const oldHp = state.hp;
         state.hp = Math.min(state.maxHp, state.hp + effect.value);
         const healed = state.hp - oldHp;
-        logLine(`使用 ${item.name}，恢复生命 +${healed}（${state.hp}/${state.maxHp}）。`, state);
+        logAction(state, `使用 ${item.name}，恢复生命 +${healed}（${state.hp}/${state.maxHp}）。`);
       }
       break;
 
@@ -193,18 +273,18 @@ export function useConsumable(state: GameState, itemId: string): boolean {
         const oldMp = state.mp;
         state.mp = Math.min(state.maxMp, state.mp + effect.value);
         const restored = state.mp - oldMp;
-        logLine(`使用 ${item.name}，恢复法力 +${restored}（${state.mp}/${state.maxMp}）。`, state);
+        logAction(state, `使用 ${item.name}，恢复法力 +${restored}（${state.mp}/${state.maxMp}）。`);
       }
       break;
 
     case "buff":
       // TODO: 实现buff系统（临时属性加成）
-      logLine(`使用 ${item.name}，获得临时增益效果。`, state);
+      logAction(state, `使用 ${item.name}，获得临时增益效果。`);
       break;
 
     case "stat":
       // TODO: 实现永久属性加成（如果设计中有）
-      logLine(`使用 ${item.name}，属性提升。`, state);
+      logAction(state, `使用 ${item.name}，属性提升。`);
       break;
   }
 
@@ -301,7 +381,12 @@ export function getEquipmentStats(state: GameState): {
  * 重新排序背包物品
  * itemIds 数组长度为20，null表示空位置，字符串表示物品ID
  */
-export function reorderItems(state: GameState, itemIds: (string | null)[], allowDiscard = false): boolean {
+export function reorderItems(
+  state: GameState,
+  itemIds: (string | null)[],
+  allowDiscard = false,
+  actorLabel?: string
+): boolean {
   if (!state.inventory) {
     state.inventory = Array(INVENTORY_SIZE).fill(null);
   }
@@ -348,7 +433,10 @@ export function reorderItems(state: GameState, itemIds: (string | null)[], allow
   } else {
     // 允许丢弃时，将未包含的物品视为销毁并记录日志
     itemsMap.forEach(item => {
-      logLine(`销毁 ${item.name}。`, state);
+      const quantityLabel = (isConsumable(item) || isMaterial(item)) && item.stackSize !== 1
+        ? ` ${item.stackSize} 个`
+        : "";
+      logActionWithActor(state, `销毁 ${item.name}${quantityLabel}。`, actorLabel);
     });
   }
 

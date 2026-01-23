@@ -1,0 +1,176 @@
+.commandPanel {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.68) 0%, rgba(255, 255, 255, 0.45) 100%);
+  border: 1.5px solid var(--ink-border);
+  border-radius: 16px;
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow:
+    0 18px 40px var(--ink-shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(6px);
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 2px;
+  color: var(--ink-text);
+  letter-spacing: 2px;
+}
+
+.commandList {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.commandButton {
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1.5px solid var(--ink-border);
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+  box-shadow:
+    0 10px 22px var(--ink-shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.commandButton:hover:not(:disabled):not(.active) {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: var(--ink-border-strong);
+  transform: translateY(-1px);
+  box-shadow:
+    0 16px 32px var(--ink-shadow-strong),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+.commandButton.active {
+  background: linear-gradient(135deg, rgba(46, 95, 138, 0.92), rgba(25, 118, 210, 0.85));
+  color: rgba(255, 255, 255, 0.98);
+  border-color: rgba(25, 118, 210, 0.65);
+  box-shadow:
+    0 18px 36px var(--ink-shadow-strong),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.commandButton.active:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.02);
+}
+
+.commandButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.targetHint {
+  margin-top: 8px;
+  padding: 12px 12px;
+  background: rgba(255, 243, 205, 0.6);
+  border: 1.5px solid rgba(160, 104, 35, 0.4);
+  border-radius: 12px;
+  box-shadow: 0 14px 30px var(--ink-shadow);
+}
+
+.hintText {
+  font-size: 13px;
+  color: rgba(95, 86, 75, 0.95);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.selectedTargetInfo {
+  font-size: 12px;
+  color: var(--ink-success);
+  font-weight: 800;
+}
+
+.submitButton {
+  padding: 12px;
+  background: linear-gradient(135deg, rgba(47, 90, 58, 0.95), rgba(76, 175, 80, 0.85));
+  color: rgba(255, 255, 255, 0.98);
+  border: 1.5px solid rgba(47, 90, 58, 0.45);
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+  box-shadow:
+    0 18px 36px var(--ink-shadow-strong),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.submitButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.02);
+}
+
+.submitButton:disabled {
+  background: rgba(0, 0, 0, 0.15);
+  border-color: rgba(0, 0, 0, 0.1);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.submittedStatus {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(232, 245, 233, 0.7);
+  border: 1.5px solid rgba(47, 90, 58, 0.35);
+  border-radius: 16px;
+  box-shadow: 0 18px 40px var(--ink-shadow);
+}
+
+.submittedIcon {
+  font-size: 48px;
+  color: rgba(47, 90, 58, 0.95);
+  margin-bottom: 8px;
+}
+
+.submittedText {
+  font-size: 16px;
+  font-weight: 900;
+  color: rgba(47, 90, 58, 0.95);
+}
+
+.phaseInfo {
+  padding: 12px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.04);
+  border: 1.5px solid rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  color: var(--ink-text-muted);
+  font-size: 14px;
+}
+
+@media (max-width: 900px) {
+  .commandList {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .commandList {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .commandButton,
+  .submitButton {
+    transition: none;
+  }
+
+  .commandPanel {
+    backdrop-filter: none;
+  }
+}
