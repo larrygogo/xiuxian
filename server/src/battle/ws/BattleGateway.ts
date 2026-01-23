@@ -274,11 +274,17 @@ export class BattleGateway {
   /**
    * 广播战斗结束事件
    */
-  broadcastBattleEnd(roomId: string, winner: "players" | "monsters" | "draw", logs: string[]): void {
+  broadcastBattleEnd(
+    roomId: string,
+    winner: "players" | "monsters" | "draw",
+    logs: string[],
+    rewards?: BattleEndPayload["rewards"]
+  ): void {
     const payload: BattleEndPayload = {
       roomId,
       winner,
-      logs
+      logs,
+      rewards
     };
 
     const event = {

@@ -278,17 +278,7 @@ function App() {
                   inventory={state?.inventory || []}
                   onRoomMissing={handleBattleExit}
                   onBattleEnd={handleBattleExit}
-                  headerRight={({ battleEnded }) => (
-                    <button
-                      type="button"
-                      onClick={handleExitBattle}
-                      className={styles['exit-battle-button']}
-                      disabled={!battleEnded}
-                      title={battleEnded ? '退出战斗' : '战斗未结束，无法退出'}
-                    >
-                      退出战斗
-                    </button>
-                  )}
+                  onExitBattle={handleExitBattle}
                 />
               </div>
             ) : (

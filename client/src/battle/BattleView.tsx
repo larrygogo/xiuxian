@@ -19,9 +19,10 @@ interface BattleViewProps {
   headerRight?: ReactNode | ((context: { battleEnded: boolean }) => ReactNode);
   onRoomMissing?: () => void;
   onBattleEnd?: () => void;
+  onExitBattle?: () => void;
 }
 
-export function BattleView({ roomId, inventory = [], headerRight, onRoomMissing, onBattleEnd }: BattleViewProps) {
+export function BattleView({ roomId, inventory = [], headerRight, onRoomMissing, onBattleEnd, onExitBattle }: BattleViewProps) {
   const { user } = useAuth();
   const [socket, setSocket] = useState<Socket | null>(null);
   const socketRef = useRef<Socket | null>(null);
@@ -205,8 +206,33 @@ export function BattleView({ roomId, inventory = [], headerRight, onRoomMissing,
 
         case 'BATTLE_END': {
           const payload = event.payload as BattleEndPayload;
-          const endLine = `战斗结束！获胜方：${payload.winner === 'players' ? '玩家' : payload.winner === 'monsters' ? '怪物' : '平局'}`;
+          const winnerText = payload.winner === 'players' ? '玩家' : payload.winner === 'monsters' ? '怪物' : '平局';
+          const endLine = `战斗结束！获胜方：${winnerText}`;
           setBattleLogs(prev => [...prev, ...payload.logs, endLine]);
+          
+          // 显示奖励信息
+          if (payload.rewards && user?.id) {
+            const playerReward = payload.rewards.find(r => r.userId === user.id);
+            if (playerReward && playerReward.success) {
+              const rewardMessages: string[] = [];
+              if (playerReward.experience > 0) {
+                rewardMessages.push(`经验 +${playerReward.experience}`);
+              }
+              if (playerReward.qi > 0) {
+                rewardMessages.push(`灵气 +${playerReward.qi}`);
+              }
+              if (playerReward.items.length > 0) {
+                const itemNames = playerReward.items.map(i => i.name).join('、');
+                rewardMessages.push(`获得物品：${itemNames}`);
+              }
+              if (rewardMessages.length > 0) {
+                setBattleLogs(prev => [...prev, `战斗奖励：${rewardMessages.join('，')}`]);
+              }
+            } else if (playerReward && !playerReward.success) {
+              setBattleLogs(prev => [...prev, '由于死亡或逃跑，未获得战斗奖励']);
+            }
+          }
+          
           stopRefreshPolling({ resetGiveUp: true });
           setCountdown(0);
           setCommandSubmitted(false);
@@ -410,6 +436,7 @@ export function BattleView({ roomId, inventory = [], headerRight, onRoomMissing,
             consumables={consumables}
             selectedItemId={selectedItemId}
             itemTargetScope={selectedItemTargetScope}
+            onExitBattle={onExitBattle}
             onCommandSelect={(cmd) => {
               setSelectedCommand(cmd);
               if (cmd === 'item') {

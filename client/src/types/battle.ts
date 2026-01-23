@@ -74,6 +74,19 @@ export interface BattleEndPayload {
   roomId: string;
   winner: "players" | "monsters" | "draw";
   logs: string[];
+  rewards?: Array<{
+    playerId: string;
+    userId: number;
+    experience: number;
+    qi: number;
+    items: Array<{
+      id: string;
+      templateId: string;
+      name: string;
+      type: string;
+    }>;
+    success: boolean;
+  }>;
 }
 
 export interface BattleEventDTO {

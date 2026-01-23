@@ -94,11 +94,11 @@ export function BattlefieldGrid({
         style={{ cursor: canClick ? 'pointer' : 'default' }}
       >
         <div className={styles.combatantContent}>
-          <div className={styles.combatantInfo}>
+          <div className={styles.combatantHeader}>
             <div className={styles.combatantName}>{combatant.name}</div>
             <div className={styles.combatantLevel}>Lv.{combatant.level}</div>
           </div>
-          <div className={styles.combatantStats}>
+          <div className={styles.combatantFooter}>
             <div className={styles.hpBar}>
               <div
                 className={styles.hpFill}
@@ -107,9 +107,6 @@ export function BattlefieldGrid({
                   backgroundColor: hpPercent > 50 ? '#4caf50' : hpPercent > 25 ? '#ff9800' : '#f44336'
                 }}
               />
-            </div>
-            <div className={styles.hpText}>
-              {combatant.hp}/{combatant.maxHp}
             </div>
           </div>
         </div>

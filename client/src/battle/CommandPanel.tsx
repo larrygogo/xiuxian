@@ -21,6 +21,7 @@ interface CommandPanelProps {
   consumables?: Consumable[];
   selectedItemId?: string | null;
   itemTargetScope?: 'self' | 'ally' | 'enemy' | 'any' | null;
+  onExitBattle?: () => void;
   onCommandSelect?: (command: BattleUICommandType) => void;
   onItemSelect?: (itemId: string | null) => void;
   onCommandSubmitted?: (allSubmitted?: boolean) => void;
@@ -39,6 +40,7 @@ export function CommandPanel({
   consumables = [],
   selectedItemId = null,
   itemTargetScope = null,
+  onExitBattle,
   onCommandSelect,
   onItemSelect,
   onCommandSubmitted
@@ -220,12 +222,20 @@ export function CommandPanel({
         </>
       )}
 
-      {phase !== 'TURN_INPUT' && (
+      {phase !== 'TURN_INPUT' && phase !== 'ENDED' && (
         <div className={styles.phaseInfo}>
           {phase === 'TURN_RESOLVE' && '回合结算中...'}
-          {phase === 'ENDED' && '战斗已结束'}
           {phase === 'PREPARE' && '准备中...'}
         </div>
+      )}
+      {phase === 'ENDED' && (
+        <button
+          type="button"
+          className={styles.exitBattleButton}
+          onClick={onExitBattle}
+        >
+          退出战斗
+        </button>
       )}
     </div>
   );

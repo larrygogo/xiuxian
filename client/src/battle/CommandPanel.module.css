@@ -169,6 +169,27 @@
   font-size: 14px;
 }
 
+.exitBattleButton {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(122, 47, 47, 0.45);
+  background: linear-gradient(135deg, rgba(122, 47, 47, 0.95), rgba(211, 47, 47, 0.85));
+  color: rgba(255, 255, 255, 0.98);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+  box-shadow:
+    0 16px 32px var(--ink-shadow-strong),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.exitBattleButton:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.03);
+}
+
 @media (max-width: 900px) {
   .commandList {
     grid-template-columns: repeat(3, minmax(0, 1fr));

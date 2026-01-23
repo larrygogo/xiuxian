@@ -290,9 +290,18 @@ router.post("/rooms/:roomId/command", async (req: Request, res: Response) => {
               battleGateway.broadcastTurnResolve(roomId, resolveResult.snapshot, resolveResult.logs);
             }
 
-            // 如果战斗结束，广播 BATTLE_END 事件
+            // 如果战斗结束，计算奖励并广播 BATTLE_END 事件
             if (resolveResult.battleEnded && resolveResult.winner) {
-              battleGateway.broadcastBattleEnd(roomId, resolveResult.winner, []);
+              // 计算奖励
+              const rewards = battleRoomService.calculateBattleRewards(roomId, resolveResult.winner);
+              
+              // 应用奖励
+              if (rewards.length > 0) {
+                await battleRoomService.applyBattleRewards(rewards);
+              }
+              
+              // 广播事件（包含奖励信息）
+              battleGateway.broadcastBattleEnd(roomId, resolveResult.winner, resolveResult.logs, rewards);
             } else if (!resolveResult.battleEnded) {
               // 如果战斗未结束，触发下一回合的 TURN_BEGIN
               const newRoom = battleRoomService.getRoom(roomId);

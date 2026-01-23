@@ -12,6 +12,7 @@ import type { CommandType } from "../domain/Command";
 import { BattleRoomStateAdapter } from "./BattleRoomStateAdapter";
 import { ResolveEngine } from "./ResolveEngine";
 import type { BattleSnapshotDTO } from "../dto/BattleSnapshotDTO";
+import { BattleRewardService } from "./BattleRewardService";
 
 /**
  * 战斗房间服务
@@ -20,11 +21,13 @@ export class BattleRoomService {
   private repo: BattleRoomRepo;
   private monsterSpawnService: MonsterSpawnService;
   private resolveEngine: ResolveEngine;
+  private rewardService: BattleRewardService;
 
   constructor(repo: BattleRoomRepo) {
     this.repo = repo;
     this.monsterSpawnService = new MonsterSpawnService();
     this.resolveEngine = new ResolveEngine();
+    this.rewardService = new BattleRewardService();
   }
 
   /**
@@ -309,6 +312,8 @@ export class BattleRoomService {
     // 更新房间状态
     if (result.battleEnded) {
       newRoom.status = "finished";
+      // 同步玩家状态（HP/MP）
+      this.syncPlayerStatesFromRoom(newRoom);
     } else {
       newRoom.status = "in_progress";
       newRoom.currentTurn = result.newState.turnNumber;
@@ -346,6 +351,90 @@ export class BattleRoomService {
       winner: result.winner,
       snapshot
     };
+  }
+
+  /**
+   * 计算战斗奖励
+   */
+  calculateBattleRewards(
+    roomId: string,
+    winner: "players" | "monsters" | "draw"
+  ): Array<{
+    playerId: string;
+    userId: number;
+    experience: number;
+    qi: number;
+    items: Array<{
+      id: string;
+      templateId: string;
+      name: string;
+      type: string;
+    }>;
+    success: boolean;
+  }> {
+    const room = this.repo.findById(roomId);
+    if (!room) {
+      return [];
+    }
+
+    const rewards = this.rewardService.calculateRewards(room, winner);
+    
+    // 转换为前端需要的格式
+    return rewards.map((reward: import("./BattleRewardService").BattleReward) => ({
+      playerId: reward.playerId,
+      userId: reward.userId,
+      experience: reward.experience,
+      qi: reward.qi,
+      items: reward.items.map((item: import("../../types/item").Item) => ({
+        id: item.id,
+        templateId: item.templateId,
+        name: item.name,
+        type: item.type
+      })),
+      success: reward.success
+    }));
+  }
+
+  /**
+   * 应用战斗奖励
+   */
+  async applyBattleRewards(
+    rewards: Array<{
+      playerId: string;
+      userId: number;
+      experience: number;
+      qi: number;
+      items: Array<{
+        id: string;
+        templateId: string;
+        name: string;
+        type: string;
+      }>;
+      success: boolean;
+    }>
+  ): Promise<void> {
+    // 直接应用奖励（物品信息已经在 calculateBattleRewards 中生成）
+    // 但我们需要重新计算以获取完整的 Item 对象
+    // 找到第一个奖励对应的房间
+    if (rewards.length === 0) {
+      return;
+    }
+
+    const firstReward = rewards[0];
+    const room = Array.from(this.repo.findAll()).find(r => 
+      r.participants.some(p => p.id === firstReward.playerId)
+    );
+    
+    if (!room) {
+      console.error("[BattleRoomService] 无法找到房间以应用奖励");
+      return;
+    }
+
+    // 重新计算奖励以获取完整的 Item 对象
+    const battleRewards = this.rewardService.calculateRewards(room, "players");
+    
+    // 应用奖励（包括物品、经验和灵气）
+    await this.rewardService.applyRewards(battleRewards);
   }
 
   /**
