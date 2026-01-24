@@ -210,20 +210,31 @@ export function BattleView({ roomId, inventory = [], headerRight, onRoomMissing,
           const endLine = `战斗结束！获胜方：${winnerText}`;
           setBattleLogs(prev => [...prev, ...payload.logs, endLine]);
           
+          // 更新快照（确保所有怪物的死亡状态都同步）
+          if (payload.snapshot) {
+            setSnapshot(payload.snapshot);
+          }
+          
           // 显示奖励信息
           if (payload.rewards && user?.id) {
             const playerReward = payload.rewards.find(r => r.userId === user.id);
             if (playerReward && playerReward.success) {
               const rewardMessages: string[] = [];
-              if (playerReward.experience > 0) {
-                rewardMessages.push(`经验 +${playerReward.experience}`);
-              }
               if (playerReward.qi > 0) {
                 rewardMessages.push(`灵气 +${playerReward.qi}`);
               }
+              if (playerReward.lingshi > 0) {
+                rewardMessages.push(`灵石 +${playerReward.lingshi}`);
+              }
               if (playerReward.items.length > 0) {
-                const itemNames = playerReward.items.map(i => i.name).join('、');
-                rewardMessages.push(`获得物品：${itemNames}`);
+                // 合并相同物品显示（数量 > 1 时显示数量）
+                const itemTexts = playerReward.items.map(i => {
+                  if (i.count && i.count > 1) {
+                    return `${i.name} x${i.count}`;
+                  }
+                  return i.name;
+                });
+                rewardMessages.push(`获得物品：${itemTexts.join('、')}`);
               }
               if (rewardMessages.length > 0) {
                 setBattleLogs(prev => [...prev, `战斗奖励：${rewardMessages.join('，')}`]);

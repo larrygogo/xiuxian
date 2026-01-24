@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { AxiosError } from 'axios';
 import { gameAPI } from '../services/api';
 import { connectSocket, disconnectSocket } from '../services/socket';
+import type { Socket } from 'socket.io-client';
 import type { ActionResult, GameState } from '../types/game';
 import type { EquipmentSlot } from '../types/item';
 
@@ -59,38 +60,64 @@ export function useGameState(userId: string | null | undefined) {
     setLoading(true);
     setError(null);
 
-    // 断开旧的 WebSocket 连接
-    disconnectSocket();
-
     // 获取游戏状态
     fetchState();
 
-    // 连接 WebSocket
+    // 连接 WebSocket（使用 ref 防止重复设置监听器）
+    let socketInstance: Socket | null = null;
+    let isMounted = true;
+    
     try {
-      const socket = connectSocket(token);
+      socketInstance = connectSocket(token);
       
-      socket.on('game:state', (data: GameStateResponse) => {
-        console.log('收到游戏状态更新:', data);
-        setState(data.state);
-      });
+      const handleGameState = (data: GameStateResponse) => {
+        if (isMounted) {
+          console.log('收到游戏状态更新:', data);
+          setState(data.state);
+        }
+      };
 
-      socket.on('connect', () => {
-        console.log('WebSocket 连接成功');
-      });
+      const handleConnect = () => {
+        if (isMounted) {
+          console.log('WebSocket 连接成功');
+        }
+      };
 
-      socket.on('connect_error', (err: Error) => {
-        console.error('WebSocket 连接错误:', err);
-        setError('WebSocket 连接失败，但可以继续使用 REST API');
-      });
+      const handleConnectError = (err: Error) => {
+        if (isMounted) {
+          console.error('WebSocket 连接错误:', err);
+          setError('WebSocket 连接失败，但可以继续使用 REST API');
+        }
+      };
+
+      // 只在 socket 未连接时添加监听器，避免重复添加
+      if (!socketInstance.connected) {
+        socketInstance.on('game:state', handleGameState);
+        socketInstance.on('connect', handleConnect);
+        socketInstance.on('connect_error', handleConnectError);
+      } else {
+        // 如果已经连接，直接添加监听器
+        socketInstance.on('game:state', handleGameState);
+        socketInstance.on('connect', handleConnect);
+        socketInstance.on('connect_error', handleConnectError);
+      }
 
       return () => {
-        disconnectSocket();
+        isMounted = false;
+        // 清理事件监听器
+        if (socketInstance) {
+          socketInstance.off('game:state', handleGameState);
+          socketInstance.off('connect', handleConnect);
+          socketInstance.off('connect_error', handleConnectError);
+        }
+        // 注意：这里不调用 disconnectSocket()，因为 socket 是全局共享的
+        // 只有在组件卸载且没有其他组件使用时才应该断开
       };
     } catch (err) {
       console.error('WebSocket 初始化失败:', err);
       // WebSocket 失败不影响 REST API 使用
     }
-  }, [userId, fetchState]);
+  }, [userId]); // 移除 fetchState 依赖，因为它不会变化
 
   const heal = async (): Promise<ActionResult> => {
     try {

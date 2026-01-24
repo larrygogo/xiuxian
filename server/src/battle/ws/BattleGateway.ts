@@ -10,6 +10,7 @@ import type { BattleStartPayload, TurnBeginPayload, TurnResolvePayload, BattleEn
 import type { BattleTimeoutService } from "../service/BattleTimeoutService";
 import { TurnScheduler } from "../service/TurnScheduler";
 import { battleRoomRepo, battleRoomService } from "../battleSingletons";
+import { getUserGameState } from "../../services/gameService";
 
 type AuthedSocket = Socket & {
   userId: number;
@@ -64,7 +65,14 @@ export class BattleGateway {
     // 连接处理
     battleNamespace.on("connection", (socket: Socket) => {
       const authed = socket as AuthedSocket;
-      console.log(`战斗网关：用户 ${authed.username} (${authed.userId}) 已连接`);
+      
+      // 获取游戏状态以显示角色信息
+      const gameState = getUserGameState(authed.userId);
+      if (gameState) {
+        console.log(`战斗网关：用户 ${authed.username} (${authed.userId}) 已连接 - 角色: ${gameState.name} (ID: ${gameState.characterId})`);
+      } else {
+        console.log(`战斗网关：用户 ${authed.username} (${authed.userId}) 已连接`);
+      }
 
       // 发送连接成功消息（Mock）
       socket.emit("battle:connected", {
@@ -135,7 +143,12 @@ export class BattleGateway {
 
       // 断开连接
       socket.on("disconnect", () => {
-        console.log(`战斗网关：用户 ${authed.username} (${authed.userId}) 已断开连接`);
+        const gameState = getUserGameState(authed.userId);
+        if (gameState) {
+          console.log(`战斗网关：用户 ${authed.username} (${authed.userId}) 已断开连接 - 角色: ${gameState.name} (ID: ${gameState.characterId})`);
+        } else {
+          console.log(`战斗网关：用户 ${authed.username} (${authed.userId}) 已断开连接`);
+        }
       });
     });
   }
@@ -278,12 +291,37 @@ export class BattleGateway {
     roomId: string,
     winner: "players" | "monsters" | "draw",
     logs: string[],
-    rewards?: BattleEndPayload["rewards"]
+    rewards?: BattleEndPayload["rewards"],
+    snapshot?: import("../dto/BattleSnapshotDTO").BattleSnapshotDTO
   ): void {
+    // 如果没有提供快照，从房间获取最新状态
+    let finalSnapshot = snapshot;
+    if (!finalSnapshot) {
+      const room = this.battleRoomService.getRoom(roomId);
+      if (room) {
+        const state = BattleRoomStateAdapter.battleRoomToState(room);
+        finalSnapshot = {
+          roomId: state.roomId,
+          mapId: state.mapId,
+          turnNumber: state.turnNumber,
+          phase: state.phase,
+          deadlineAt: state.deadlineAt,
+          players: state.players,
+          monsters: state.monsters,
+          commands: Array.from(state.commands.values()).map((cmd) => ({
+            playerId: cmd.playerId,
+            type: cmd.type,
+            targetId: cmd.targetId
+          }))
+        };
+      }
+    }
+
     const payload: BattleEndPayload = {
       roomId,
       winner,
       logs,
+      snapshot: finalSnapshot,
       rewards
     };
 

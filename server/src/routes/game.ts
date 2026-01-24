@@ -15,6 +15,7 @@ import { getAllEquipmentTemplates, getConsumableData, getItemTemplates, getMater
 import { refreshDerivedStats } from "../systems/stats";
 import { getUserById } from "../services/userService";
 import { generateCharacterId } from "../state/defaultState";
+import { LEVEL_MAX } from "../config";
 import type { EquipmentSlot, ItemType } from "../types/item";
 
 const router = express.Router();
@@ -398,6 +399,9 @@ router.post("/actions/levelup", async (req: Request, res: Response) => {
       }
       return res.status(400).json({ error: "已达到最高境界，无法继续升级" });
     }
+
+    // 升级后刷新属性，确保等级成长生效
+    refreshDerivedStats(state);
 
     await updateUserGameState(userId, state);
     res.json({ message: "升级成功", state: toClientState(state) });
@@ -1051,6 +1055,135 @@ router.post("/admin/give-exp", requireAdmin, async (req: Request, res: Response)
   } catch (error) {
     console.error("赠送经验错误:", error);
     res.status(500).json({ error: "赠送经验失败" });
+  }
+});
+
+/**
+ * 管理员：设置玩家等级和属性点
+ * POST /api/game/admin/set-level
+ */
+router.post("/admin/set-level", requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { targetUserId, targetCharacterId, level, statPoints } = req.body as {
+      targetUserId?: number;
+      targetCharacterId?: number;
+      level?: number;
+      statPoints?: number;
+    };
+
+    // 确定目标用户ID：优先使用 targetUserId，如果没有则通过 targetCharacterId 查找
+    let finalTargetUserId: number | null = null;
+    
+    if (targetUserId && typeof targetUserId === "number") {
+      finalTargetUserId = targetUserId;
+    } else if (targetCharacterId && typeof targetCharacterId === "number") {
+      finalTargetUserId = await findUserIdByCharacterId(targetCharacterId);
+      if (!finalTargetUserId) {
+        return res.status(404).json({ error: `指定的角色ID ${targetCharacterId} 不存在` });
+      }
+    } else {
+      return res.status(400).json({ error: "必须提供目标用户ID或角色ID" });
+    }
+
+    // 验证参数：至少需要提供 level 或 statPoints 之一
+    if (level === undefined && statPoints === undefined) {
+      return res.status(400).json({ error: "必须提供 level 或 statPoints 至少一个参数" });
+    }
+
+    // 获取目标用户信息（用于日志显示）
+    const targetUser = await getUserById(finalTargetUserId);
+    if (!targetUser) {
+      return res.status(404).json({ error: "指定的目标用户ID不存在" });
+    }
+
+    // 获取目标用户的游戏状态
+    let targetState = getUserGameState(finalTargetUserId);
+    if (!targetState) {
+      targetState = await initializeUserGame(finalTargetUserId, null);
+    }
+
+    const oldLevel = targetState.level;
+    const oldStatPoints = targetState.statPoints;
+    const changes: string[] = [];
+
+    // 设置等级
+    if (level !== undefined) {
+      if (typeof level !== "number" || level < 1 || level > LEVEL_MAX || !Number.isInteger(level)) {
+        return res.status(400).json({ error: `等级必须是 1 到 ${LEVEL_MAX} 之间的整数` });
+      }
+
+      const oldLevelForStats = targetState.level;
+      targetState.level = level;
+
+      // 根据等级自动计算属性点总数（每级5点，从1级开始）
+      // 等级 N 应该有 (N-1) × 5 点可分配属性点
+      // 计算当前已分配的属性点（从基础属性中减去初始值10）
+      const baseStats = targetState.baseStats || { str: 10, agi: 10, vit: 10, int: 10, spi: 10 };
+      const allocatedStatPoints = 
+        (baseStats.str - 10) + 
+        (baseStats.agi - 10) + 
+        (baseStats.vit - 10) + 
+        (baseStats.int - 10) + 
+        (baseStats.spi - 10);
+      
+      // 新等级应该有的总属性点
+      const expectedTotalStatPoints = (level - 1) * 5;
+      
+      // 设置新的可分配属性点 = 总属性点 - 已分配属性点
+      targetState.statPoints = Math.max(0, expectedTotalStatPoints - allocatedStatPoints);
+
+      if (level !== oldLevelForStats) {
+        const statPointsChange = targetState.statPoints - oldStatPoints;
+        if (statPointsChange > 0) {
+          changes.push(`等级 ${oldLevel} → ${level}（获得 ${statPointsChange} 点属性点）`);
+        } else if (statPointsChange < 0) {
+          changes.push(`等级 ${oldLevel} → ${level}（扣除 ${Math.abs(statPointsChange)} 点属性点）`);
+        } else {
+          changes.push(`等级 ${oldLevel} → ${level}`);
+        }
+      } else {
+        changes.push(`等级保持为 ${level}`);
+      }
+    }
+
+    // 增加属性点
+    if (statPoints !== undefined) {
+      if (typeof statPoints !== "number" || !Number.isInteger(statPoints) || statPoints < 0) {
+        return res.status(400).json({ error: "属性点必须是非负整数" });
+      }
+
+      if (statPoints > 0) {
+        targetState.statPoints += statPoints;
+        changes.push(`增加 ${statPoints} 点可分配属性点`);
+      }
+    }
+
+    // 刷新属性（确保等级成长生效）
+    refreshDerivedStats(targetState);
+
+    // 回满生命和法力
+    targetState.hp = targetState.maxHp;
+    targetState.mp = targetState.maxMp;
+
+    // 记录日志
+    const actorName = targetState.name && targetState.name.trim().length > 0 ? targetState.name : "无名修士";
+    const actorLabel = `${actorName}(${targetState.characterId})`;
+    const eventMessage = `系统设置：${changes.join("，")}。`;
+    logLine(eventMessage, targetState, `${actorLabel}：${eventMessage}`);
+
+    // 保存状态并推送更新
+    await updateUserGameState(finalTargetUserId, targetState);
+
+    res.json({
+      message: `成功设置用户 ${targetUser.username} (用户ID: ${finalTargetUserId}, 角色ID: ${targetState.characterId})`,
+      changes: {
+        level: level !== undefined ? { old: oldLevel, new: targetState.level } : undefined,
+        statPoints: { old: oldStatPoints, new: targetState.statPoints }
+      }
+    });
+  } catch (error) {
+    console.error("设置等级错误:", error);
+    res.status(500).json({ error: "设置等级失败" });
   }
 });
 

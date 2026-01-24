@@ -7,23 +7,23 @@
 
 .admin-tabs {
   display: flex;
-  gap: 12px;
-  padding: 16px;
+  gap: 8px;
+  padding: 12px;
   margin-bottom: 8px;
 }
 
 .admin-tab {
   flex: 1;
-  padding: 14px 24px;
+  padding: 8px 16px;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.2) 100%);
   border: 1.5px solid var(--ink-border);
-  border-radius: 10px;
+  border-radius: 8px;
   color: var(--ink-text-muted);
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   position: relative;
   overflow: hidden;
   box-shadow: 

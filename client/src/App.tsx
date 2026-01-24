@@ -4,7 +4,8 @@ import { useGameState } from './hooks/useGameState';
 import { Login } from './components/Login';
 import { CharacterCreation } from './components/CharacterCreation';
 import { MainStatus } from './components/MainStatus';
-import { GameActions } from './components/GameActions';
+import { GameScenes } from './components/GameScenes';
+import { SceneConfirmDialog } from './components/SceneConfirmDialog';
 import { EventLog } from './components/EventLog';
 import { ControlModal } from './components/ControlModal';
 import { Inventory } from './components/Inventory';
@@ -25,6 +26,7 @@ function App() {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [battleRoomId, setBattleRoomId] = useState<string | null>(null);
   const [creatingBattle, setCreatingBattle] = useState(false);
+  const [selectedScene, setSelectedScene] = useState<{ mapId: string; name: string; description: string; levelRange: [number, number]; monsterPool: Array<{ monsterId: string; weight: number; levelRange: [number, number] }> } | null>(null);
   const modalManagerRef = useRef(new ModalManager());
   const modalCardRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -155,27 +157,38 @@ function App() {
     }
   };
 
-  // 处理进入战斗
-  const handleEnterBattle = async () => {
-    if (!user?.id || creatingBattle) return;
+  // 处理场景选择
+  const handleSelectScene = (scene: { mapId: string; name: string; description: string; levelRange: [number, number]; monsterPool: Array<{ monsterId: string; weight: number }> }) => {
+    setSelectedScene(scene);
+  };
+
+  // 处理确认进入战斗
+  const handleConfirmEnterBattle = async () => {
+    if (!user?.id || creatingBattle || !selectedScene) return;
 
     setCreatingBattle(true);
     try {
       closeAllPanels();
-      // 创建战斗房间（使用默认地图和当前玩家）
+      // 创建战斗房间（使用选中的场景和当前玩家）
       const response = await battleAPI.createRoom({
-        mapId: 'map_forest_1', // 默认地图
+        mapId: selectedScene.mapId,
         playerIds: [Number(user.id)]
       });
 
       const { room } = response.data as { room: { roomId: string } };
       setBattleRoomId(room.roomId);
+      setSelectedScene(null); // 清除选中的场景
     } catch (error: any) {
       console.error('创建战斗房间失败:', error);
       alert(error.response?.data?.error || '创建战斗房间失败');
     } finally {
       setCreatingBattle(false);
     }
+  };
+
+  // 取消场景选择
+  const handleCancelSceneSelection = () => {
+    setSelectedScene(null);
   };
 
   // 退出战斗
@@ -284,7 +297,7 @@ function App() {
             ) : (
               <>
                 <EventLog state={state} variant="system-chat" title="系统频道" />
-                <GameActions state={state} onEnterBattle={handleEnterBattle} />
+                <GameScenes state={state} onSelectScene={handleSelectScene} />
                 <div className={styles['control-zone']}>
                   <div className={styles['control-title']}>控制区域</div>
                   <div className={styles['control-buttons']}>
@@ -345,6 +358,14 @@ function App() {
               )}
             </ControlModal>
           ))}
+          {selectedScene && (
+            <SceneConfirmDialog
+              scene={selectedScene}
+              playerLevel={state?.level || 1}
+              onConfirm={handleConfirmEnterBattle}
+              onCancel={handleCancelSceneSelection}
+            />
+          )}
         </div>
       </div>
     </MessageProvider>

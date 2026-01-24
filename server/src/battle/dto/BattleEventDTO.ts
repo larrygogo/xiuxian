@@ -66,16 +66,18 @@ export interface BattleEndPayload {
   roomId: string;
   winner: "players" | "monsters" | "draw";
   logs: string[];
+  snapshot?: import("./BattleSnapshotDTO").BattleSnapshotDTO; // 最终战斗状态快照
   rewards?: Array<{
     playerId: string;
     userId: number;
-    experience: number;
     qi: number;
+    lingshi: number;
     items: Array<{
       id: string;
       templateId: string;
       name: string;
       type: string;
+      count?: number; // 相同物品的数量
     }>;
     success: boolean;
   }>;

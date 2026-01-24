@@ -18,10 +18,6 @@ export class CombatantAdapter {
     // 确保战斗属性是最新的
     const combatStats = refreshDerivedStats(gameState);
 
-    // 计算统一的攻击力和防御力（取物理和法术的较大值）
-    const atk = Math.max(combatStats.pdmg, combatStats.mdmg);
-    const def = Math.max(combatStats.pdef, combatStats.mdef);
-
     // 确定状态
     let status: Combatant["status"] = "alive";
     if (gameState.hp <= 0) {
@@ -41,8 +37,14 @@ export class CombatantAdapter {
       mp: Math.max(0, gameState.mp),
       maxMp: gameState.maxMp,
       spd: combatStats.spd,
-      atk,
-      def,
+      // 使用新的战斗属性系统
+      pdmg: combatStats.pdmg,
+      mdmg: combatStats.mdmg,
+      pdef: combatStats.pdef,
+      mdef: combatStats.mdef,
+      // 兼容字段
+      atk: Math.max(combatStats.pdmg, combatStats.mdmg),
+      def: Math.max(combatStats.pdef, combatStats.mdef),
       status,
       position,
       userId

@@ -1,32 +1,45 @@
 [
   {
+    "mapId": "map_beginner_1",
+    "name": "新手村外",
+    "description": "新手村外的安全区域，这里是修仙之路的起点。虽然怪物较弱，但对于初入修仙的修士来说，这里是最适合的历练场所。",
+    "levelRange": [1, 5],
+    "monsterPool": [
+      { "monsterId": "mob_wolf", "weight": 60, "levelRange": [1, 4] },
+      { "monsterId": "mob_snake", "weight": 40, "levelRange": [1, 5] }
+    ]
+  },
+  {
     "mapId": "map_forest_1",
     "name": "幽暗森林",
+    "description": "一片被浓雾笼罩的古老森林，树木参天蔽日。这里是初入修仙之路的修士们常来的地方，虽然危险，但也是历练的好去处。",
     "levelRange": [1, 10],
     "monsterPool": [
-      { "monsterId": "mob_wolf", "weight": 50 },
-      { "monsterId": "mob_bandit", "weight": 30 },
-      { "monsterId": "mob_snake", "weight": 20 }
+      { "monsterId": "mob_wolf", "weight": 50, "levelRange": [1, 8] },
+      { "monsterId": "mob_bandit", "weight": 30, "levelRange": [3, 10] },
+      { "monsterId": "mob_snake", "weight": 20, "levelRange": [2, 9] }
     ]
   },
   {
     "mapId": "map_mountain_1",
     "name": "荒山野岭",
+    "description": "荒凉的山脉地带，怪石嶙峋，草木稀疏。这里盘踞着更强大的妖兽，只有有一定实力的修士才敢踏足。",
     "levelRange": [5, 15],
     "monsterPool": [
-      { "monsterId": "mob_bandit", "weight": 40 },
-      { "monsterId": "mob_bear", "weight": 35 },
-      { "monsterId": "mob_corpse", "weight": 25 }
+      { "monsterId": "mob_bandit", "weight": 40, "levelRange": [5, 12] },
+      { "monsterId": "mob_bear", "weight": 35, "levelRange": [7, 15] },
+      { "monsterId": "mob_corpse", "weight": 25, "levelRange": [6, 14] }
     ]
   },
   {
     "mapId": "map_dungeon_1",
     "name": "地下洞窟",
+    "description": "深不见底的地下洞窟，阴森恐怖，散发着腐朽的气息。这里是强者的试炼场，弱者只会成为洞窟中的一具枯骨。",
     "levelRange": [10, 20],
     "monsterPool": [
-      { "monsterId": "mob_corpse", "weight": 30 },
-      { "monsterId": "mob_bear", "weight": 40 },
-      { "monsterId": "mob_bandit", "weight": 30 }
+      { "monsterId": "mob_corpse", "weight": 30, "levelRange": [10, 18] },
+      { "monsterId": "mob_bear", "weight": 40, "levelRange": [12, 20] },
+      { "monsterId": "mob_bandit", "weight": 30, "levelRange": [11, 19] }
     ]
   }
 ]

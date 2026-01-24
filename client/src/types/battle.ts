@@ -18,11 +18,18 @@ export interface Combatant {
   mp?: number;
   maxMp?: number;
   spd: number;
-  atk: number;
-  def: number;
+  // 战斗属性（和玩家一样的系统）
+  pdmg: number; // 物理伤害
+  mdmg: number; // 法术伤害
+  pdef: number; // 物理防御
+  mdef: number; // 法术防御
+  // 兼容字段（保留用于向后兼容，实际使用 pdmg/mdmg 和 pdef/mdef）
+  atk?: number; // 攻击力（兼容字段，取 pdmg 和 mdmg 的较大值）
+  def?: number; // 防御力（兼容字段，取 pdef 和 mdef 的较大值）
   status: CombatantStatus;
   position: { x: number; y: number };
   userId?: number;
+  monsterId?: string; // 怪物模板ID（仅怪物）
 }
 
 export interface BattleSnapshotDTO {
@@ -74,16 +81,18 @@ export interface BattleEndPayload {
   roomId: string;
   winner: "players" | "monsters" | "draw";
   logs: string[];
+  snapshot?: BattleSnapshotDTO; // 最终战斗状态快照
   rewards?: Array<{
     playerId: string;
     userId: number;
-    experience: number;
     qi: number;
+    lingshi: number;
     items: Array<{
       id: string;
       templateId: string;
       name: string;
       type: string;
+      count?: number; // 相同物品的数量
     }>;
     success: boolean;
   }>;

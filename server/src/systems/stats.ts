@@ -141,6 +141,17 @@ export function refreshDerivedStats(state: GameState): CombatStats {
     }
   }
 
+  // 添加基于等级的固定成长（防止裸奔）
+  // 等级 N 时，总成长 = (N-1) × 每级成长值
+  const levelBonus = Math.max(0, state.level - 1);
+  finalCombatStats.maxHp += levelBonus * 12;  // 最大生命 +12/级
+  finalCombatStats.maxMp += levelBonus * 8;   // 最大法力 +8/级
+  finalCombatStats.pdmg += levelBonus * 1;     // 物理攻击 +1/级
+  finalCombatStats.mdmg += levelBonus * 1;     // 法术攻击 +1/级
+  finalCombatStats.pdef += levelBonus * 1;     // 物理防御 +1/级
+  finalCombatStats.mdef += levelBonus * 1;     // 法术防御 +1/级
+  finalCombatStats.spd += Math.floor(levelBonus * 0.5);     // 速度 +1/级
+
   // 合并已有的战斗属性，避免丢失自定义字段
   state.combatStats = {
     ...state.combatStats,

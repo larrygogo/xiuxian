@@ -136,12 +136,7 @@ export class BattleTimeoutService {
 
       console.log(`[BattleTimeoutService] 结算成功: roomId=${roomId}, battleEnded=${resolveResult.battleEnded}`);
 
-      // 广播 TURN_RESOLVE 事件
-      if (resolveResult.snapshot) {
-        battleGateway.broadcastTurnResolve(roomId, resolveResult.snapshot, resolveResult.logs);
-      }
-
-      // 如果战斗结束，计算奖励并广播 BATTLE_END 事件
+      // 如果战斗结束，计算奖励并广播 BATTLE_END 事件（不发送 TURN_RESOLVE）
       if (resolveResult.battleEnded && resolveResult.winner) {
         // 计算奖励
         const rewards = battleRoomService.calculateBattleRewards(roomId, resolveResult.winner);
@@ -151,10 +146,15 @@ export class BattleTimeoutService {
           await battleRoomService.applyBattleRewards(rewards);
         }
         
-        // 广播事件（包含奖励信息）
-        battleGateway.broadcastBattleEnd(roomId, resolveResult.winner, resolveResult.logs, rewards);
+        // 广播事件（包含奖励信息和最终快照）
+        battleGateway.broadcastBattleEnd(roomId, resolveResult.winner, resolveResult.logs, rewards, resolveResult.snapshot);
       } else if (!resolveResult.battleEnded) {
-        // 如果战斗未结束，触发下一回合的 TURN_BEGIN
+        // 如果战斗未结束，广播 TURN_RESOLVE 事件
+        if (resolveResult.snapshot) {
+          battleGateway.broadcastTurnResolve(roomId, resolveResult.snapshot, resolveResult.logs);
+        }
+        
+        // 触发下一回合的 TURN_BEGIN
         const newRoom = battleRoomService.getRoom(roomId);
         if (newRoom) {
           battleGateway.broadcastTurnBegin(roomId, newRoom);

@@ -1,5 +1,7 @@
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
+import { computeDerivedStats } from "../../systems/stats";
+import type { BaseStats } from "../../types/game";
 
 /**
  * 地图配置
@@ -7,61 +9,64 @@ import { join } from "path";
 export interface MapConfig {
   mapId: string;
   name: string;
+  description?: string;
   levelRange: [number, number];
   monsterPool: Array<{
     monsterId: string;
     weight: number;
+    levelRange: [number, number];
   }>;
 }
 
 /**
- * 怪物基础属性
+ * 怪物基础属性（和玩家一样的基础属性系统）
+ */
+export interface MonsterBaseAttributes {
+  str: number; // 力道
+  agi: number; // 身法
+  vit: number; // 体魄
+  int: number; // 灵识
+  spi: number; // 根骨
+}
+
+/**
+ * 怪物基础属性（兼容旧格式）
  */
 export interface MonsterBaseStats {
-  maxHp: number;
-  atk: number;
-  def: number;
-  spd: number;
+  maxHp?: number; // 最大生命值（如果提供，会覆盖基于 vit 的计算）
+  atk?: number; // 攻击力（兼容字段，如果提供 baseAttributes 则忽略）
+  def?: number; // 防御力（兼容字段，如果提供 baseAttributes 则忽略）
+  spd?: number; // 速度（兼容字段，如果提供 baseAttributes 则忽略）
+  // 新的基础属性系统（和玩家一样）
+  baseAttributes?: MonsterBaseAttributes; // 基础属性（优先使用）
 }
 
 /**
- * 成长曲线配置
+ * 成长曲线配置（线性成长）
  */
-export interface LinearGrowth {
-  type: "LINEAR";
+export interface GrowthConfig {
   perLevel: {
-    maxHp: number;
-    atk: number;
-    def: number;
-    spd: number;
+    maxHp?: number; // 最大生命值成长
+    // 基础属性成长（优先使用）
+    str?: number; // 力道成长
+    agi?: number; // 身法成长
+    vit?: number; // 体魄成长
+    int?: number; // 灵识成长
+    spi?: number; // 根骨成长
+    // 兼容字段
+    atk?: number; // 攻击力成长（如果提供 baseAttributes 成长则忽略）
+    def?: number; // 防御力成长（如果提供 baseAttributes 成长则忽略）
+    spd?: number; // 速度成长（如果提供 baseAttributes 成长则忽略）
   };
 }
 
-export interface ExponentialGrowth {
-  type: "EXPONENTIAL";
-  rate: {
-    maxHp: number;
-    atk: number;
-    def: number;
-    spd: number;
-  };
+/**
+ * 怪物掉落物品配置
+ */
+export interface MonsterDrop {
+  templateId: string; // 物品模板ID
+  probability: number; // 掉落概率 (0-1)
 }
-
-export interface SegmentGrowth {
-  type: "SEGMENT";
-  segments: Array<{
-    from: number;
-    to: number;
-    perLevel: {
-      maxHp: number;
-      atk: number;
-      def: number;
-      spd: number;
-    };
-  }>;
-}
-
-export type GrowthConfig = LinearGrowth | ExponentialGrowth | SegmentGrowth;
 
 /**
  * 怪物模板
@@ -69,25 +74,25 @@ export type GrowthConfig = LinearGrowth | ExponentialGrowth | SegmentGrowth;
 export interface MonsterTemplate {
   monsterId: string;
   name: string;
-  rarity: "NORMAL" | "ELITE" | "BOSS";
   baseStats: MonsterBaseStats;
   growth: GrowthConfig;
-  caps?: {
-    maxHp: number;
-    atk: number;
-    def: number;
-    spd: number;
-  };
+  drops?: MonsterDrop[]; // 掉落物品列表
 }
 
 /**
- * 计算后的怪物属性
+ * 计算后的怪物属性（和玩家一样的战斗属性系统）
  */
 export interface CalculatedMonsterStats {
   maxHp: number;
-  atk: number;
-  def: number;
-  spd: number;
+  maxMp: number;
+  pdmg: number; // 物理伤害
+  mdmg: number; // 法术伤害
+  pdef: number; // 物理防御
+  mdef: number; // 法术防御
+  spd: number; // 速度
+  // 兼容字段
+  atk?: number; // 攻击力（取 pdmg 和 mdmg 的较大值）
+  def?: number; // 防御力（取 pdef 和 mdef 的较大值）
 }
 
 /**
@@ -127,17 +132,22 @@ export class ConfigService {
   private monstersCache: MonsterTemplate[] | null = null;
 
   /**
+   * 清除地图配置缓存
+   */
+  clearMapsCache(): void {
+    this.mapsCache = null;
+  }
+
+  /**
    * 加载地图配置
    */
   loadMapsConfig(): MapConfig[] {
-    if (this.mapsCache) {
-      return this.mapsCache;
-    }
-
+    // 每次都重新读取文件，确保获取最新数据
     const filePath = join(DATA_DIR, "maps.json");
     const data = readFileSync(filePath, "utf-8");
-    this.mapsCache = JSON.parse(data) as MapConfig[];
-    return this.mapsCache;
+    const maps = JSON.parse(data) as MapConfig[];
+    this.mapsCache = maps;
+    return maps;
   }
 
   /**
@@ -171,7 +181,7 @@ export class ConfigService {
   }
 
   /**
-   * 根据怪物模板和等级计算属性
+   * 根据怪物模板和等级计算属性（使用和玩家一样的属性系统）
    */
   calculateMonsterStats(monsterId: string, level: number): CalculatedMonsterStats | null {
     const template = this.getMonsterById(monsterId);
@@ -179,57 +189,107 @@ export class ConfigService {
       return null;
     }
 
-    const { baseStats, growth, caps } = template;
-    const stats: CalculatedMonsterStats = {
-      maxHp: baseStats.maxHp,
-      atk: baseStats.atk,
-      def: baseStats.def,
-      spd: baseStats.spd
+    const { baseStats, growth } = template;
+    const levelDiff = level - 1;
+
+    // 如果提供了基础属性，使用基础属性系统（和玩家一样）
+    if (baseStats.baseAttributes) {
+      const baseAttrs = baseStats.baseAttributes;
+      const growthAttrs = growth.perLevel;
+
+      // 计算当前等级的基础属性
+      const currentBase: BaseStats = {
+        str: baseAttrs.str + (growthAttrs.str || 0) * levelDiff,
+        agi: baseAttrs.agi + (growthAttrs.agi || 0) * levelDiff,
+        vit: baseAttrs.vit + (growthAttrs.vit || 0) * levelDiff,
+        int: baseAttrs.int + (growthAttrs.int || 0) * levelDiff,
+        spi: baseAttrs.spi + (growthAttrs.spi || 0) * levelDiff
+      };
+
+      // 使用和玩家一样的公式计算战斗属性
+      const combatStats = computeDerivedStats(currentBase);
+
+      // 如果提供了 maxHp 覆盖值，使用它
+      let maxHp = combatStats.maxHp;
+      if (baseStats.maxHp !== undefined) {
+        maxHp = baseStats.maxHp + (growth.perLevel.maxHp || 0) * levelDiff;
+      }
+
+      return {
+        maxHp: Math.max(1, Math.floor(maxHp)),
+        maxMp: combatStats.maxMp,
+        pdmg: combatStats.pdmg,
+        mdmg: combatStats.mdmg,
+        pdef: combatStats.pdef,
+        mdef: combatStats.mdef,
+        spd: combatStats.spd,
+        atk: Math.max(combatStats.pdmg, combatStats.mdmg), // 兼容字段
+        def: Math.max(combatStats.pdef, combatStats.mdef) // 兼容字段
+      };
+    }
+
+    // 兼容旧格式：使用 atk/def/spd
+    // 将旧的 atk/def 转换为基础属性（反向计算）
+    const baseAtk = baseStats.atk || 8;
+    const baseDef = baseStats.def || 3;
+    const baseSpd = baseStats.spd || 6;
+    const baseMaxHp = baseStats.maxHp || 45;
+
+    // 根据旧的 atk/def 反推基础属性（简化处理：假设物理为主）
+    // pdmg = str * 2.8 + agi * 0.3，假设 agi = str * 0.5，则 str ≈ atk / 3.0
+    // pdef = spi * 2.2 + vit * 0.6，假设 vit = spi，则 spi ≈ def / 2.8
+    const estimatedStr = Math.max(1, Math.floor(baseAtk / 3.0));
+    const estimatedAgi = Math.max(1, Math.floor(estimatedStr * 0.5));
+    const estimatedSpi = Math.max(1, Math.floor(baseDef / 2.8));
+    const estimatedVit = Math.max(1, Math.floor(baseDef / 2.8));
+    // spd = 50 + agi * 2.0，反推 agi = (spd - 50) / 2.0
+    const estimatedAgiFromSpd = Math.max(1, Math.floor((baseSpd - 50) / 2.0));
+    // 使用速度反推的 agi 如果更合理，使用它
+    const finalAgi = estimatedAgiFromSpd > 0 ? estimatedAgiFromSpd : estimatedAgi;
+    // maxHp = 60 + vit * 6，反推 vit = (maxHp - 60) / 6
+    const estimatedVitFromHp = Math.max(1, Math.floor((baseMaxHp - 60) / 6));
+    const finalVit = estimatedVitFromHp > 0 ? estimatedVitFromHp : estimatedVit;
+
+    const baseAttrs: BaseStats = {
+      str: estimatedStr,
+      agi: finalAgi,
+      vit: finalVit,
+      int: 0, // 假设怪物主要是物理攻击
+      spi: estimatedSpi
     };
 
-    // 计算成长
-    if (growth.type === "LINEAR") {
-      const levelDiff = level - 1;
-      stats.maxHp += growth.perLevel.maxHp * levelDiff;
-      stats.atk += growth.perLevel.atk * levelDiff;
-      stats.def += growth.perLevel.def * levelDiff;
-      stats.spd += growth.perLevel.spd * levelDiff;
-    } else if (growth.type === "EXPONENTIAL") {
-      const levelDiff = level - 1;
-      stats.maxHp = baseStats.maxHp * Math.pow(growth.rate.maxHp, levelDiff);
-      stats.atk = baseStats.atk * Math.pow(growth.rate.atk, levelDiff);
-      stats.def = baseStats.def * Math.pow(growth.rate.def, levelDiff);
-      stats.spd = baseStats.spd * Math.pow(growth.rate.spd, levelDiff);
-    } else if (growth.type === "SEGMENT") {
-      const levelDiff = level - 1;
-      // 找到对应的 segment
-      const segment = growth.segments.find(
-        (s) => level >= s.from && level <= s.to
-      );
-      if (segment) {
-        const segmentLevelDiff = level - segment.from;
-        stats.maxHp += segment.perLevel.maxHp * segmentLevelDiff;
-        stats.atk += segment.perLevel.atk * segmentLevelDiff;
-        stats.def += segment.perLevel.def * segmentLevelDiff;
-        stats.spd += segment.perLevel.spd * segmentLevelDiff;
-      }
+    // 应用成长
+    if (growth.perLevel.atk) {
+      baseAttrs.str += Math.floor(growth.perLevel.atk / 3.0 * levelDiff);
+    }
+    if (growth.perLevel.def) {
+      baseAttrs.spi += Math.floor(growth.perLevel.def / 2.8 * levelDiff);
+      baseAttrs.vit += Math.floor(growth.perLevel.def / 2.8 * levelDiff);
+    }
+    if (growth.perLevel.spd) {
+      baseAttrs.agi += Math.floor(growth.perLevel.spd / 2.0 * levelDiff);
     }
 
-    // 应用上限
-    if (caps) {
-      stats.maxHp = Math.min(stats.maxHp, caps.maxHp);
-      stats.atk = Math.min(stats.atk, caps.atk);
-      stats.def = Math.min(stats.def, caps.def);
-      stats.spd = Math.min(stats.spd, caps.spd);
+    // 使用和玩家一样的公式计算战斗属性
+    const combatStats = computeDerivedStats(baseAttrs);
+
+    // 计算 maxHp（考虑成长）
+    let maxHp = combatStats.maxHp;
+    if (baseStats.maxHp !== undefined) {
+      maxHp = baseStats.maxHp + (growth.perLevel.maxHp || 0) * levelDiff;
     }
 
-    // 确保数值为正整数
-    stats.maxHp = Math.max(1, Math.floor(stats.maxHp));
-    stats.atk = Math.max(1, Math.floor(stats.atk));
-    stats.def = Math.max(0, Math.floor(stats.def));
-    stats.spd = Math.max(1, Math.floor(stats.spd));
-
-    return stats;
+    return {
+      maxHp: Math.max(1, Math.floor(maxHp)),
+      maxMp: combatStats.maxMp,
+      pdmg: combatStats.pdmg,
+      mdmg: combatStats.mdmg,
+      pdef: combatStats.pdef,
+      mdef: combatStats.mdef,
+      spd: combatStats.spd,
+      atk: Math.max(combatStats.pdmg, combatStats.mdmg), // 兼容字段
+      def: Math.max(combatStats.pdef, combatStats.mdef) // 兼容字段
+    };
   }
 }
 

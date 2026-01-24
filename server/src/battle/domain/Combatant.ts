@@ -21,11 +21,18 @@ export interface Combatant {
   mp?: number; // 当前法力值（玩家可用）
   maxMp?: number; // 最大法力值（玩家可用）
   spd: number; // 速度
-  atk: number; // 攻击力（统一，不区分物理/法术）
-  def: number; // 防御力（统一）
+  // 战斗属性（和玩家一样的系统）
+  pdmg: number; // 物理伤害
+  mdmg: number; // 法术伤害
+  pdef: number; // 物理防御
+  mdef: number; // 法术防御
+  // 兼容字段（保留用于向后兼容，实际使用 pdmg/mdmg 和 pdef/mdef）
+  atk?: number; // 攻击力（兼容字段，取 pdmg 和 mdmg 的较大值）
+  def?: number; // 防御力（兼容字段，取 pdef 和 mdef 的较大值）
   status: CombatantStatus; // 状态
   position: { x: number; y: number }; // 战场位置
   userId?: number; // 用户ID（仅玩家）
+  monsterId?: string; // 怪物模板ID（仅怪物）
 }
 
 /**
@@ -37,10 +44,12 @@ export function createCombatant(
   name: string,
   level: number = 1
 ): Combatant {
-  // Mock 基础属性
+  // Mock 基础属性（使用新的战斗属性系统）
   const baseHp = 100;
-  const baseAtk = 10;
-  const baseDef = 5;
+  const basePdmg = 10;
+  const baseMdmg = 8;
+  const basePdef = 5;
+  const baseMdef = 5;
   const baseSpd = 10;
 
   return {
@@ -53,8 +62,12 @@ export function createCombatant(
     mp: 0,
     maxMp: 0,
     spd: baseSpd,
-    atk: baseAtk,
-    def: baseDef,
+    pdmg: basePdmg,
+    mdmg: baseMdmg,
+    pdef: basePdef,
+    mdef: baseMdef,
+    atk: Math.max(basePdmg, baseMdmg), // 兼容字段
+    def: Math.max(basePdef, baseMdef), // 兼容字段
     status: "alive",
     position: { x: 0, y: 0 },
     userId: side === "player" ? undefined : undefined

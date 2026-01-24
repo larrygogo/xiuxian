@@ -23,6 +23,37 @@ router.use((req, res, next) => {
 const roomLock = new BattleRoomLock();
 
 /**
+ * 获取场景列表
+ * GET /api/battle/scenes
+ */
+router.get("/scenes", async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "未提供认证令牌" });
+    }
+
+    const maps = configService.loadMapsConfig();
+    
+    // 获取玩家等级（如果需要过滤场景）
+    // 这里暂时返回所有场景，前端可以根据玩家等级显示提示
+    
+    res.json({
+      scenes: maps.map(map => ({
+        mapId: map.mapId,
+        name: map.name,
+        description: map.description || "",
+        levelRange: map.levelRange,
+        monsterPool: map.monsterPool
+      }))
+    });
+  } catch (error) {
+    console.error("获取场景列表错误:", error);
+    res.status(500).json({ error: "获取场景列表失败" });
+  }
+});
+
+/**
  * 创建战斗房间
  * POST /api/battle/rooms
  */
@@ -285,12 +316,7 @@ router.post("/rooms/:roomId/command", async (req: Request, res: Response) => {
           // 立即触发结算
           const resolveResult = battleRoomService.resolveTurn(roomId);
           if (resolveResult) {
-            // 广播 TURN_RESOLVE 事件
-            if (resolveResult.snapshot) {
-              battleGateway.broadcastTurnResolve(roomId, resolveResult.snapshot, resolveResult.logs);
-            }
-
-            // 如果战斗结束，计算奖励并广播 BATTLE_END 事件
+            // 如果战斗结束，计算奖励并广播 BATTLE_END 事件（不发送 TURN_RESOLVE）
             if (resolveResult.battleEnded && resolveResult.winner) {
               // 计算奖励
               const rewards = battleRoomService.calculateBattleRewards(roomId, resolveResult.winner);
@@ -300,10 +326,15 @@ router.post("/rooms/:roomId/command", async (req: Request, res: Response) => {
                 await battleRoomService.applyBattleRewards(rewards);
               }
               
-              // 广播事件（包含奖励信息）
-              battleGateway.broadcastBattleEnd(roomId, resolveResult.winner, resolveResult.logs, rewards);
+              // 广播事件（包含奖励信息和最终快照）
+              battleGateway.broadcastBattleEnd(roomId, resolveResult.winner, resolveResult.logs, rewards, resolveResult.snapshot);
             } else if (!resolveResult.battleEnded) {
-              // 如果战斗未结束，触发下一回合的 TURN_BEGIN
+              // 如果战斗未结束，广播 TURN_RESOLVE 事件
+              if (resolveResult.snapshot) {
+                battleGateway.broadcastTurnResolve(roomId, resolveResult.snapshot, resolveResult.logs);
+              }
+              
+              // 触发下一回合的 TURN_BEGIN
               const newRoom = battleRoomService.getRoom(roomId);
               if (newRoom) {
                 battleGateway.broadcastTurnBegin(roomId, newRoom);

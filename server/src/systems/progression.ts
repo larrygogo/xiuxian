@@ -1,50 +1,6 @@
-import { readFileSync, existsSync } from "fs";
-import { join } from "path";
 import { LEVEL_MAX } from "../config";
 import { logLine } from "../services/logger";
 import type { GameState } from "../types/game";
-
-// 加载升级灵气表
-function getDataDir(): string {
-  const cwd = process.cwd();
-  const possiblePaths = [
-    join(cwd, "server", "data"),  // 从项目根目录启动
-    join(cwd, "data"),             // 从 server 目录启动
-    join(__dirname, "..", "..", "data"),  // 从编译后的位置
-    join(__dirname, "..", "data")  // 从 src/systems 位置
-  ];
-  
-  for (const path of possiblePaths) {
-    try {
-      const testFile = join(path, "levelQiTable.json");
-      if (existsSync(testFile)) {
-        return path;
-      }
-    } catch {
-      // 继续尝试下一个路径
-    }
-  }
-  
-  // 如果都找不到，默认使用 server/data
-  return join(cwd, "server", "data");
-}
-
-function loadLevelQiTable(): Record<string, number> {
-  const dataDir = getDataDir();
-  const filePath = join(dataDir, "levelQiTable.json");
-  const data = readFileSync(filePath, "utf-8");
-  return JSON.parse(data) as Record<string, number>;
-}
-
-// 缓存灵气表数据
-let levelQiTableCache: Record<string, number> | null = null;
-
-function getLevelQiTable(): Record<string, number> {
-  if (!levelQiTableCache) {
-    levelQiTableCache = loadLevelQiTable();
-  }
-  return levelQiTableCache;
-}
 
 /**
  * 获取当前等级的显示名称
@@ -55,21 +11,36 @@ export function stageName(state: GameState): string {
 }
 
 /**
+ * 原公式（保持不变）
+ * 计算原始经验值
+ */
+function expRaw(level: number): number {
+  const base = 100;
+  const p = 1.6;
+  const growth = 1.08;
+  const k = 10;
+
+  return base * Math.pow(level, p) * Math.pow(growth, level / k);
+}
+
+/**
+ * 结果整形：让经验值变成 step 的倍数
+ */
+function roundToStep(x: number, step: number): number {
+  return Math.round(x / step) * step;
+}
+
+/**
+ * 最终使用：统一让结尾是 0（10 的倍数）
  * 计算进境所需的灵气数量
- * 从 levelQiTable.json 文件中读取
+ * 
+ * @param level 当前等级
+ * @returns 升级到下一级所需的灵气数量
  */
 export function qiNeedForStep(level: number): number {
   const lvl = Math.max(1, Math.min(level, LEVEL_MAX));
-  const table = getLevelQiTable();
-  const qi = table[lvl.toString()];
-  
-  // 如果表中没有该等级的数据，使用默认值（向后兼容）
-  if (qi === undefined) {
-    // 降级到旧的线性公式作为后备
-    return 30 + (lvl - 1) * 6;
-  }
-  
-  return qi;
+  const raw = expRaw(lvl);
+  return roundToStep(raw, 10);
 }
 
 /**

@@ -1,9 +1,9 @@
 [
   {
-    "templateId": "material_iron_001",
+    "templateId": "material_iron_000",
     "name": "精铁",
     "description": "经过提炼的精制铁块，可用于锻造装备。",
-    "level": 1
+    "level": 0
   },
   {
     "templateId": "material_iron_010",

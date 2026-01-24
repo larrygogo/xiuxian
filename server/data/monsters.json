@@ -2,131 +2,139 @@
   {
     "monsterId": "mob_wolf",
     "name": "山林野狼",
-    "rarity": "NORMAL",
     "baseStats": {
-      "maxHp": 145,
-      "atk": 108,
-      "def": 3,
-      "spd": 6
-    },
-    "growth": {
-      "type": "LINEAR",
-      "perLevel": {
-        "maxHp": 6,
-        "atk": 1.2,
-        "def": 0.6,
-        "spd": 0.3
+      "maxHp": 45,
+      "baseAttributes": {
+        "str": 3,
+        "agi": 2,
+        "vit": 1,
+        "int": 0,
+        "spi": 1
       }
     },
-    "caps": {
-      "maxHp": 500,
-      "atk": 100,
-      "def": 80,
-      "spd": 50
-    }
+    "growth": {
+      "perLevel": {
+        "maxHp": 6,
+        "str": 0.4,
+        "agi": 0.15,
+        "vit": 0.2,
+        "spi": 0.2
+      }
+    },
+    "drops": [
+      { "templateId": "material_iron_001", "probability": 0.3 },
+      { "templateId": "potion_hp_001", "probability": 0.2 }
+    ]
   },
   {
     "monsterId": "mob_bandit",
     "name": "山贼",
-    "rarity": "ELITE",
     "baseStats": {
-      "maxHp": 180,
-      "atk": 114,
-      "def": 6,
-      "spd": 5
-    },
-    "growth": {
-      "type": "LINEAR",
-      "perLevel": {
-        "maxHp": 9,
-        "atk": 1.8,
-        "def": 0.9,
-        "spd": 0.3
+      "maxHp": 80,
+      "baseAttributes": {
+        "str": 5,
+        "agi": 1,
+        "vit": 3,
+        "int": 0,
+        "spi": 2
       }
     },
-    "caps": {
-      "maxHp": 3000,
-      "atk": 200,
-      "def": 150,
-      "spd": 80
-    }
+    "growth": {
+      "perLevel": {
+        "maxHp": 9,
+        "str": 0.6,
+        "agi": 0.15,
+        "vit": 0.3,
+        "spi": 0.3
+      }
+    },
+    "drops": [
+      { "templateId": "material_iron_010", "probability": 0.4 },
+      { "templateId": "potion_hp_002", "probability": 0.25 },
+      { "templateId": "weapon_001", "probability": 0.15 }
+    ]
   },
   {
     "monsterId": "mob_snake",
     "name": "妖蛇",
-    "rarity": "NORMAL",
     "baseStats": {
-      "maxHp": 135,
-      "atk": 110,
-      "def": 2,
-      "spd": 8
-    },
-    "growth": {
-      "type": "LINEAR",
-      "perLevel": {
-        "maxHp": 5,
-        "atk": 1.5,
-        "def": 0.4,
-        "spd": 0.4
+      "maxHp": 35,
+      "baseAttributes": {
+        "str": 3,
+        "agi": 4,
+        "vit": 0,
+        "int": 0,
+        "spi": 1
       }
     },
-    "caps": {
-      "maxHp": 400,
-      "atk": 120,
-      "def": 60,
-      "spd": 60
-    }
+    "growth": {
+      "perLevel": {
+        "maxHp": 5,
+        "str": 0.5,
+        "agi": 0.2,
+        "vit": 0.1,
+        "spi": 0.15
+      }
+    },
+    "drops": [
+      { "templateId": "material_iron_001", "probability": 0.25 },
+      { "templateId": "potion_mp_001", "probability": 0.3 }
+    ]
   },
   {
     "monsterId": "mob_bear",
     "name": "黑熊精",
-    "rarity": "ELITE",
     "baseStats": {
-      "maxHp": 120,
-      "atk": 12,
-      "def": 10,
-      "spd": 4
-    },
-    "growth": {
-      "type": "LINEAR",
-      "perLevel": {
-        "maxHp": 12,
-        "atk": 1.5,
-        "def": 1.2,
-        "spd": 0.2
+      "maxHp": 20,
+      "baseAttributes": {
+        "str": 4,
+        "agi": 0,
+        "vit": 2,
+        "int": 0,
+        "spi": 4
       }
     },
-    "caps": {
-      "maxHp": 5000,
-      "atk": 250,
-      "def": 200,
-      "spd": 70
-    }
+    "growth": {
+      "perLevel": {
+        "maxHp": 12,
+        "str": 0.5,
+        "agi": 0.1,
+        "vit": 0.4,
+        "spi": 0.4
+      }
+    },
+    "drops": [
+      { "templateId": "material_iron_010", "probability": 0.35 },
+      { "templateId": "potion_hp_002", "probability": 0.3 },
+      { "templateId": "armor_001", "probability": 0.2 }
+    ]
   },
   {
     "monsterId": "mob_corpse",
     "name": "腐尸",
-    "rarity": "NORMAL",
     "baseStats": {
       "maxHp": 50,
-      "atk": 9,
-      "def": 4,
-      "spd": 3
-    },
-    "growth": {
-      "type": "LINEAR",
-      "perLevel": {
-        "maxHp": 7,
-        "atk": 1.3,
-        "def": 0.7,
-        "spd": 0.2
+      "baseAttributes": {
+        "str": 3,
+        "agi": 0,
+        "vit": 2,
+        "int": 0,
+        "spi": 2
       }
     },
-    "caps": {
-      "maxHp": 600,
-      "atk": 110,
-      "def": 90,
-      "spd": 40
-    }
+    "growth": {
+      "perLevel": {
+        "maxHp": 7,
+        "str": 0.45,
+        "agi": 0.1,
+        "vit": 0.25,
+        "spi": 0.25
+      }
+    },
+    "drops": [
+      { "templateId": "material_iron_001", "probability": 0.3 },
+      { "templateId": "potion_hp_001", "probability": 0.25 },
+      { "templateId": "helmet_001", "probability": 0.1 }
+    ]
   }
 ]

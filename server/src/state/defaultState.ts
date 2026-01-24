@@ -2,15 +2,16 @@ import type { GameState } from "../types/game";
 
 /**
  * 生成唯一的角色数字ID
- * 设计目标：更短（便于展示/输入），同时尽量降低冲突概率
+ * 设计目标：固定8位数字，便于展示/输入
  */
 export function generateCharacterId(): number {
-  // 10位数字：8位“秒级时间尾号” + 2位随机数
-  // 例：last8Seconds=12345678, rand=07 => 1234567807
-  const seconds = Math.floor(Date.now() / 1000);
-  const last8Seconds = seconds % 100_000_000;
-  const rand2 = Math.floor(Math.random() * 100);
-  return last8Seconds * 100 + rand2;
+  // 8位数字：范围 10000000 到 99999999
+  // 使用时间戳的后7位 + 1位随机数，确保是8位
+  const timestamp = Date.now();
+  const last7Digits = timestamp % 10_000_000;
+  const randomDigit = Math.floor(Math.random() * 10);
+  // 确保第一位不是0，所以从10000000开始
+  return 10_000_000 + (last7Digits % 9_000_000) + randomDigit;
 }
 
 /**

@@ -50,7 +50,7 @@ function getRequiredLevelFromTemplateId(templateId: string): number {
 }
 
 export function AdminGiveItem({ onSuccess }: AdminGiveItemProps) {
-  const [activeTab, setActiveTab] = useState<'item' | 'exp'>('item');
+  const [activeTab, setActiveTab] = useState<'item' | 'exp' | 'level'>('item');
   
   // 物品相关状态
   const [targetId, setTargetId] = useState('');
@@ -72,6 +72,10 @@ export function AdminGiveItem({ onSuccess }: AdminGiveItemProps) {
   // 经验相关状态
   const [expTargetId, setExpTargetId] = useState('');
   const [expAmount, setExpAmount] = useState('');
+  
+  // 等级相关状态
+  const [levelTargetId, setLevelTargetId] = useState('');
+  const [levelValue, setLevelValue] = useState('');
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -298,6 +302,59 @@ export function AdminGiveItem({ onSuccess }: AdminGiveItemProps) {
     }
   };
 
+  const handleLevelSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setLoading(true);
+
+    try {
+      const idValue = parseInt(levelTargetId, 10);
+      if (isNaN(idValue) || idValue <= 0) {
+        setError('请输入有效的ID');
+        setLoading(false);
+        return;
+      }
+
+      if (levelValue.trim() === '') {
+        setError('请输入等级');
+        setLoading(false);
+        return;
+      }
+
+      const levelNum = parseInt(levelValue, 10);
+      if (isNaN(levelNum) || levelNum < 1 || levelNum > 100 || !Number.isInteger(levelNum)) {
+        setError('等级必须是 1 到 100 之间的整数');
+        setLoading(false);
+        return;
+      }
+
+      const payload: {
+        targetCharacterId: number;
+        level: number;
+      } = {
+        targetCharacterId: idValue,
+        level: levelNum
+      };
+
+      const response = await gameAPI.setLevel(payload);
+      const data = response.data as { message?: string; changes?: { level?: { old: number; new: number }; statPoints: { old: number; new: number } } };
+      
+      setSuccess(data.message || '设置成功');
+      
+      if (onSuccess) {
+        setTimeout(() => {
+          onSuccess();
+        }, 1000);
+      }
+    } catch (err: unknown) {
+      const message = (err as AxiosError<ApiError>).response?.data?.error || '设置等级失败';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className={styles['admin-panel']}>
       <div className={styles['admin-tabs']}>
@@ -314,6 +371,13 @@ export function AdminGiveItem({ onSuccess }: AdminGiveItemProps) {
           onClick={() => setActiveTab('exp')}
         >
           赠送经验
+        </button>
+        <button
+          type="button"
+          className={`${styles['admin-tab']} ${activeTab === 'level' ? styles['active'] : ''}`}
+          onClick={() => setActiveTab('level')}
+        >
+          设置等级
         </button>
       </div>
 
@@ -503,7 +567,7 @@ export function AdminGiveItem({ onSuccess }: AdminGiveItemProps) {
             {loading ? '赠送中...' : '赠送物品'}
           </button>
         </form>
-      ) : (
+      ) : activeTab === 'exp' ? (
         <form onSubmit={handleExpSubmit} className={styles['admin-give-item-form']}>
           <div className={styles['form-group']}>
             <label htmlFor="expTargetId">目标角色ID *</label>
@@ -535,6 +599,45 @@ export function AdminGiveItem({ onSuccess }: AdminGiveItemProps) {
 
           <button type="submit" disabled={loading} className={styles['submit-button']}>
             {loading ? '赠送中...' : '赠送经验'}
+          </button>
+        </form>
+      ) : (
+        <form onSubmit={handleLevelSubmit} className={styles['admin-give-item-form']}>
+          <div className={styles['form-group']}>
+            <label htmlFor="levelTargetId">目标角色ID *</label>
+            <input
+              id="levelTargetId"
+              type="text"
+              value={levelTargetId}
+              onChange={(e) => setLevelTargetId(e.target.value)}
+              required
+              placeholder="输入角色ID"
+            />
+          </div>
+
+          <div className={styles['form-group']}>
+            <label htmlFor="levelValue">等级（1-100） *</label>
+            <input
+              id="levelValue"
+              type="number"
+              min="1"
+              max="100"
+              step="1"
+              value={levelValue}
+              onChange={(e) => setLevelValue(e.target.value)}
+              required
+              placeholder="输入等级"
+            />
+            <small style={{ color: 'var(--ink-text-muted)', fontSize: '12px' }}>
+              设置等级后会自动计算属性点（每级5点）
+            </small>
+          </div>
+
+          {error && <div className={styles['error-message']}>{error}</div>}
+          {success && <div className={styles['success-message']}>{success}</div>}
+
+          <button type="submit" disabled={loading} className={styles['submit-button']}>
+            {loading ? '设置中...' : '设置等级'}
           </button>
         </form>
       )}

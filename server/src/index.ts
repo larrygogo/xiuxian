@@ -104,17 +104,30 @@ io.use((socket, next) => {
 
 // 存储每个用户的 socket 连接
 const userSockets = new Map<number, Set<AuthedSocket>>();
+// 存储已处理的 socket ID，防止重复处理
+const processedSocketIds = new Set<string>();
 
 io.on("connection", async (socket: Socket) => {
   const authed = socket as AuthedSocket;
   const userId = authed.userId;
-  console.log(`用户 ${authed.username} (${userId}) 已连接`);
+  const socketId = socket.id;
+
+  // 检查是否已经处理过这个 socket（防止重复连接事件）
+  if (processedSocketIds.has(socketId)) {
+    // 这个 socket 已经处理过，忽略重复的连接事件
+    return;
+  }
+
+  // 标记为已处理
+  processedSocketIds.add(socketId);
 
   // 存储 socket，便于后续广播
   if (!userSockets.has(userId)) {
     userSockets.set(userId, new Set());
   }
-  userSockets.get(userId)!.add(authed);
+  const existingSockets = userSockets.get(userId)!;
+  const isFirstConnection = existingSockets.size === 0;
+  existingSockets.add(authed);
 
   // 定义状态变化回调，通过 WebSocket 推送
   const onStateChange = (newState: GameState) => {
@@ -134,6 +147,12 @@ io.on("connection", async (socket: Socket) => {
     setUserStateCallback(userId, onStateChange);
   }
 
+  // 显示连接信息（包含角色名和角色ID）
+  // 只在第一次连接时显示，避免重复日志
+  if (isFirstConnection) {
+    console.log(`用户 ${authed.username} (${userId}) 已连接 - 角色: ${state.name} (ID: ${state.characterId})`);
+  }
+
   // 发送当前状态
   authed.emit("game:state", { state: toClientState(state) });
 
@@ -144,12 +163,23 @@ io.on("connection", async (socket: Socket) => {
 
   // 断开连接处理
   authed.on("disconnect", () => {
-    console.log(`用户 ${authed.username} (${userId}) 已断开连接`);
+    // 从已处理列表中移除
+    processedSocketIds.delete(socketId);
+    
+    const gameState = getUserGameState(userId);
     const sockets = userSockets.get(userId);
     if (!sockets) return;
+    
     sockets.delete(authed);
+    
+    // 如果该用户的所有 socket 都断开了，显示断开日志
     if (sockets.size === 0) {
       userSockets.delete(userId);
+      if (gameState) {
+        console.log(`用户 ${authed.username} (${userId}) 已断开连接 - 角色: ${gameState.name} (ID: ${gameState.characterId})`);
+      } else {
+        console.log(`用户 ${authed.username} (${userId}) 已断开连接`);
+      }
       // 可选：清理游戏状态（如果希望用户离线时停止游戏）
       // cleanupUserGame(userId);
     }

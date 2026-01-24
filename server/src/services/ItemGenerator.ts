@@ -320,6 +320,40 @@ export class ItemGenerator {
   }
 
   /**
+   * 通过模板ID生成消耗品
+   * @param templateId 消耗品模板ID
+   * @param level 物品等级（可选）
+   */
+  generateConsumableFromTemplate(templateId: string, level?: number): Consumable {
+    const templates = getConsumableData();
+    const template = templates.find((t) => t.templateId === templateId);
+    if (!template) {
+      throw new Error(`消耗品模板不存在: ${templateId}`);
+    }
+
+    // 使用模板中的效果值
+    const effect: ConsumableEffect = { ...template.effect };
+
+    const name = template.name;
+    // 优先使用模板中的描述，如果不存在或为空则使用默认描述
+    const description = (template.description && template.description.trim()) 
+      ? template.description 
+      : `${name}，使用后可恢复或增强。`;
+
+    return {
+      id: this.generateItemId(),
+      templateId: template.templateId,
+      name,
+      type: "consumable",
+      level: level ?? 1,
+      effect,
+      stackSize: 1,
+      description,
+      battleTarget: template.battleTarget
+    };
+  }
+
+  /**
    * 生成消耗品
    * @param level 物品等级
    */
@@ -346,6 +380,34 @@ export class ItemGenerator {
       stackSize: 1,
       description,
       battleTarget: template.battleTarget
+    };
+  }
+
+  /**
+   * 通过模板ID生成材料
+   * @param templateId 材料模板ID
+   * @param level 物品等级（可选，如果模板没有指定等级则使用此值）
+   */
+  generateMaterialFromTemplate(templateId: string, level?: number): Material {
+    const templates = getMaterialData();
+    const template = templates.find((t) => t.templateId === templateId);
+    if (!template) {
+      throw new Error(`材料模板不存在: ${templateId}`);
+    }
+
+    // 优先使用模板中的描述，如果不存在或为空则使用默认描述
+    const description = (template.description && template.description.trim())
+      ? template.description
+      : `${template.name}，可用于合成或强化。`;
+
+    return {
+      id: this.generateItemId(),
+      templateId: template.templateId,
+      name: template.name,
+      type: "material",
+      level: template.level ?? level ?? 1,
+      stackSize: 1,
+      description
     };
   }
 

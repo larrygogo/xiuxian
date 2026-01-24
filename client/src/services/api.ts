@@ -84,9 +84,12 @@ export const gameAPI = {
     api.post('/api/game/admin/give-item', payload),
   giveExp: (payload: { targetUserId?: number; targetCharacterId?: number; amount: number }) =>
     api.post('/api/game/admin/give-exp', payload),
+  setLevel: (payload: { targetUserId?: number; targetCharacterId?: number; level?: number; statPoints?: number }) =>
+    api.post('/api/game/admin/set-level', payload),
 };
 
 export const battleAPI = {
+  getScenes: () => api.get('/api/battle/scenes'),
   createRoom: (payload: { mapId: string; playerIds: number[] }) =>
     api.post('/api/battle/rooms', payload),
   getActiveRoom: () => api.get('/api/battle/rooms/active'),

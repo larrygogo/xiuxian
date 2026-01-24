@@ -362,8 +362,8 @@ export class BattleRoomService {
   ): Array<{
     playerId: string;
     userId: number;
-    experience: number;
     qi: number;
+    lingshi: number;
     items: Array<{
       id: string;
       templateId: string;
@@ -379,20 +379,43 @@ export class BattleRoomService {
 
     const rewards = this.rewardService.calculateRewards(room, winner);
     
-    // 转换为前端需要的格式
-    return rewards.map((reward: import("./BattleRewardService").BattleReward) => ({
-      playerId: reward.playerId,
-      userId: reward.userId,
-      experience: reward.experience,
-      qi: reward.qi,
-      items: reward.items.map((item: import("../../types/item").Item) => ({
-        id: item.id,
-        templateId: item.templateId,
-        name: item.name,
-        type: item.type
-      })),
-      success: reward.success
-    }));
+    // 转换为前端需要的格式，合并相同物品
+    return rewards.map((reward: import("./BattleRewardService").BattleReward) => {
+      // 合并相同物品（按 templateId 分组）
+      const itemMap = new Map<string, { count: number; item: { id: string; templateId: string; name: string; type: string } }>();
+      
+      for (const item of reward.items) {
+        const key = item.templateId;
+        if (itemMap.has(key)) {
+          itemMap.get(key)!.count++;
+        } else {
+          itemMap.set(key, {
+            count: 1,
+            item: {
+              id: item.id,
+              templateId: item.templateId,
+              name: item.name,
+              type: item.type
+            }
+          });
+        }
+      }
+
+      // 转换为数组格式（包含数量信息）
+      const mergedItems = Array.from(itemMap.values()).map(({ count, item }) => ({
+        ...item,
+        count
+      }));
+
+      return {
+        playerId: reward.playerId,
+        userId: reward.userId,
+        qi: reward.qi,
+        lingshi: reward.lingshi,
+        items: mergedItems,
+        success: reward.success
+      };
+    });
   }
 
   /**
@@ -402,13 +425,14 @@ export class BattleRoomService {
     rewards: Array<{
       playerId: string;
       userId: number;
-      experience: number;
       qi: number;
+      lingshi: number;
       items: Array<{
         id: string;
         templateId: string;
         name: string;
         type: string;
+        count?: number;
       }>;
       success: boolean;
     }>
@@ -433,7 +457,7 @@ export class BattleRoomService {
     // 重新计算奖励以获取完整的 Item 对象
     const battleRewards = this.rewardService.calculateRewards(room, "players");
     
-    // 应用奖励（包括物品、经验和灵气）
+    // 应用奖励（包括物品和灵气）
     await this.rewardService.applyRewards(battleRewards);
   }
 

@@ -49,11 +49,12 @@ export class ResolveEngine {
     ended: boolean;
     winner?: "players" | "monsters" | "draw";
   } {
+    // 确保所有 HP <= 0 的参与者都被视为死亡
     const allPlayersDeadOrEscaped = roomState.players.every(
-      (p) => p.status === "dead" || p.status === "escaped"
+      (p) => p.hp <= 0 || p.status === "dead" || p.status === "escaped"
     );
     const allMonstersDeadOrEscaped = roomState.monsters.every(
-      (m) => m.status === "dead" || m.status === "escaped"
+      (m) => m.hp <= 0 || m.status === "dead" || m.status === "escaped"
     );
 
     if (allPlayersDeadOrEscaped && allMonstersDeadOrEscaped) {
@@ -184,11 +185,23 @@ export class ResolveEngine {
             break;
           }
 
-          // 计算伤害
-          let damage = Math.max(1, actor.atk - target.def);
+          // 计算伤害（使用物理/法术伤害和防御系统）
+          // 攻击者选择使用物理或法术攻击（选择较高的）
+          const usePhysical = actor.pdmg >= actor.mdmg;
+          const attackerDmg = usePhysical ? actor.pdmg : actor.mdmg;
+          const defenderDef = usePhysical ? target.pdef : target.mdef;
+          
+          // 伤害公式：damage = dmg * dmg / (dmg + def * 0.8)
+          // 这个公式确保：
+          // - 当攻击力 >> 防御力时，伤害接近攻击力
+          // - 当攻击力 = 防御力时，伤害 ≈ 56% 攻击力
+          // - 当攻击力 << 防御力时，伤害仍然 > 0，但会较小
+          let damage = Math.max(1, Math.floor((attackerDmg * attackerDmg) / (attackerDmg + defenderDef * 0.8)));
+          
           const wasDefending = target.status === "defending";
           if (wasDefending) {
-            damage = Math.floor(damage * 0.6);
+            // 防御状态额外减伤 40%
+            damage = Math.max(1, Math.floor(damage * 0.6));
           }
 
           // 应用伤害
@@ -291,10 +304,18 @@ export class ResolveEngine {
       }
     }
 
-    // 5. 检查战斗是否结束
+    // 5. 确保所有 HP 为 0 的参与者都被标记为死亡状态
+    for (const participant of [...newState.players, ...newState.monsters]) {
+      if (participant.hp <= 0 && participant.status !== "dead" && participant.status !== "escaped") {
+        participant.status = "dead";
+        participant.hp = 0; // 确保 HP 为 0
+      }
+    }
+
+    // 6. 检查战斗是否结束
     const battleResult = this.checkBattleEnd(newState);
 
-    // 6. 回合推进（如果战斗未结束）
+    // 7. 回合推进（如果战斗未结束）
     if (!battleResult.ended) {
       newState.turnNumber++;
       newState.phase = "TURN_INPUT";
@@ -304,6 +325,14 @@ export class ResolveEngine {
     } else {
       newState.phase = "ENDED";
       newState.updatedAt = Date.now();
+      
+      // 战斗结束时，再次确保所有 HP 为 0 的参与者都被标记为死亡状态
+      for (const participant of [...newState.players, ...newState.monsters]) {
+        if (participant.hp <= 0 && participant.status !== "dead" && participant.status !== "escaped") {
+          participant.status = "dead";
+          participant.hp = 0;
+        }
+      }
     }
 
     return {
@@ -323,12 +352,16 @@ export class ResolveEngine {
       return { success: false };
     }
 
-    // Mock 伤害计算
+    // Mock 伤害计算（使用新的属性系统）
     let damage = 0;
     if (command.type === "attack" && command.targetId) {
       const target = room.participants.find((p) => p.id === command.targetId);
       if (target) {
-        damage = Math.floor(actor.atk * 0.8);
+        // 使用物理/法术伤害和防御
+        const usePhysical = actor.pdmg >= actor.mdmg;
+        const attackerDmg = usePhysical ? actor.pdmg : actor.mdmg;
+        const defenderDef = usePhysical ? target.pdef : target.mdef;
+        damage = Math.max(1, Math.floor((attackerDmg * attackerDmg) / (attackerDmg + defenderDef * 0.8) * 0.8));
         target.hp = Math.max(0, target.hp - damage);
       }
     }
