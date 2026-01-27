@@ -35,3 +35,5 @@ server/game.db-journal
 
 # Old files (can be removed after migration)
 save.json
+
+.pnpm-store/

@@ -23,8 +23,9 @@ type AuthedSocket = Socket & {
 const app = express();
 const server = http.createServer(app);
 
+
 const allowedOrigins = new Set(
-  [process.env.CLIENT_URL, "http://localhost:5173", "http://127.0.0.1:5173"].filter(
+  [process.env.CLIENT_URL, "http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174", "http://localhost:5175", "http://127.0.0.1:5175"].filter(
     (value): value is string => Boolean(value)
   )
 );
