@@ -9,6 +9,7 @@ import { UIButton } from '@/ui/core/UIButton';
 import { stateManager } from '@/services/managers/StateManager';
 import type { GameState } from '@/types/game.types';
 import { COLORS } from '@/config/constants';
+import type { SafeAreaManager } from '@/ui/safearea/SafeAreaManager';
 
 // 战斗场景接口（临时定义，待后续从API获取）
 export interface BattleScene {
@@ -25,16 +26,34 @@ export class SceneSelectionPanel extends UIPanel {
   private gameState: GameState;
   private scenes: BattleScene[] = [];
   private onSceneSelected?: (sceneId: string) => void;
+  private safeAreaManager?: SafeAreaManager;
 
-  constructor(scene: Phaser.Scene, onSceneSelected?: (sceneId: string) => void) {
+  constructor(scene: Phaser.Scene, onSceneSelected?: (sceneId: string) => void, safeAreaManager?: SafeAreaManager) {
+    // 使用安全区或相机尺寸计算面板位置和大小
+    const safeRect = safeAreaManager?.getFinalSafeRect();
+    const centerX = safeRect ? safeRect.x + safeRect.width / 2 : scene.cameras.main.width / 2;
+    const centerY = safeRect ? safeRect.y + safeRect.height / 2 : scene.cameras.main.height / 2;
+
+    // 计算面板尺寸，确保在安全区内
+    // 面板宽度为安全区宽度的90%，最大500px
+    // 面板高度为安全区高度的80%，最大700px
+    const panelWidth = safeRect
+      ? Math.min(500, safeRect.width * 0.9)
+      : 500;
+    const panelHeight = safeRect
+      ? Math.min(700, safeRect.height * 0.8)
+      : 600;
+
     super({
       scene,
-      x: scene.cameras.main.width / 2,
-      y: scene.cameras.main.height / 2,
-      width: 500,
-      height: 600,
+      x: centerX,
+      y: centerY,
+      width: panelWidth,
+      height: panelHeight,
       title: '选择历练场景'
     });
+
+    this.safeAreaManager = safeAreaManager;
 
     const state = stateManager.getGameState();
     if (!state) {
@@ -54,13 +73,16 @@ export class SceneSelectionPanel extends UIPanel {
    */
   private createContent(): void {
     const centerX = 0;
-    const topY = -260;
+    // 使用面板配置尺寸计算相对位置
+    const contentBounds = this.getContentBounds();
+    const halfHeight = contentBounds.height / 2;
+    const topY = -halfHeight + 30; // 内容区顶部 + padding
 
     // 等级提示
     const levelHint = new UIText(
       this.scene,
       centerX,
-      topY + 10,
+      topY,
       `当前等级: Lv.${this.gameState.level}`,
       { fontSize: '16px', color: '#f39c12', fontStyle: 'bold' }
     );
@@ -73,11 +95,11 @@ export class SceneSelectionPanel extends UIPanel {
     // 创建场景卡片列表
     this.createSceneList();
 
-    // 关闭按钮
+    // 关闭按钮 - 放在内容区底部
     const closeButton = new UIButton({
       scene: this.scene,
       x: centerX,
-      y: 260,
+      y: halfHeight - 30,
       width: 100,
       height: 40,
       text: '关闭',
@@ -138,8 +160,14 @@ export class SceneSelectionPanel extends UIPanel {
    * 创建场景列表
    */
   private createSceneList(): void {
-    let yOffset = -220;
-    const cardWidth = 450;
+    // 使用面板配置尺寸计算相对位置
+    const contentBounds = this.getContentBounds();
+    const halfHeight = contentBounds.height / 2;
+
+    // 场景列表开始位置：等级提示下方
+    let yOffset = -halfHeight + 70;
+    // 卡片宽度为内容区宽度的95%
+    const cardWidth = Math.min(450, contentBounds.width * 0.95);
     const cardSpacing = 10;
 
     this.scenes.forEach(scene => {
@@ -247,7 +275,12 @@ export class SceneSelectionPanel extends UIPanel {
     const dialogWidth = 400;
     const dialogHeight = 200;
 
-    // 遮罩
+    // 使用安全区或相机尺寸计算对话框位置
+    const safeRect = this.safeAreaManager?.getFinalSafeRect();
+    const centerX = safeRect ? safeRect.x + safeRect.width / 2 : this.scene.cameras.main.width / 2;
+    const centerY = safeRect ? safeRect.y + safeRect.height / 2 : this.scene.cameras.main.height / 2;
+
+    // 遮罩 - 覆盖整个屏幕
     const overlay = this.scene.add.rectangle(
       this.scene.cameras.main.width / 2,
       this.scene.cameras.main.height / 2,
@@ -259,10 +292,10 @@ export class SceneSelectionPanel extends UIPanel {
     overlay.setDepth(1500);
     overlay.setInteractive();
 
-    // 对话框背景
+    // 对话框背景 - 在安全区中心
     const dialog = this.scene.add.rectangle(
-      this.scene.cameras.main.width / 2,
-      this.scene.cameras.main.height / 2,
+      centerX,
+      centerY,
       dialogWidth,
       dialogHeight,
       0x2c3e50
@@ -272,8 +305,8 @@ export class SceneSelectionPanel extends UIPanel {
 
     // 标题
     const title = this.scene.add.text(
-      this.scene.cameras.main.width / 2,
-      this.scene.cameras.main.height / 2 - 60,
+      centerX,
+      centerY - 60,
       '确认进入',
       {
         fontSize: '20px',
@@ -286,8 +319,8 @@ export class SceneSelectionPanel extends UIPanel {
 
     // 内容
     const content = this.scene.add.text(
-      this.scene.cameras.main.width / 2,
-      this.scene.cameras.main.height / 2 - 10,
+      centerX,
+      centerY - 10,
       `确定要进入【${scene.name}】吗？\n\n推荐等级: ${scene.minLevel}-${scene.maxLevel}`,
       {
         fontSize: '16px',
@@ -301,8 +334,8 @@ export class SceneSelectionPanel extends UIPanel {
     // 确认按钮
     const confirmBtn = new UIButton({
       scene: this.scene,
-      x: this.scene.cameras.main.width / 2 - 60,
-      y: this.scene.cameras.main.height / 2 + 60,
+      x: centerX - 60,
+      y: centerY + 60,
       width: 100,
       height: 40,
       text: '确认',
@@ -332,8 +365,8 @@ export class SceneSelectionPanel extends UIPanel {
     // 取消按钮
     const cancelBtn = new UIButton({
       scene: this.scene,
-      x: this.scene.cameras.main.width / 2 + 60,
-      y: this.scene.cameras.main.height / 2 + 60,
+      x: centerX + 60,
+      y: centerY + 60,
       width: 100,
       height: 40,
       text: '取消',

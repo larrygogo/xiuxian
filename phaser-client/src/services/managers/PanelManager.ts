@@ -109,7 +109,8 @@ export class PanelManager extends Phaser.Events.EventEmitter {
     if (!this.scene) return;
 
     if (!this.sceneSelectionPanel) {
-      this.sceneSelectionPanel = new SceneSelectionPanel(this.scene, onSceneSelected);
+      const safeAreaManager = this.getSafeAreaManagerFn?.();
+      this.sceneSelectionPanel = new SceneSelectionPanel(this.scene, onSceneSelected, safeAreaManager);
     }
     this.sceneSelectionPanel.show();
     this.emit('panel:opened', 'sceneSelection');
