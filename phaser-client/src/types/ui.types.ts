@@ -43,6 +43,10 @@ export interface UIInputConfig {
   type?: 'text' | 'password' | 'number';
   maxLength?: number;
   textStyle?: Phaser.Types.GameObjects.Text.TextStyle;
+  backgroundColor?: number;
+  borderColor?: number;
+  textColor?: string;
+  placeholderColor?: string;
 }
 
 // UI进度条配置

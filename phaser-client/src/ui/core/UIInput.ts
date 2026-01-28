@@ -20,25 +20,30 @@ export class UIInput extends UIContainer {
     super(config.scene, config.x, config.y);
     this.config = config;
 
-    // 背景
+    // 背景（支持自定义颜色）
+    const bgColor = config.backgroundColor ?? COLORS.dark;
+    const borderColor = config.borderColor ?? COLORS.light;
+
     this.background = this.scene.add.rectangle(
       0, 0,
       config.width,
       config.height,
-      COLORS.dark,
-      0.8
+      bgColor,
+      0.9
     );
-    this.background.setStrokeStyle(2, COLORS.light, 0.5);
+    this.background.setStrokeStyle(2, borderColor, 0.6);
     this.add(this.background);
 
-    // 文本显示
+    // 文本显示（支持自定义颜色）
+    const placeholderColor = config.placeholderColor ?? '#999999';
+
     this.textDisplay = this.scene.add.text(
-      -config.width / 2 + 10,
+      -config.width / 2 + 12,
       0,
       config.placeholder || '',
       {
         fontSize: '16px',
-        color: '#999999',
+        color: placeholderColor,
         fontFamily: 'Arial, sans-serif',
         ...config.textStyle
       }
@@ -85,7 +90,8 @@ export class UIInput extends UIContainer {
     this.isFocused = false;
 
     // 恢复边框
-    this.background.setStrokeStyle(2, COLORS.light, 0.5);
+    const borderColor = this.config.borderColor ?? COLORS.light;
+    this.background.setStrokeStyle(2, borderColor, 0.6);
   }
 
   /**
@@ -141,7 +147,13 @@ export class UIInput extends UIContainer {
     this.domInput.placeholder = this.config.placeholder || '';
     this.domInput.maxLength = this.config.maxLength || 100;
 
-    // 样式（使用刚才计算的缩放比例）
+    // 样式（使用刚才计算的缩放比例，支持自定义颜色）
+    const bgColor = this.config.backgroundColor ?? 0x2c3e50;
+    const textColor = this.config.textColor ?? '#ffffff';
+
+    // 将数字颜色转换为CSS颜色
+    const bgColorCSS = `rgba(${(bgColor >> 16) & 0xff}, ${(bgColor >> 8) & 0xff}, ${bgColor & 0xff}, 0.95)`;
+
     Object.assign(this.domInput.style, {
       position: 'absolute',
       left: `${screenX}px`,
@@ -149,14 +161,15 @@ export class UIInput extends UIContainer {
       width: `${this.config.width * scaleX}px`,
       height: `${this.config.height * scaleY}px`,
       fontSize: '16px',
-      padding: '0 10px',
+      padding: '0 12px',
       border: 'none',
       outline: 'none',
-      backgroundColor: 'rgba(44, 62, 80, 0.9)',
-      color: '#ffffff',
+      backgroundColor: bgColorCSS,
+      color: textColor,
       fontFamily: 'Arial, sans-serif',
       boxSizing: 'border-box',
-      zIndex: '10000'
+      zIndex: '10000',
+      borderRadius: '6px'
     });
 
     // 事件
@@ -201,16 +214,19 @@ export class UIInput extends UIContainer {
    * 更新文本显示
    */
   private updateDisplay(): void {
+    const textColor = this.config.textColor ?? '#ffffff';
+    const placeholderColor = this.config.placeholderColor ?? '#999999';
+
     if (this._value) {
       let displayText = this._value;
       if (this.config.type === 'password') {
         displayText = '*'.repeat(this._value.length);
       }
       this.textDisplay.setText(displayText);
-      this.textDisplay.setColor('#ffffff');
+      this.textDisplay.setColor(textColor);
     } else {
       this.textDisplay.setText(this.config.placeholder || '');
-      this.textDisplay.setColor('#999999');
+      this.textDisplay.setColor(placeholderColor);
     }
   }
 

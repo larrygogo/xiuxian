@@ -8,20 +8,25 @@ import { CharacterPanel } from '@/ui/panels/CharacterPanel';
 import { InventoryPanel } from '@/ui/panels/InventoryPanel';
 import { EquipmentPanel } from '@/ui/panels/EquipmentPanel';
 import { SceneSelectionPanel } from '@/ui/panels/SceneSelectionPanel';
+import { EventLogPanel } from '@/ui/panels/EventLogPanel';
 import { stateManager } from './StateManager';
 import type { GameState } from '@/types/game.types';
+import type { SafeAreaManager } from '@/ui/safearea/SafeAreaManager';
 
-export type PanelType = 'character' | 'inventory' | 'equipment' | 'sceneSelection';
+export type PanelType = 'character' | 'inventory' | 'equipment' | 'sceneSelection' | 'eventLog';
 
 export class PanelManager extends Phaser.Events.EventEmitter {
   private static instance: PanelManager;
   private scene?: Phaser.Scene;
+  private safeAreaManager?: SafeAreaManager;
+  private getSafeAreaManagerFn?: () => SafeAreaManager | undefined;
 
   // 面板实例
   private characterPanel?: CharacterPanel;
   private inventoryPanel?: InventoryPanel;
   private equipmentPanel?: EquipmentPanel;
   private sceneSelectionPanel?: SceneSelectionPanel;
+  private eventLogPanel?: EventLogPanel;
 
   private constructor() {
     super();
@@ -40,8 +45,14 @@ export class PanelManager extends Phaser.Events.EventEmitter {
   /**
    * 初始化面板管理器
    */
-  init(scene: Phaser.Scene): void {
+  init(scene: Phaser.Scene, getSafeAreaManagerFn?: () => SafeAreaManager | undefined): void {
     this.scene = scene;
+    this.getSafeAreaManagerFn = getSafeAreaManagerFn;
+
+    // 如果场景有 getSafeAreaManager 方法，自动使用
+    if (!this.getSafeAreaManagerFn && 'getSafeAreaManager' in scene) {
+      this.getSafeAreaManagerFn = () => (scene as any).getSafeAreaManager();
+    }
 
     // 监听游戏状态更新，自动更新所有打开的面板
     stateManager.on('gameState:updated', (state: GameState) => {
@@ -56,7 +67,8 @@ export class PanelManager extends Phaser.Events.EventEmitter {
     if (!this.scene) return;
 
     if (!this.characterPanel) {
-      this.characterPanel = new CharacterPanel(this.scene);
+      const safeAreaManager = this.getSafeAreaManagerFn?.();
+      this.characterPanel = new CharacterPanel(this.scene, safeAreaManager);
     }
     this.characterPanel.show();
     this.emit('panel:opened', 'character');
@@ -69,7 +81,8 @@ export class PanelManager extends Phaser.Events.EventEmitter {
     if (!this.scene) return;
 
     if (!this.inventoryPanel) {
-      this.inventoryPanel = new InventoryPanel(this.scene);
+      const safeAreaManager = this.getSafeAreaManagerFn?.();
+      this.inventoryPanel = new InventoryPanel(this.scene, safeAreaManager);
     }
     this.inventoryPanel.show();
     this.emit('panel:opened', 'inventory');
@@ -82,7 +95,8 @@ export class PanelManager extends Phaser.Events.EventEmitter {
     if (!this.scene) return;
 
     if (!this.equipmentPanel) {
-      this.equipmentPanel = new EquipmentPanel(this.scene);
+      const safeAreaManager = this.getSafeAreaManagerFn?.();
+      this.equipmentPanel = new EquipmentPanel(this.scene, safeAreaManager);
     }
     this.equipmentPanel.show();
     this.emit('panel:opened', 'equipment');
@@ -102,6 +116,25 @@ export class PanelManager extends Phaser.Events.EventEmitter {
   }
 
   /**
+   * 显示事件日志面板
+   */
+  showEventLogPanel(): void {
+    if (!this.scene) return;
+
+    if (!this.eventLogPanel) {
+      this.eventLogPanel = new EventLogPanel({
+        scene: this.scene,
+        x: this.scene.cameras.main.width / 2,
+        y: this.scene.cameras.main.height / 2,
+        width: 350,
+        height: 300
+      });
+    }
+    this.eventLogPanel.show();
+    this.emit('panel:opened', 'eventLog');
+  }
+
+  /**
    * 隐藏指定面板
    */
   hidePanel(type: PanelType): void {
@@ -118,6 +151,9 @@ export class PanelManager extends Phaser.Events.EventEmitter {
       case 'sceneSelection':
         this.sceneSelectionPanel?.hide();
         break;
+      case 'eventLog':
+        this.eventLogPanel?.hide();
+        break;
     }
     this.emit('panel:closed', type);
   }
@@ -130,6 +166,7 @@ export class PanelManager extends Phaser.Events.EventEmitter {
     this.inventoryPanel?.hide();
     this.equipmentPanel?.hide();
     this.sceneSelectionPanel?.hide();
+    this.eventLogPanel?.hide();
     this.emit('panels:allClosed');
   }
 
@@ -154,6 +191,9 @@ export class PanelManager extends Phaser.Events.EventEmitter {
         case 'sceneSelection':
           this.showSceneSelectionPanel();
           break;
+        case 'eventLog':
+          this.showEventLogPanel();
+          break;
       }
     }
   }
@@ -161,7 +201,7 @@ export class PanelManager extends Phaser.Events.EventEmitter {
   /**
    * 获取指定面板
    */
-  private getPanel(type: PanelType): Phaser.GameObjects.GameObject | undefined {
+  private getPanel(type: PanelType): Phaser.GameObjects.Container | undefined {
     switch (type) {
       case 'character':
         return this.characterPanel;
@@ -171,6 +211,8 @@ export class PanelManager extends Phaser.Events.EventEmitter {
         return this.equipmentPanel;
       case 'sceneSelection':
         return this.sceneSelectionPanel;
+      case 'eventLog':
+        return this.eventLogPanel;
     }
   }
 
@@ -205,11 +247,13 @@ export class PanelManager extends Phaser.Events.EventEmitter {
     this.inventoryPanel?.destroy();
     this.equipmentPanel?.destroy();
     this.sceneSelectionPanel?.destroy();
+    this.eventLogPanel?.destroy();
 
     this.characterPanel = undefined;
     this.inventoryPanel = undefined;
     this.equipmentPanel = undefined;
     this.sceneSelectionPanel = undefined;
+    this.eventLogPanel = undefined;
 
     this.emit('panels:destroyed');
   }

@@ -10,8 +10,9 @@ import { UIInput } from '@/ui/core/UIInput';
 import { UIText } from '@/ui/core/UIText';
 import { gameAPI } from '@/services/api';
 import { stateManager } from '@/services/managers/StateManager';
+import { BaseScene } from '@/scenes/BaseScene';
 
-export default class CharacterCreateScene extends Phaser.Scene {
+export default class CharacterCreateScene extends BaseScene {
   private nameInput?: UIInput;
   private startButton?: UIButton;
   private errorText?: UIText;
@@ -26,6 +27,8 @@ export default class CharacterCreateScene extends Phaser.Scene {
 
   create() {
     console.log('CharacterCreateScene: create');
+    this.initSafeAreaSystem();
+    this.createUI();
 
     const width = this.cameras.main.width;
     const height = this.cameras.main.height;
@@ -50,6 +53,10 @@ export default class CharacterCreateScene extends Phaser.Scene {
 
     // 键盘事件
     this.setupKeyboardEvents();
+  }
+
+  protected createUI(): void {
+    // CharacterCreateScene 直接在 create 中创建UI
   }
 
   /**
@@ -359,5 +366,6 @@ export default class CharacterCreateScene extends Phaser.Scene {
    */
   shutdown(): void {
     this.input.keyboard?.off('keydown-ENTER');
+    super.shutdown();
   }
 }

@@ -11,10 +11,12 @@ import { ItemCard } from '@/ui/widgets/ItemCard';
 import { DragDropSystem } from '@/systems/DragDropSystem';
 import { stateManager } from '@/services/managers/StateManager';
 import { gameAPI } from '@/services/api';
+import { toastManager } from '@/ui/toast/ToastManager';
 import { SLOT_NAMES } from '@/types/item.types';
 import type { EquipmentSlot, Equipment } from '@/types/item.types';
 import type { GameState } from '@/types/game.types';
 import { COLORS } from '@/config/constants';
+import type { SafeAreaManager } from '@/ui/safearea/SafeAreaManager';
 
 export class EquipmentPanel extends UIPanel {
   private gameState: GameState;
@@ -22,6 +24,7 @@ export class EquipmentPanel extends UIPanel {
   private equipmentSlots: Map<EquipmentSlot, ItemSlot> = new Map();
   private statsText?: UIText;
   private itemCard?: ItemCard;
+  private safeAreaManager?: SafeAreaManager;
 
   private readonly slotPositions: Record<EquipmentSlot, { x: number; y: number }> = {
     helmet: { x: 0, y: -150 },
@@ -32,15 +35,22 @@ export class EquipmentPanel extends UIPanel {
     boots: { x: 0, y: 150 }
   };
 
-  constructor(scene: Phaser.Scene) {
+  constructor(scene: Phaser.Scene, safeAreaManager?: SafeAreaManager) {
+    // 使用安全区或相机尺寸
+    const safeRect = safeAreaManager?.getFinalSafeRect();
+    const centerX = safeRect ? safeRect.x + safeRect.width / 2 : scene.cameras.main.width / 2;
+    const centerY = safeRect ? safeRect.y + safeRect.height / 2 : scene.cameras.main.height / 2;
+
     super({
       scene,
-      x: scene.cameras.main.width / 2,
-      y: scene.cameras.main.height / 2,
+      x: centerX,
+      y: centerY,
       width: 450,
       height: 600,
       title: '装备'
     });
+
+    this.safeAreaManager = safeAreaManager;
 
     const state = stateManager.getGameState();
     if (!state) {
@@ -319,9 +329,10 @@ export class EquipmentPanel extends UIPanel {
   private async unequipItem(slot: EquipmentSlot): Promise<void> {
     try {
       await gameAPI.unequipItem(slot);
-      console.log(`Unequipped item from slot ${slot}`);
+      toastManager.toast('已卸下装备', { level: 'success' });
     } catch (error) {
       console.error('Failed to unequip item:', error);
+      toastManager.toast('卸下失败', { level: 'error' });
     }
   }
 

@@ -2,6 +2,8 @@
  * 游戏常量定义
  */
 
+import { Anchor } from '@/ui/layout/Anchors';
+
 // 游戏尺寸（竖屏模式 9:16）
 export const GAME_WIDTH = 1080;
 export const GAME_HEIGHT = 1920;
@@ -68,9 +70,9 @@ export const DEBUG = {
 
 // 顶部状态栏配置
 export const TOP_STATUS_BAR = {
-  ANCHOR: 'top-left' as const,  // 锚点位置: 'top-left' | 'top-center' | 'top-right'
-  OFFSET_X: 10,                 // X轴偏移
-  OFFSET_Y: 10                  // Y轴偏移
+  ANCHOR: Anchor.TOP_LEFT,  // 锚点位置
+  OFFSET_X: 10,             // X轴偏移
+  OFFSET_Y: 10              // Y轴偏移
 };
 
 // 底部操作栏配置

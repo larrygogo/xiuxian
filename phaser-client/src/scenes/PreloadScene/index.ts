@@ -1,10 +1,10 @@
-import Phaser from 'phaser';
 import { SCENE_KEYS } from '@/config/constants';
+import { BaseScene } from '@/scenes/BaseScene';
 
 /**
  * 预加载场景 - 加载所有游戏资源
  */
-export default class PreloadScene extends Phaser.Scene {
+export default class PreloadScene extends BaseScene {
   constructor() {
     super({ key: SCENE_KEYS.PRELOAD });
   }
@@ -19,9 +19,15 @@ export default class PreloadScene extends Phaser.Scene {
 
   async create() {
     console.log('PreloadScene: create');
+    this.initSafeAreaSystem();
+    this.createUI();
 
     // 检查token，决定跳转到哪个场景
     await this.checkAuthAndNavigate();
+  }
+
+  protected createUI(): void {
+    // PreloadScene 的UI由 createLoadingBar 创建
   }
 
   /**

@@ -4,16 +4,13 @@
  */
 
 import Phaser from 'phaser';
-import { SCENE_KEYS, COLORS, TOP_STATUS_BAR, BOTTOM_BAR } from '@/config/constants';
+import { SCENE_KEYS, TOP_STATUS_BAR, BOTTOM_BAR } from '@/config/constants';
 import { stateManager } from '@/services/managers/StateManager';
 import { gameSocket } from '@/services/websocket';
-import { UIButton } from '@/ui/core/UIButton';
-import { UIText } from '@/ui/core/UIText';
-import { TopStatusBar } from '@/ui/widgets/TopStatusBar';
+import { TopStatusBar } from '@/scenes/MainScene/components/TopStatusBar';
 import { panelManager } from '@/services/managers/PanelManager';
-import { needQi } from '@/utils/progression';
+import { toastManager } from '@/ui/toast/ToastManager';
 import { Anchor } from '@/ui/layout/Anchors';
-import { DemoTopLeftBar, DemoTopRightButton, DemoBottomBar } from '@/scenes/MainScene/widgets';
 import type { GameState } from '@/types/game.types';
 import { BaseScene } from '@/scenes/BaseScene';
 
@@ -31,14 +28,9 @@ export default class MainScene extends BaseScene {
   private equipmentButton?: Phaser.GameObjects.Image;
   private characterButton?: Phaser.GameObjects.Image;
   private settingsButton?: Phaser.GameObjects.Image;
-  private adminButton?: Phaser.GameObjects.Image;
 
   // 底部操作栏容器
   private bottomActionBar?: Phaser.GameObjects.Container;
-
-  // 事件日志
-  private eventLogContainer?: Phaser.GameObjects.Container;
-  private eventLogTexts: UIText[] = [];
 
   // 游戏状态
   private gameState: GameState | null = null;
@@ -96,6 +88,9 @@ export default class MainScene extends BaseScene {
     // 初始化面板管理器
     panelManager.init(this);
 
+    // 初始化 Toast 管理器
+    toastManager.init(this);
+
     // 创建UI（使用新系统）
     this.createUI();
 
@@ -125,10 +120,8 @@ export default class MainScene extends BaseScene {
   }
 
   protected createUI(): void {
-    const viewRect = this.safeAreaManager.getViewRect();
     this.createTopStatusBar();
     this.createBottomButtons();
-    // this.createRightEventLog(viewRect);
   }
 
   /**
@@ -191,7 +184,6 @@ export default class MainScene extends BaseScene {
     this.topStatusBar = new TopStatusBar({
       scene: this,
       gameState: this.gameState,
-      safeAreaManager: this.safeAreaManager,
       anchor: TOP_STATUS_BAR.ANCHOR,
       offsetX: TOP_STATUS_BAR.OFFSET_X,
       offsetY: TOP_STATUS_BAR.OFFSET_Y
@@ -269,112 +261,6 @@ export default class MainScene extends BaseScene {
 
 
   /**
-   * 创建事件日志（使用安全区布局）
-   */
-  private createRightEventLog(viewRect: { x: number; y: number; width: number; height: number }): void {
-    const safeRect = this.safeAreaManager.getFinalSafeRect();
-
-    // 事件日志位置：在底部操作栏上方
-    const logHeight = 140;
-    const logY = safeRect.y + safeRect.height - BOTTOM_BAR.HEIGHT - logHeight - 20; // 操作栏上方留20px间距
-    const logWidth = safeRect.width;
-
-    console.log('Event log position:', { logY, logHeight, safeAreaBottom: safeRect.y + safeRect.height });
-
-    // 背景（圆角矩形，圆角半径8）
-    const logBgGraphics = this.add.graphics();
-    logBgGraphics.fillStyle(0x414141, 0xCC / 255); // #414141CC
-    logBgGraphics.fillRoundedRect(safeRect.x, logY, logWidth, logHeight, 16);
-
-
-
-
-
-    logBgGraphics.setDepth(10);
-
-    // 标题
-    const titleX = safeRect.x + 10;
-    const logTitle = this.add.text(titleX, logY + 8, '修仙日志', {
-      fontSize: '18px',
-      color: '#ecf0f1',
-      fontStyle: 'bold'
-    });
-    logTitle.setDepth(10);
-
-    // 日志容器
-    this.eventLogContainer = this.add.container(titleX, logY + 35);
-    this.eventLogContainer.setDepth(10);
-
-    // 显示现有日志
-    this.updateEventLog();
-  }
-
-  /**
-   * 创建中央角色展示（竖屏布局）
-   */
-  private createCenterCharacter(width: number, height: number): void {
-    const centerX = width / 2;
-    // 在状态栏（~180）和日志（height-250）之间
-    const statusBarBottom = 180;
-    const logTop = height - 250;
-    const centerY = (statusBarBottom + logTop) / 2;
-
-    // 角色占位图（圆形）
-    const avatar = this.add.circle(centerX, centerY, 140, 0x34495e, 0.5);
-    avatar.setStrokeStyle(4, COLORS.primary);
-    avatar.setDepth(5);
-
-    // 角色图标（使用emoji代替）
-    const icon = this.add.text(centerX, centerY, '🧘', {
-      fontSize: '120px'
-    });
-    icon.setOrigin(0.5);
-    icon.setDepth(5);
-
-    // 添加呼吸动画
-    this.tweens.add({
-      targets: [avatar, icon],
-      scaleX: 1.05,
-      scaleY: 1.05,
-      duration: 2000,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.easeInOut'
-    });
-  }
-
-  /**
-   * 更新事件日志（使用安全区布局）
-   */
-  private updateEventLog(): void {
-    if (!this.eventLogContainer || !this.gameState) return;
-
-    // 清除旧日志
-    this.eventLogTexts.forEach(text => text.destroy());
-    this.eventLogTexts = [];
-
-    // 只显示最近的4条日志
-    const logs = this.gameState.eventLog || [];
-    const recentLogs = logs.slice(-4);
-
-    const safeRect = this.safeAreaManager.getFinalSafeRect();
-    const padding = 20;
-    const availableWidth = safeRect.width - padding * 2; // 减去左右padding
-
-    recentLogs.forEach((log, index) => {
-      const text = new UIText(
-        this,
-        0,
-        index * 28, // 行间距
-        log,
-        { fontSize: '18px', color: '#bdc3c7', wordWrap: { width: availableWidth } }
-      );
-      this.eventLogContainer!.add(text);
-      this.eventLogTexts.push(text);
-    });
-  }
-
-  /**
    * 设置WebSocket监听器
    */
   private setupWebSocketListeners(): void {
@@ -394,9 +280,6 @@ export default class MainScene extends BaseScene {
 
     // 更新顶部状态栏
     this.topStatusBar?.update(this.gameState);
-
-    // 更新事件日志
-    this.updateEventLog();
 
     // 面板更新由PanelManager自动处理（监听gameState:updated事件）
   }
@@ -431,27 +314,15 @@ export default class MainScene extends BaseScene {
   }
 
   /**
-   * 打开管理员面板
-   */
-  private openAdminPanel(): void {
-    // TODO: 打开管理员面板
-    console.log('Open admin panel');
-  }
-
-  /**
    * 场景销毁时清理
    */
   shutdown(): void {
-    // 移除事件监听器
-    this.scale.off('resize', this.onResize, this);
-
     // 移除WebSocket监听器
     gameSocket.off('game:state');
 
-    // 销毁SafeAreaManager
-    this.safeAreaManager?.destroy();
-
     // 销毁所有面板
     panelManager.destroyAllPanels();
+
+    super.shutdown();
   }
 }

@@ -5,6 +5,7 @@
 import { apiClient } from './ApiClient';
 import { API_ENDPOINTS } from '@/config/api.config';
 import type { User, ActionResult } from '@/types/game.types';
+import type { FormConfig } from '@/types/formConfig.types';
 
 export interface LoginResponse {
   message: string;
@@ -37,5 +38,19 @@ export const authAPI = {
       username,
       password
     });
+  },
+
+  /**
+   * 获取登录表单配置
+   */
+  async getLoginFormConfig(): Promise<FormConfig> {
+    return apiClient.get<FormConfig>(API_ENDPOINTS.AUTH_LOGIN_FORM);
+  },
+
+  /**
+   * 获取注册表单配置
+   */
+  async getRegisterFormConfig(): Promise<FormConfig> {
+    return apiClient.get<FormConfig>(API_ENDPOINTS.AUTH_REGISTER_FORM);
   }
 };

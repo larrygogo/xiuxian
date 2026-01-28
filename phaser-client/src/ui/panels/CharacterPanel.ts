@@ -9,11 +9,14 @@ import { UIText } from '@/ui/core/UIText';
 import { COLORS } from '@/config/constants';
 import { stateManager } from '@/services/managers/StateManager';
 import { gameAPI } from '@/services/api';
+import { toastManager } from '@/ui/toast/ToastManager';
 import { needQi } from '@/utils/progression';
 import type { GameState } from '@/types/game.types';
+import type { SafeAreaManager } from '@/ui/safearea/SafeAreaManager';
 
 export class CharacterPanel extends UIPanel {
   private gameState: GameState;
+  private safeAreaManager?: SafeAreaManager;
 
   // 属性文本
   private attributeTexts: Map<string, UIText> = new Map();
@@ -27,15 +30,22 @@ export class CharacterPanel extends UIPanel {
   private pendingStats: { [key: string]: number } = {};
   private remainingPoints: number = 0;
 
-  constructor(scene: Phaser.Scene) {
+  constructor(scene: Phaser.Scene, safeAreaManager?: SafeAreaManager) {
+    // 使用安全区或相机尺寸
+    const safeRect = safeAreaManager?.getFinalSafeRect();
+    const centerX = safeRect ? safeRect.x + safeRect.width / 2 : scene.cameras.main.width / 2;
+    const centerY = safeRect ? safeRect.y + safeRect.height / 2 : scene.cameras.main.height / 2;
+
     super({
       scene,
-      x: scene.cameras.main.width / 2,
-      y: scene.cameras.main.height / 2,
+      x: centerX,
+      y: centerY,
       width: 600,
       height: 650,
       title: '角色属性'
     });
+
+    this.safeAreaManager = safeAreaManager;
 
     const state = stateManager.getGameState();
     if (!state) {
@@ -110,7 +120,59 @@ export class CharacterPanel extends UIPanel {
     levelText.setOrigin(0.5);
     this.contentContainer.add(levelText);
 
-    return yOffset - 160;
+    // HP/MP 状态
+    const hpText = new UIText(
+      this.scene,
+      centerX - 80,
+      yOffset - 160,
+      `生命: ${this.gameState.hp}/${this.gameState.maxHp}`,
+      { fontSize: '14px', color: '#e74c3c' }
+    );
+    hpText.setOrigin(0.5);
+    this.contentContainer.add(hpText);
+    this.combatTexts.set('hp_display', hpText);
+
+    const mpText = new UIText(
+      this.scene,
+      centerX + 80,
+      yOffset - 160,
+      `法力: ${this.gameState.mp}/${this.gameState.maxMp}`,
+      { fontSize: '14px', color: '#3498db' }
+    );
+    mpText.setOrigin(0.5);
+    this.contentContainer.add(mpText);
+    this.combatTexts.set('mp_display', mpText);
+
+    // 疗伤按钮
+    const canHeal = this.gameState.hp < this.gameState.maxHp && this.gameState.qi >= 15;
+    const healBtn = new UIButton({
+      scene: this.scene,
+      x: centerX,
+      y: yOffset - 130,
+      width: 80,
+      height: 30,
+      text: '疗伤',
+      textStyle: { fontSize: '14px' },
+      onClick: () => this.handleHeal()
+    });
+    healBtn.setColor(canHeal ? COLORS.success : 0x7f8c8d);
+    healBtn.setEnabled(canHeal);
+    this.contentContainer.add(healBtn);
+
+    return yOffset - 100;
+  }
+
+  /**
+   * 处理疗伤
+   */
+  private async handleHeal(): Promise<void> {
+    try {
+      await gameAPI.heal();
+      toastManager.toast('疗伤成功', { level: 'success' });
+    } catch (error) {
+      console.error('Heal failed:', error);
+      toastManager.toast('疗伤失败', { level: 'error' });
+    }
   }
 
   /**
@@ -140,7 +202,8 @@ export class CharacterPanel extends UIPanel {
     ];
 
     attributes.forEach(attr => {
-      const value = (this.gameState as any)[attr.key] || 0;
+      const baseStats = this.gameState.baseStats ?? { str: 0, agi: 0, vit: 0, int: 0, spi: 0 };
+      const value = baseStats[attr.key as keyof typeof baseStats] || 0;
 
       // 属性名
       const nameText = new UIText(
@@ -198,12 +261,12 @@ export class CharacterPanel extends UIPanel {
     yOffset += spacing;
 
     const combatAttrs = [
-      { key: 'accuracy', label: '命中' },
-      { key: 'physicalDamage', label: '物理伤害' },
-      { key: 'physicalDefense', label: '物理防御' },
-      { key: 'speed', label: '速度' },
-      { key: 'magicDamage', label: '法术伤害' },
-      { key: 'magicDefense', label: '法术防御' },
+      { key: 'hit', label: '命中' },
+      { key: 'pdmg', label: '物理伤害' },
+      { key: 'pdef', label: '物理防御' },
+      { key: 'spd', label: '速度' },
+      { key: 'mdmg', label: '法术伤害' },
+      { key: 'mdef', label: '法术防御' },
       { key: 'maxHp', label: '最大HP' },
       { key: 'maxMp', label: '最大MP' }
     ];
@@ -217,7 +280,8 @@ export class CharacterPanel extends UIPanel {
     // 第一列
     let y1 = yOffset;
     col1.forEach(attr => {
-      const value = (this.gameState as any)[attr.key] || 0;
+      const combatStats = this.gameState.combatStats ?? {};
+      const value = combatStats[attr.key as keyof typeof combatStats] || 0;
 
       const nameText = new UIText(
         this.scene,
@@ -244,7 +308,8 @@ export class CharacterPanel extends UIPanel {
     // 第二列
     let y2 = yOffset;
     col2.forEach(attr => {
-      const value = (this.gameState as any)[attr.key] || 0;
+      const combatStats = this.gameState.combatStats ?? {};
+      const value = combatStats[attr.key as keyof typeof combatStats] || 0;
 
       const nameText = new UIText(
         this.scene,
@@ -421,9 +486,11 @@ export class CharacterPanel extends UIPanel {
     // 更新剩余点数
     this.statPointsText?.setText(`剩余: ${this.remainingPoints}`);
 
+    const baseStats = this.gameState.baseStats ?? { str: 0, agi: 0, vit: 0, int: 0, spi: 0 };
+
     // 更新属性值显示（显示加点后的值）
     Object.keys(this.pendingStats).forEach(stat => {
-      const baseValue = (this.gameState as any)[stat] || 0;
+      const baseValue = baseStats[stat as keyof typeof baseStats] || 0;
       const pending = this.pendingStats[stat];
       const text = this.attributeTexts.get(stat);
       if (text) {
@@ -455,10 +522,11 @@ export class CharacterPanel extends UIPanel {
   private async confirmStatAllocation(): Promise<void> {
     try {
       await gameAPI.allocateStats(this.pendingStats);
-      console.log('Stat allocation confirmed');
+      toastManager.toast('属性分配成功', { level: 'success' });
       this.hide();
     } catch (error) {
       console.error('Stat allocation failed:', error);
+      toastManager.toast('属性分配失败', { level: 'error' });
     }
   }
 
@@ -468,10 +536,11 @@ export class CharacterPanel extends UIPanel {
   private async handleLevelUp(): Promise<void> {
     try {
       await gameAPI.levelUp();
-      console.log('Level up successful');
+      toastManager.toast('突破成功！', { level: 'success' });
       this.hide();
     } catch (error) {
       console.error('Level up failed:', error);
+      toastManager.toast('突破失败', { level: 'error' });
     }
   }
 
@@ -489,13 +558,25 @@ export class CharacterPanel extends UIPanel {
   update(gameState: GameState): void {
     this.gameState = gameState;
 
-    // 更新属性值
+    const baseStats = gameState.baseStats ?? { str: 0, agi: 0, vit: 0, int: 0, spi: 0 };
+    const combatStats = gameState.combatStats ?? {};
+
+    // 更新基础属性值
     this.attributeTexts.forEach((text, key) => {
-      text.setText(((gameState as any)[key] || 0).toString());
+      const value = baseStats[key as keyof typeof baseStats] || 0;
+      text.setText(value.toString());
     });
 
+    // 更新战斗属性值
     this.combatTexts.forEach((text, key) => {
-      text.setText(((gameState as any)[key] || 0).toString());
+      if (key === 'hp_display') {
+        text.setText(`生命: ${gameState.hp}/${gameState.maxHp}`);
+      } else if (key === 'mp_display') {
+        text.setText(`法力: ${gameState.mp}/${gameState.maxMp}`);
+      } else {
+        const value = combatStats[key as keyof typeof combatStats] || 0;
+        text.setText(value.toString());
+      }
     });
 
     // 更新经验值

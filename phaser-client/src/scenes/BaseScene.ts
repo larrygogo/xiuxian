@@ -127,4 +127,11 @@ export abstract class BaseScene extends Phaser.Scene {
   protected getScreenSize() {
     return this.safeAreaManager.getScreenSize();
   }
+
+  /**
+   * 获取SafeAreaManager
+   */
+  public getSafeAreaManager(): SafeAreaManager {
+    return this.safeAreaManager;
+  }
 }

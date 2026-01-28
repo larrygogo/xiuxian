@@ -12,10 +12,12 @@ import { ItemTooltip } from '@/ui/widgets/ItemTooltip';
 import { DragDropSystem, type DragSource, type DropTarget } from '@/systems/DragDropSystem';
 import { stateManager } from '@/services/managers/StateManager';
 import { gameAPI } from '@/services/api';
+import { toastManager } from '@/ui/toast/ToastManager';
 import { isEquipment, isConsumable } from '@/types/item.types';
 import type { Item, Equipment, Consumable } from '@/types/item.types';
 import type { GameState } from '@/types/game.types';
 import { COLORS } from '@/config/constants';
+import type { SafeAreaManager } from '@/ui/safearea/SafeAreaManager';
 
 export class InventoryPanel extends UIPanel {
   private gameState: GameState;
@@ -28,21 +30,28 @@ export class InventoryPanel extends UIPanel {
   private tooltip: ItemTooltip;
   private cardOverlay?: Phaser.GameObjects.Rectangle;
   private panelOverlay?: Phaser.GameObjects.Rectangle;
+  private safeAreaManager?: SafeAreaManager;
 
-  constructor(scene: Phaser.Scene) {
-    const width = scene.cameras.main.width;
-    const height = scene.cameras.main.height;
+  constructor(scene: Phaser.Scene, safeAreaManager?: SafeAreaManager) {
+    // 使用安全区或相机尺寸
+    const safeRect = safeAreaManager?.getFinalSafeRect();
+    const width = safeRect?.width ?? scene.cameras.main.width;
+    const height = safeRect?.height ?? scene.cameras.main.height;
+    const centerX = safeRect ? safeRect.x + safeRect.width / 2 : scene.cameras.main.width / 2;
+    const centerY = safeRect ? safeRect.y + safeRect.height / 2 : scene.cameras.main.height / 2;
 
     super({
       scene,
-      x: width / 2,
-      y: height / 2,
+      x: centerX,
+      y: centerY,
       width: width,
       height: height,
       title: '仙囊',
       closable: false,
       draggable: false
     });
+
+    this.safeAreaManager = safeAreaManager;
 
     const state = stateManager.getGameState();
     if (!state) {
@@ -366,9 +375,10 @@ export class InventoryPanel extends UIPanel {
   private async mergeItems(fromItemId: string, toItemId: string): Promise<void> {
     try {
       await gameAPI.mergeItems(fromItemId, toItemId);
-      console.log('Items merged successfully');
+      toastManager.toast('物品已合并', { level: 'success' });
     } catch (error) {
       console.error('Failed to merge items:', error);
+      toastManager.toast('合并失败', { level: 'error' });
     }
   }
 
@@ -378,9 +388,10 @@ export class InventoryPanel extends UIPanel {
   private async equipItem(itemId: string): Promise<void> {
     try {
       await gameAPI.equipItem(itemId);
-      console.log('Item equipped successfully');
+      toastManager.toast('装备成功', { level: 'success' });
     } catch (error) {
       console.error('Failed to equip item:', error);
+      toastManager.toast('装备失败', { level: 'error' });
     }
   }
 
@@ -390,9 +401,10 @@ export class InventoryPanel extends UIPanel {
   private async useItem(itemId: string): Promise<void> {
     try {
       await gameAPI.useItem(itemId);
-      console.log('Item used successfully');
+      toastManager.toast('使用成功', { level: 'success' });
     } catch (error) {
       console.error('Failed to use item:', error);
+      toastManager.toast('使用失败', { level: 'error' });
     }
   }
 

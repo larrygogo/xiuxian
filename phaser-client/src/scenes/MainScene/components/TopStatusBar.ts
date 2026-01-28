@@ -9,33 +9,23 @@ import { UIProgressBar } from '@/ui/core/UIProgressBar';
 import { UIText } from '@/ui/core/UIText';
 import { needQi } from '@/utils/progression';
 import type { GameState } from '@/types/game.types';
-import type { SafeArea } from '@/utils/ResponsiveHelper';
+import type { Rect } from '@/ui/safearea/types';
 import { SafeAreaManager } from '@/ui/safearea/SafeAreaManager';
-import { Anchor, legacyAnchorToEnum } from '@/ui/layout/Anchors';
+import { Anchor } from '@/ui/layout/Anchors';
 import { LayoutUtil } from '@/ui/layout/LayoutUtil';
-
-/**
- * 锚点位置（字符串形式，向后兼容）
- */
-export type AnchorPosition =
-  | 'top-left'      // 左上角
-  | 'top-center'    // 顶部居中
-  | 'top-right';    // 右上角
+import { BaseScene } from '@/scenes/BaseScene';
 
 export interface TopStatusBarConfig {
-  scene: Phaser.Scene;
+  scene: BaseScene;
   gameState: GameState;
-  safeArea?: SafeArea;              // (旧API) 使用SafeArea对象
-  safeAreaManager?: SafeAreaManager; // (新API) 使用SafeAreaManager（推荐）
-  anchor?: AnchorPosition | Anchor;  // 锚点位置，默认 'top-left'
+  anchor?: Anchor;                   // 锚点位置，默认 Anchor.TOP_LEFT
   offsetX?: number;                 // X轴偏移（基于锚点），默认 10
   offsetY?: number;                 // Y轴偏移（基于锚点），默认 10
 }
 
 export class TopStatusBar extends UIContainer {
   private gameState: GameState;
-  private safeArea?: SafeArea;
-  private safeAreaManager?: SafeAreaManager;
+  private safeAreaManager: SafeAreaManager;
   private anchor: Anchor;
   private offsetX: number;
   private offsetY: number;
@@ -53,23 +43,14 @@ export class TopStatusBar extends UIContainer {
   private contentHeight: number = 140; // 头像(120) + 上下边距(20)
 
   constructor(config: TopStatusBarConfig) {
-    // 验证配置
-    if (!config.safeArea && !config.safeAreaManager) {
-      throw new Error('TopStatusBar: either safeArea or safeAreaManager must be provided');
-    }
-
-    // 处理锚点（支持字符串和枚举）
-    const anchorInput = config.anchor || 'top-left';
-    const anchor = typeof anchorInput === 'string'
-      ? legacyAnchorToEnum(anchorInput as AnchorPosition)
-      : anchorInput;
+    // 处理锚点（仅支持枚举）
+    const anchor = config.anchor || Anchor.TOP_LEFT;
     const offsetX = config.offsetX ?? 10;
     const offsetY = config.offsetY ?? 10;
 
     // 获取当前的SafeArea
-    const safeArea = config.safeAreaManager
-      ? config.safeAreaManager.getFinalSafeRect()
-      : config.safeArea!;
+    const safeAreaManager = config.scene.getSafeAreaManager();
+    const safeArea = safeAreaManager.getFinalSafeRect();
 
     // 计算位置
     const position = TopStatusBar.calculatePosition(
@@ -82,8 +63,7 @@ export class TopStatusBar extends UIContainer {
     super(config.scene, position.x, position.y);
 
     this.gameState = config.gameState;
-    this.safeArea = config.safeArea;
-    this.safeAreaManager = config.safeAreaManager;
+    this.safeAreaManager = safeAreaManager;
     this.anchor = anchor;
     this.offsetX = offsetX;
     this.offsetY = offsetY;
@@ -91,19 +71,15 @@ export class TopStatusBar extends UIContainer {
     this.setDepth(10);
 
     // 应用UI缩放因子（RESIZE模式下缩小UI到正确尺寸）
-    if (this.safeAreaManager) {
-      const uiScale = this.safeAreaManager.getUIScale();
-      this.setScale(uiScale);
-      console.log('TopStatusBar: applying UI scale', uiScale);
-    }
+    const uiScale = this.safeAreaManager.getUIScale();
+    this.setScale(uiScale);
+    console.log('TopStatusBar: applying UI scale', uiScale);
 
     this.createContent();
 
     // 如果使用SafeAreaManager，监听安全区变化事件
-    if (this.safeAreaManager) {
-      this.safeAreaManager.on('safeAreaChanged', this.onSafeAreaChanged, this);
-      console.log('TopStatusBar: listening to safeAreaChanged events');
-    }
+    this.safeAreaManager.on('safeAreaChanged', this.onSafeAreaChanged, this);
+    console.log('TopStatusBar: listening to safeAreaChanged events');
   }
 
   /**
@@ -114,26 +90,16 @@ export class TopStatusBar extends UIContainer {
     bounds: { x: number; y: number; width: number; height: number }
   ): boolean {
     // 获取当前安全区
-    const safeRect = this.safeAreaManager
-      ? this.safeAreaManager.getFinalSafeRect()
-      : this.safeArea;
-
-    if (!safeRect) {
-      console.warn('⚠️ No safe area available for validation');
-      return true; // Skip validation if no safe area
-    }
+    const safeRect = this.safeAreaManager.getFinalSafeRect();
 
     const { x, y, width, height } = bounds;
     const right = x + width;
     const bottom = y + height;
 
-    // 兼容SafeArea和Rect格式
-    // SafeArea: { left, top, right, bottom, width, height }
-    // Rect: { x, y, width, height }
-    const left = 'left' in safeRect ? safeRect.left : safeRect.x;
-    const top = 'top' in safeRect ? safeRect.top : safeRect.y;
-    const safeRight = 'right' in safeRect ? safeRect.right : (safeRect.x + safeRect.width);
-    const safeBottom = 'bottom' in safeRect ? safeRect.bottom : (safeRect.y + safeRect.height);
+    const left = safeRect.x;
+    const top = safeRect.y;
+    const safeRight = safeRect.x + safeRect.width;
+    const safeBottom = safeRect.y + safeRect.height;
 
     const isValid =
       x >= left &&
@@ -164,21 +130,13 @@ export class TopStatusBar extends UIContainer {
    * 根据锚点和安全区计算位置
    */
   private static calculatePosition(
-    safeArea: SafeArea | any,
+    safeArea: Rect,
     anchor: Anchor,
     offsetX: number,
     offsetY: number
   ): { x: number; y: number } {
-    // 将SafeArea转换为Rect格式（兼容新旧API）
-    const rect = {
-      x: safeArea.left || safeArea.x || 0,
-      y: safeArea.top || safeArea.y || 0,
-      width: safeArea.width || 0,
-      height: safeArea.height || 0
-    };
-
     // 使用LayoutUtil计算位置
-    const anchorPoint = LayoutUtil.getAnchorPoint(rect, anchor);
+    const anchorPoint = LayoutUtil.getAnchorPoint(safeArea, anchor);
 
     return {
       x: anchorPoint.x + offsetX,
@@ -316,12 +274,10 @@ export class TopStatusBar extends UIContainer {
 
     // 灵石显示（右上角，使用安全区）
     // 确保文本完全在安全区内，距离右边缘至少SAFE_PADDING像素
-    const currentSafeRect = this.safeAreaManager
-      ? this.safeAreaManager.getFinalSafeRect()
-      : (this.safeArea || { x: 0, y: 0, width: 1080, height: 1920 });
+    const currentSafeRect = this.safeAreaManager.getFinalSafeRect();
     const spiritStonePadding = SAFE_PADDING;
-    const safeRight = 'right' in currentSafeRect ? currentSafeRect.right : (currentSafeRect.x + currentSafeRect.width);
-    const safeTop = 'top' in currentSafeRect ? currentSafeRect.top : currentSafeRect.y;
+    const safeRight = currentSafeRect.x + currentSafeRect.width;
+    const safeTop = currentSafeRect.y;
     const spiritStoneX = safeRight - spiritStonePadding;
     const spiritStoneY = safeTop + 16;
 
@@ -391,25 +347,14 @@ export class TopStatusBar extends UIContainer {
    * 安全区变化事件处理（仅在使用SafeAreaManager时触发）
    */
   private onSafeAreaChanged(): void {
-    if (!this.safeAreaManager) return;
-
     const safeRect = this.safeAreaManager.getFinalSafeRect();
     this.updatePositionFromRect(safeRect);
   }
 
   /**
-   * 更新位置（当安全区变化时调用）
-   * 支持旧API（SafeArea）和新API（Rect）
-   */
-  updatePosition(safeArea: SafeArea): void {
-    this.safeArea = safeArea;
-    this.updatePositionFromRect(safeArea);
-  }
-
-  /**
    * 从矩形更新位置（内部方法）
    */
-  private updatePositionFromRect(safeRect: SafeArea | any): void {
+  private updatePositionFromRect(safeRect: Rect): void {
     // 重新计算位置
     const position = TopStatusBar.calculatePosition(
       safeRect,
@@ -425,11 +370,8 @@ export class TopStatusBar extends UIContainer {
 
     // 更新灵石文本位置（因为它不在容器内，需要单独更新）
     if (this.spiritStoneText) {
-      const currentSafeRect = this.safeAreaManager
-        ? this.safeAreaManager.getFinalSafeRect()
-        : safeRect;
-      const spiritStoneX = (currentSafeRect.x + currentSafeRect.width) - SAFE_PADDING;
-      const spiritStoneY = currentSafeRect.y + 16;
+      const spiritStoneX = (safeRect.x + safeRect.width) - SAFE_PADDING;
+      const spiritStoneY = safeRect.y + 16;
       this.spiritStoneText.setPosition(spiritStoneX, spiritStoneY);
 
       // 验证更新后的位置
@@ -486,9 +428,7 @@ export class TopStatusBar extends UIContainer {
    */
   destroy(fromScene?: boolean): void {
     // 停止监听事件
-    if (this.safeAreaManager) {
-      this.safeAreaManager.off('safeAreaChanged', this.onSafeAreaChanged, this);
-    }
+    this.safeAreaManager.off('safeAreaChanged', this.onSafeAreaChanged, this);
 
     // 销毁头像图片（如果存在）
     if (this.avatarImage) {

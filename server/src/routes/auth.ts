@@ -2,6 +2,12 @@ import express, { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { JWT_EXPIRES_IN, JWT_SECRET } from "../config";
 import { createUser, verifyUser } from "../services/userService";
+import { 
+  getLoginFormConfig, 
+  getRegisterFormConfig,
+  getLoginFormHTML,
+  getRegisterFormHTML
+} from "../services/formConfigService";
 
 const router = express.Router();
 
@@ -74,6 +80,64 @@ router.post("/login", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("登录错误:", error);
     res.status(500).json({ error: "登录失败" });
+  }
+});
+
+/**
+ * 获取登录表单配置
+ * GET /api/auth/login-form
+ */
+router.get("/login-form", async (req: Request, res: Response) => {
+  try {
+    const config = getLoginFormConfig();
+    res.json(config);
+  } catch (error) {
+    console.error("获取登录表单配置错误:", error);
+    res.status(500).json({ error: "获取表单配置失败" });
+  }
+});
+
+/**
+ * 获取注册表单配置
+ * GET /api/auth/register-form
+ */
+router.get("/register-form", async (req: Request, res: Response) => {
+  try {
+    const config = getRegisterFormConfig();
+    res.json(config);
+  } catch (error) {
+    console.error("获取注册表单配置错误:", error);
+    res.status(500).json({ error: "获取表单配置失败" });
+  }
+});
+
+/**
+ * 获取登录表单完整HTML页面
+ * GET /api/auth/login-page
+ */
+router.get("/login-page", async (req: Request, res: Response) => {
+  try {
+    const html = getLoginFormHTML();
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+  } catch (error) {
+    console.error("获取登录页面错误:", error);
+    res.status(500).send("获取登录页面失败");
+  }
+});
+
+/**
+ * 获取注册表单完整HTML页面
+ * GET /api/auth/register-page
+ */
+router.get("/register-page", async (req: Request, res: Response) => {
+  try {
+    const html = getRegisterFormHTML();
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+  } catch (error) {
+    console.error("获取注册页面错误:", error);
+    res.status(500).send("获取注册页面失败");
   }
 });
 

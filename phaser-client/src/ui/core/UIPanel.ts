@@ -12,11 +12,11 @@ import { storage } from '@/utils/storage';
 
 export class UIPanel extends UIContainer {
   protected config: UIPanelConfig;
-  protected background: Phaser.GameObjects.Rectangle;
-  protected titleBar: Phaser.GameObjects.Rectangle;
-  protected titleText: Phaser.GameObjects.Text;
+  protected background!: Phaser.GameObjects.Rectangle;
+  protected titleBar!: Phaser.GameObjects.Rectangle;
+  protected titleText!: Phaser.GameObjects.Text;
   protected closeButton?: UIButton;
-  protected contentContainer: Phaser.GameObjects.Container;
+  protected contentContainer!: Phaser.GameObjects.Container;
 
   private isDragging: boolean = false;
   private dragStartX: number = 0;
@@ -134,7 +134,7 @@ export class UIPanel extends UIContainer {
       this.dragStartY = pointer.y;
       this.panelStartX = this.x;
       this.panelStartY = this.y;
-      this.bringToTop();
+      this.bringPanelToTop();
     });
 
     this.titleBar.on('drag', (pointer: Phaser.Input.Pointer) => {
@@ -157,14 +157,14 @@ export class UIPanel extends UIContainer {
     // 移动端触摸支持
     this.titleBar.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (pointer.rightButtonDown()) return;
-      this.bringToTop();
+      this.bringPanelToTop();
     });
   }
 
   /**
    * 置顶
    */
-  protected bringToTop(): void {
+  protected bringPanelToTop(): void {
     this.setDepth(1000);
     // 其他面板降低深度的逻辑可以在这里添加
   }
@@ -175,7 +175,7 @@ export class UIPanel extends UIContainer {
   private savePosition(): void {
     if (!this.config.storageKey) return;
 
-    const positions = storage.get<Record<string, { x: number; y: number }>>('panel-positions', {});
+    const positions = storage.get<Record<string, { x: number; y: number }>>('panel-positions', {}) ?? {};
     positions[this.config.storageKey] = { x: this.x, y: this.y };
     storage.set('panel-positions', positions);
   }
@@ -186,7 +186,7 @@ export class UIPanel extends UIContainer {
   private restorePosition(): void {
     if (!this.config.storageKey) return;
 
-    const positions = storage.get<Record<string, { x: number; y: number }>>('panel-positions', {});
+    const positions = storage.get<Record<string, { x: number; y: number }>>('panel-positions', {}) ?? {};
     const savedPosition = positions[this.config.storageKey];
 
     if (savedPosition) {
@@ -206,7 +206,7 @@ export class UIPanel extends UIContainer {
    */
   show(): this {
     super.show();
-    this.bringToTop();
+    this.bringPanelToTop();
     return this;
   }
 
