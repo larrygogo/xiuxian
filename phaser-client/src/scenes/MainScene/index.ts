@@ -13,6 +13,7 @@ import { toastManager } from '@/ui/toast/ToastManager';
 import { Anchor } from '@/ui/layout/Anchors';
 import type { GameState } from '@/types/game.types';
 import { BaseScene } from '@/scenes/BaseScene';
+import { battleAPI } from '@/services/api';
 
 export default class MainScene extends BaseScene {
   // 背景元素
@@ -24,8 +25,8 @@ export default class MainScene extends BaseScene {
   private topStatusBar?: TopStatusBar;
 
   // 按钮
+  private battleSceneButton?: Phaser.GameObjects.Image;
   private bagButton?: Phaser.GameObjects.Image;
-  private equipmentButton?: Phaser.GameObjects.Image;
   private characterButton?: Phaser.GameObjects.Image;
   private settingsButton?: Phaser.GameObjects.Image;
 
@@ -218,20 +219,20 @@ export default class MainScene extends BaseScene {
     const buttonSize = BOTTOM_BAR.BUTTON_SIZE * uiScale;
     const buttonSpacing = BOTTOM_BAR.BUTTON_SPACING * uiScale;
 
-    // 4个按钮均匀分布：装备(左) - 背包(中) - 角色 - 设置(右)
+    // 4个按钮均匀分布：战斗场景(左) - 背包 - 角色 - 设置(右)
     // 从中心向左偏移1.5个间距，然后每个按钮间隔一个间距
     const firstButtonX = -buttonSpacing * 1.5;
 
-    // 装备按钮（左侧，罗盘）
-    const compassImage = this.add.image(firstButtonX, buttonY, 'buttonCompass');
-    compassImage.setDisplaySize(buttonSize, buttonSize);
-    compassImage.setInteractive({ useHandCursor: true });
-    compassImage.on('pointerdown', () => this.openEquipmentPanel());
-    compassImage.setDepth(11);
-    this.equipmentButton = compassImage;
-    this.bottomActionBar.add(compassImage);
+    // 战斗场景按钮（左侧，使用罗盘图标作为临时图标）
+    const battleSceneImage = this.add.image(firstButtonX, buttonY, 'buttonCompass');
+    battleSceneImage.setDisplaySize(buttonSize, buttonSize);
+    battleSceneImage.setInteractive({ useHandCursor: true });
+    battleSceneImage.on('pointerdown', () => this.openBattleSceneSelection());
+    battleSceneImage.setDepth(11);
+    this.battleSceneButton = battleSceneImage;
+    this.bottomActionBar.add(battleSceneImage);
 
-    // 背包按钮（中间）
+    // 背包按钮（第二个）
     const bagImage = this.add.image(firstButtonX + buttonSpacing, buttonY, 'buttonBag');
     bagImage.setDisplaySize(buttonSize, buttonSize);
     bagImage.setInteractive({ useHandCursor: true });
@@ -240,7 +241,7 @@ export default class MainScene extends BaseScene {
     this.bagButton = bagImage;
     this.bottomActionBar.add(bagImage);
 
-    // 角色按钮（右侧第一个）
+    // 角色按钮（第三个）
     const characterImage = this.add.image(firstButtonX + buttonSpacing * 2, buttonY, 'buttonCharacter');
     characterImage.setDisplaySize(buttonSize, buttonSize);
     characterImage.setInteractive({ useHandCursor: true });
@@ -249,7 +250,7 @@ export default class MainScene extends BaseScene {
     this.characterButton = characterImage;
     this.bottomActionBar.add(characterImage);
 
-    // 设置按钮（右侧第二个）
+    // 设置按钮（第四个）
     const settingsImage = this.add.image(firstButtonX + buttonSpacing * 3, buttonY, 'buttonSettings');
     settingsImage.setDisplaySize(buttonSize, buttonSize);
     settingsImage.setInteractive({ useHandCursor: true });
@@ -292,10 +293,58 @@ export default class MainScene extends BaseScene {
   }
 
   /**
-   * 打开装备面板
+   * 打开战斗场景选择面板
    */
-  private openEquipmentPanel(): void {
-    panelManager.showEquipmentPanel();
+  private openBattleSceneSelection(): void {
+    panelManager.showSceneSelectionPanel(async (sceneId: string) => {
+      try {
+        console.log('Selected battle scene:', sceneId);
+        
+        // 获取当前用户ID
+        const user = stateManager.getUser();
+        if (!user || !user.id) {
+          toastManager.toast('无法获取用户信息', { level: 'error' });
+          return;
+        }
+
+        // 将用户ID转换为数字（如果后端需要）
+        const userId = parseInt(user.id, 10);
+        if (isNaN(userId)) {
+          toastManager.toast('用户ID格式错误', { level: 'error' });
+          return;
+        }
+
+        // 显示加载提示
+        toastManager.toast('正在创建战斗房间...', { level: 'info' });
+
+        // 创建战斗房间（sceneId 作为 mapId）
+        const response = await battleAPI.createRoom(sceneId, [userId]);
+        const roomId = response.room.roomId;
+
+        console.log('Battle room created:', roomId);
+
+        // 进入战斗场景
+        this.scene.start(SCENE_KEYS.BATTLE, {
+          roomId: roomId,
+          onBattleEnd: () => {
+            // 战斗结束后返回主场景
+            this.scene.start(SCENE_KEYS.MAIN);
+          },
+          onRoomMissing: () => {
+            // 房间不存在时返回主场景
+            toastManager.toast('战斗房间不存在', { level: 'error' });
+            this.scene.start(SCENE_KEYS.MAIN);
+          }
+        });
+      } catch (error: any) {
+        console.error('Failed to create battle room:', error);
+        const errorMessage = error.response?.data?.error || 
+                           error.response?.data?.message || 
+                           error.message || 
+                           '创建战斗房间失败';
+        toastManager.toast(errorMessage, { level: 'error' });
+      }
+    });
   }
 
   /**

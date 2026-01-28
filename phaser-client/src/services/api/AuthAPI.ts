@@ -52,5 +52,27 @@ export const authAPI = {
    */
   async getRegisterFormConfig(): Promise<FormConfig> {
     return apiClient.get<FormConfig>(API_ENDPOINTS.AUTH_REGISTER_FORM);
+  },
+
+  /**
+   * 获取登录表单完整HTML
+   */
+  async getLoginFormHTML(): Promise<string> {
+    const axiosInstance = apiClient.getAxiosInstance();
+    const response = await axiosInstance.get(API_ENDPOINTS.AUTH_LOGIN_PAGE, {
+      responseType: 'text'
+    });
+    return response.data;
+  },
+
+  /**
+   * 获取注册表单完整HTML
+   */
+  async getRegisterFormHTML(): Promise<string> {
+    const axiosInstance = apiClient.getAxiosInstance();
+    const response = await axiosInstance.get(API_ENDPOINTS.AUTH_REGISTER_PAGE, {
+      responseType: 'text'
+    });
+    return response.data;
   }
 };

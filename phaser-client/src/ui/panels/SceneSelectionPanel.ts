@@ -7,17 +7,21 @@ import { UIPanel } from '@/ui/core/UIPanel';
 import { UIText } from '@/ui/core/UIText';
 import { UIButton } from '@/ui/core/UIButton';
 import { stateManager } from '@/services/managers/StateManager';
+import { battleAPI } from '@/services/api';
 import type { GameState } from '@/types/game.types';
 import { COLORS } from '@/config/constants';
+import { LayoutUtil } from '@/ui/layout/LayoutUtil';
+import { Anchor } from '@/ui/layout/Anchors';
+import type { BaseScene } from '@/scenes/BaseScene';
 
-// 战斗场景接口（临时定义，待后续从API获取）
+/** 场景项（与后端 mapId 一致，用于创建房间） */
 export interface BattleScene {
-  id: string;
+  id: string; // 即 mapId，创建房间时传给后端
   name: string;
   description: string;
   minLevel: number;
   maxLevel: number;
-  monsterPool: string[]; // 怪物池
+  monsterPool: string[];
   difficulty: 'easy' | 'normal' | 'hard' | 'extreme';
 }
 
@@ -25,15 +29,28 @@ export class SceneSelectionPanel extends UIPanel {
   private gameState: GameState;
   private scenes: BattleScene[] = [];
   private onSceneSelected?: (sceneId: string) => void;
+  private loadingText: UIText | null = null;
+  private sceneListContainer: Phaser.GameObjects.Container | null = null;
+  private backButton: UIButton | null = null;
+  private scrollHitArea: Phaser.GameObjects.Rectangle | null = null;
+  
+  // 滚动相关
+  private scrollY: number = 0;
+  private maxScrollY: number = 0;
+  private readonly cardHeight = 180; // 从140增大到180
+  private readonly cardSpacing = 10;
+  private readonly buttonAreaHeight = 100; // 为返回按钮预留的底部空间
 
   constructor(scene: Phaser.Scene, onSceneSelected?: (sceneId: string) => void) {
     super({
       scene,
       x: scene.cameras.main.width / 2,
       y: scene.cameras.main.height / 2,
-      width: 500,
-      height: 600,
-      title: '选择历练场景'
+      width: scene.cameras.main.width,
+      height: scene.cameras.main.height,
+      title: '选择历练场景',
+      draggable: false,
+      closable: false
     });
 
     const state = stateManager.getGameState();
@@ -42,6 +59,13 @@ export class SceneSelectionPanel extends UIPanel {
     }
     this.gameState = state;
     this.onSceneSelected = onSceneSelected;
+
+    // 修改背景为不透明
+    this.background.setAlpha(1.0);
+    
+    // 隐藏标题栏（导航条）
+    this.titleBar.setVisible(false);
+    this.titleText.setVisible(false);
 
     this.createContent();
 
@@ -53,169 +77,222 @@ export class SceneSelectionPanel extends UIPanel {
    * 创建面板内容
    */
   private createContent(): void {
+    const screenWidth = this.scene.cameras.main.width;
+    const screenHeight = this.scene.cameras.main.height;
+    const panelCenterX = screenWidth / 2;
+    const panelCenterY = screenHeight / 2;
     const centerX = 0;
-    const topY = -260;
 
-    // 等级提示
+    // 获取安全区
+    let safeAreaManager: any = null;
+    if (typeof (this.scene as any).getSafeAreaManager === 'function') {
+      safeAreaManager = (this.scene as any).getSafeAreaManager();
+    }
+
+    // 计算标题位置（在安全区内）
+    let topY: number;
+    if (safeAreaManager) {
+      const safeRect = safeAreaManager.getFinalSafeRect();
+      // 从安全区顶部开始计算，转换为相对于面板中心的坐标
+      topY = safeRect.y + 30 - panelCenterY; // 安全区顶部 + 偏移
+    } else {
+      // 如果没有安全区管理器，使用屏幕顶部
+      topY = -screenHeight / 2 + 80;
+    }
+
+    // 等级提示（字体从18px增大到24px）
     const levelHint = new UIText(
       this.scene,
       centerX,
-      topY + 10,
+      topY,
       `当前等级: Lv.${this.gameState.level}`,
-      { fontSize: '16px', color: '#f39c12', fontStyle: 'bold' }
+      { fontSize: '24px', color: '#f39c12', fontStyle: 'bold' }
     );
     levelHint.setOrigin(0.5);
     this.contentContainer.add(levelHint);
 
-    // 加载场景列表（临时使用模拟数据）
+    // 加载中提示（字体从16px增大到20px）
+    this.loadingText = new UIText(
+      this.scene,
+      centerX,
+      topY + 50,
+      '加载场景列表...',
+      { fontSize: '20px', color: '#95a5a6' }
+    );
+    this.loadingText.setOrigin(0.5);
+    this.contentContainer.add(this.loadingText);
+
+    // 场景列表容器（先占位，加载完成后填充）
+    this.sceneListContainer = this.scene.add.container(centerX, topY + 100);
+    this.contentContainer.add(this.sceneListContainer);
+
+    // 从 API 加载场景列表并创建卡片
     this.loadScenes();
 
-    // 创建场景卡片列表
-    this.createSceneList();
-
-    // 关闭按钮
-    const closeButton = new UIButton({
-      scene: this.scene,
-      x: centerX,
-      y: 260,
-      width: 100,
-      height: 40,
-      text: '关闭',
-      textStyle: { fontSize: '16px' },
-      onClick: () => this.hide()
-    });
-    closeButton.setColor(COLORS.dark);
-    this.contentContainer.add(closeButton);
+    // 创建左下角返回按钮（使用安全区定位）
+    this.createBackButton();
   }
 
   /**
-   * 加载场景列表
-   * TODO: 从API获取场景列表
+   * 从 API 加载场景列表（使用后端 mapId，创建房间时才能正确生成怪物）
    */
   private loadScenes(): void {
-    // 临时模拟数据
-    this.scenes = [
-      {
-        id: 'forest_1',
-        name: '迷雾森林',
-        description: '充满神秘气息的古老森林，适合初入修仙之路的修士历练。',
-        minLevel: 1,
-        maxLevel: 10,
-        monsterPool: ['野狼', '树妖', '毒蛇'],
-        difficulty: 'easy'
-      },
-      {
-        id: 'mountain_1',
-        name: '青云山脉',
-        description: '灵气充沛的山脉，栖息着各类灵兽，需要一定实力才能探索。',
-        minLevel: 8,
-        maxLevel: 20,
-        monsterPool: ['灵猿', '山鹰', '石灵'],
-        difficulty: 'normal'
-      },
-      {
-        id: 'cave_1',
-        name: '幽暗洞窟',
-        description: '深不见底的洞窟，传说中有强大的妖兽盘踞，极度危险。',
-        minLevel: 15,
-        maxLevel: 30,
-        monsterPool: ['火蝠', '地龙', '魔蛛'],
-        difficulty: 'hard'
-      },
-      {
-        id: 'ruins_1',
-        name: '上古遗迹',
-        description: '远古修士留下的遗迹，充满机缘也充满凶险。',
-        minLevel: 25,
-        maxLevel: 50,
-        monsterPool: ['傀儡', '怨灵', '守护者'],
-        difficulty: 'extreme'
-      }
-    ];
+    battleAPI
+      .getScenes()
+      .then((res) => {
+        const raw = res.scenes as Array<{
+          mapId: string;
+          name: string;
+          description: string;
+          levelRange: [number, number];
+          monsterPool: Array<{ monsterId: string; weight: number; levelRange: [number, number] }>;
+        }>;
+        this.scenes = raw.map((map) => {
+          const [minLevel, maxLevel] = map.levelRange;
+          const difficulty: BattleScene['difficulty'] =
+            maxLevel <= 5 ? 'easy' : maxLevel <= 10 ? 'normal' : maxLevel <= 20 ? 'hard' : 'extreme';
+          const pool = map.monsterPool || [];
+          const monsterPool = pool.map((m: { monsterId?: string }) => (typeof m === 'string' ? m : m.monsterId ?? ''));
+          return {
+            id: map.mapId,
+            name: map.name,
+            description: map.description || '',
+            minLevel,
+            maxLevel,
+            monsterPool,
+            difficulty
+          };
+        });
+        if (this.loadingText) {
+          this.loadingText.destroy();
+          this.loadingText = null;
+        }
+        this.createSceneList();
+      })
+      .catch(() => {
+        if (this.loadingText) {
+          this.loadingText.setText('加载失败，请稍后重试');
+        }
+      });
   }
 
   /**
-   * 创建场景列表
+   * 创建场景列表（添加到 sceneListContainer）
    */
   private createSceneList(): void {
-    let yOffset = -220;
-    const cardWidth = 450;
-    const cardSpacing = 10;
+    if (!this.sceneListContainer) return;
+    this.sceneListContainer.removeAll(true);
 
-    this.scenes.forEach(scene => {
+    const screenWidth = this.scene.cameras.main.width;
+    const screenHeight = this.scene.cameras.main.height;
+    
+    // 获取安全区宽度来计算卡片宽度
+    let safeAreaManager: any = null;
+    if (typeof (this.scene as any).getSafeAreaManager === 'function') {
+      safeAreaManager = (this.scene as any).getSafeAreaManager();
+    }
+    
+    let cardWidth: number;
+    if (safeAreaManager) {
+      const safeRect = safeAreaManager.getFinalSafeRect();
+      // 使用安全区宽度，留出左右各20px的内边距
+      cardWidth = safeRect.width - 40;
+    } else {
+      // 如果没有安全区管理器，使用屏幕宽度减去边距
+      cardWidth = Math.min(900, screenWidth - 60);
+    }
+    
+    let yOffset = 0;
+
+    this.scenes.forEach((scene) => {
       const card = this.createSceneCard(scene, yOffset, cardWidth);
-      yOffset += card.height + cardSpacing;
+      this.sceneListContainer!.add(card);
+      yOffset += this.cardHeight + this.cardSpacing;
     });
+
+    // 计算最大滚动距离
+    const scrollAreaHeight = screenHeight - 200 - this.buttonAreaHeight; // 减去顶部提示和底部按钮区域
+    const totalContentHeight = yOffset;
+    this.maxScrollY = Math.max(0, totalContentHeight - scrollAreaHeight);
+
+    // 设置滚动功能
+    this.setupScrolling();
   }
 
   /**
    * 创建场景卡片
    */
   private createSceneCard(scene: BattleScene, yOffset: number, width: number): Phaser.GameObjects.Container {
-    const cardHeight = 140;
     const container = this.scene.add.container(0, yOffset);
 
     // 背景
     const bgColor = this.getDifficultyColor(scene.difficulty);
-    const bg = this.scene.add.rectangle(0, 0, width, cardHeight, bgColor, 0.3);
+    const bg = this.scene.add.rectangle(0, 0, width, this.cardHeight, bgColor, 0.3);
     bg.setStrokeStyle(2, bgColor);
     container.add(bg);
 
-    // 场景名称
+    // 场景名称（字体从20px增大到26px）
     const nameText = new UIText(
       this.scene,
-      -width / 2 + 15,
-      -cardHeight / 2 + 15,
+      -width / 2 + 20,
+      -this.cardHeight / 2 + 20,
       scene.name,
-      { fontSize: '18px', color: '#ecf0f1', fontStyle: 'bold' }
+      { fontSize: '26px', color: '#ecf0f1', fontStyle: 'bold' }
     );
     nameText.setOrigin(0, 0);
     container.add(nameText);
 
-    // 难度标签
+    // 难度标签（字体从16px增大到22px）
+    // 确保标签完全在卡片内，留出足够的右边距
     const difficultyText = this.getDifficultyText(scene.difficulty);
     const difficultyLabel = new UIText(
       this.scene,
-      width / 2 - 15,
-      -cardHeight / 2 + 15,
+      width / 2 - 30,
+      -this.cardHeight / 2 + 20,
       difficultyText,
-      { fontSize: '14px', color: this.getDifficultyTextColor(scene.difficulty) }
+      { fontSize: '22px', color: this.getDifficultyTextColor(scene.difficulty) }
     );
     difficultyLabel.setOrigin(1, 0);
     container.add(difficultyLabel);
 
-    // 等级范围
+    // 等级范围（字体从16px增大到20px）
     const levelRange = new UIText(
       this.scene,
-      -width / 2 + 15,
-      -cardHeight / 2 + 40,
+      -width / 2 + 20,
+      -this.cardHeight / 2 + 60,
       `推荐等级: ${scene.minLevel}-${scene.maxLevel}`,
-      { fontSize: '14px', color: '#95a5a6' }
+      { fontSize: '20px', color: '#95a5a6' }
     );
     levelRange.setOrigin(0, 0);
     container.add(levelRange);
 
-    // 描述
+    // 描述（字体从15px增大到18px）
+    // 确保描述文字不会超出卡片边界，考虑按钮和标签占用的空间
+    const descPadding = 40; // 左右各20px的padding
     const desc = new UIText(
       this.scene,
-      -width / 2 + 15,
-      -cardHeight / 2 + 65,
+      -width / 2 + 20,
+      -this.cardHeight / 2 + 95,
       scene.description,
-      { fontSize: '13px', color: '#bdc3c7', wordWrap: { width: width - 30 } }
+      { fontSize: '18px', color: '#bdc3c7', wordWrap: { width: width - descPadding } }
     );
     desc.setOrigin(0, 0);
     container.add(desc);
 
-    // 探索按钮
+    // 探索按钮（字体从16px增大到20px）
+    // 确保按钮完全在卡片内，按钮宽度140px，需要从右边界向左偏移至少70px（按钮中心到右边缘）
     const canExplore = this.gameState.level >= scene.minLevel;
+    const buttonWidth = 140;
+    const buttonHeight = 50;
+    const rightMargin = 30; // 右边距
     const exploreButton = new UIButton({
       scene: this.scene,
-      x: width / 2 - 60,
-      y: cardHeight / 2 - 20,
-      width: 100,
-      height: 30,
+      x: width / 2 - buttonWidth / 2 - rightMargin, // 按钮中心位置，确保右边缘在卡片内
+      y: this.cardHeight / 2 - 30,
+      width: buttonWidth,
+      height: buttonHeight,
       text: '进入',
-      textStyle: { fontSize: '14px' },
+      textStyle: { fontSize: '20px' },
       onClick: () => this.handleSceneSelect(scene)
     });
 
@@ -228,7 +305,6 @@ export class SceneSelectionPanel extends UIPanel {
 
     container.add(exploreButton);
 
-    this.contentContainer.add(container);
     return container;
   }
 
@@ -388,6 +464,129 @@ export class SceneSelectionPanel extends UIPanel {
       case 'hard': return '困难';
       case 'extreme': return '极难';
       default: return '未知';
+    }
+  }
+
+  /**
+   * 创建左下角返回按钮（使用安全区定位）
+   */
+  private createBackButton(): void {
+    // 尝试从场景获取 SafeAreaManager
+    let safeAreaManager: any = null;
+    if (typeof (this.scene as any).getSafeAreaManager === 'function') {
+      safeAreaManager = (this.scene as any).getSafeAreaManager();
+    }
+
+    const panelCenterX = this.scene.cameras.main.width / 2;
+    const panelCenterY = this.scene.cameras.main.height / 2;
+    let buttonX = 0;
+    let buttonY = 0;
+
+    const buttonWidth = 140;
+    const buttonHeight = 60; // 从50增大到60以适应更大的字体
+    const offset = 20; // 底部和左侧边距
+
+    // 使用安全区定位按钮到左下角，确保完全在安全区内
+    if (safeAreaManager) {
+      const safeRect = safeAreaManager.getFinalSafeRect();
+      // 计算按钮在屏幕上的绝对位置
+      const screenX = safeRect.x + offset; // 安全区左边 + 偏移
+      // 确保按钮底部在安全区底部之上
+      const screenY = safeRect.y + safeRect.height - buttonHeight - offset; // 安全区底部 - 按钮高度 - 偏移
+      // 转换为相对于面板中心的坐标
+      buttonX = screenX - panelCenterX;
+      buttonY = screenY - panelCenterY;
+    } else {
+      // 如果没有安全区管理器，使用屏幕坐标
+      const screenHeight = this.scene.cameras.main.height;
+      buttonX = offset - panelCenterX;
+      buttonY = screenHeight / 2 - buttonHeight - offset - panelCenterY;
+    }
+
+    // 创建返回按钮（使用相对坐标，字体从18px增大到22px）
+    this.backButton = new UIButton({
+      scene: this.scene,
+      x: buttonX,
+      y: buttonY,
+      width: buttonWidth,
+      height: buttonHeight,
+      text: '返回',
+      textStyle: { fontSize: '22px' },
+      onClick: () => this.hide()
+    });
+    this.backButton.setColor(COLORS.dark);
+    this.contentContainer.add(this.backButton);
+  }
+
+  /**
+   * 设置滚动功能
+   */
+  private setupScrolling(): void {
+    if (!this.sceneListContainer) return;
+
+    const screenWidth = this.scene.cameras.main.width;
+    const screenHeight = this.scene.cameras.main.height;
+    
+    // 计算滚动区域：从场景列表开始位置到返回按钮上方
+    const topY = -screenHeight / 2 + 80; // 顶部提示区域
+    const listStartY = topY + 100; // 场景列表起始位置
+    const scrollAreaTop = listStartY;
+    const scrollAreaHeight = screenHeight - (listStartY - (-screenHeight / 2)) - this.buttonAreaHeight - 20; // 减去顶部空间、按钮区域和边距
+
+    // 移除旧的滚动区域（如果存在）
+    if (this.scrollHitArea) {
+      this.scrollHitArea.destroy();
+    }
+
+    // 创建可交互区域（相对于面板中心）
+    this.scrollHitArea = this.scene.add.rectangle(
+      0,
+      scrollAreaTop + scrollAreaHeight / 2, // 滚动区域中心Y
+      screenWidth - 40,
+      scrollAreaHeight,
+      0x000000,
+      0
+    );
+    this.scrollHitArea.setInteractive();
+    this.contentContainer.add(this.scrollHitArea);
+
+    // 滚轮滚动
+    this.scrollHitArea.on('wheel', (pointer: Phaser.Input.Pointer, deltaX: number, deltaY: number) => {
+      this.scroll(deltaY * 0.5);
+    });
+
+    // 触摸滚动
+    let startY = 0;
+    let startScrollY = 0;
+
+    this.scrollHitArea.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      startY = pointer.y;
+      startScrollY = this.scrollY;
+    });
+
+    this.scrollHitArea.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      if (!pointer.isDown) return;
+      const deltaY = startY - pointer.y;
+      this.scrollTo(startScrollY + deltaY);
+    });
+  }
+
+  /**
+   * 滚动
+   */
+  private scroll(delta: number): void {
+    this.scrollTo(this.scrollY + delta);
+  }
+
+  /**
+   * 滚动到指定位置
+   */
+  private scrollTo(y: number): void {
+    this.scrollY = Phaser.Math.Clamp(y, 0, this.maxScrollY);
+    if (this.sceneListContainer) {
+      const screenHeight = this.scene.cameras.main.height;
+      const topY = -screenHeight / 2 + 80;
+      this.sceneListContainer.setY(topY + 100 - this.scrollY);
     }
   }
 }

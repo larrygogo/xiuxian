@@ -45,8 +45,11 @@ export class LoginModalIframe {
    * 创建模态框DOM
    */
   private createModal(): void {
-    // 移除已存在的弹窗
-    this.destroy();
+    // 移除已存在的弹窗（但不恢复 Phaser 输入，因为我们要创建新的模态框）
+    this.cleanup();
+
+    // 禁用 Phaser canvas 的 pointer-events，让点击事件能够穿透到 iframe
+    this.disablePhaserInput();
 
     // 创建容器
     this.container = document.createElement('div');
@@ -58,6 +61,7 @@ export class LoginModalIframe {
       width: 100%;
       height: 100%;
       z-index: 100000;
+      pointer-events: auto;
       font-family: 'PingFang SC', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, sans-serif;
     `;
 
@@ -73,11 +77,51 @@ export class LoginModalIframe {
       height: 100%;
       border: none;
       background: transparent;
+      pointer-events: auto;
     `;
     this.iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms');
 
     this.container.appendChild(this.iframe);
     document.body.appendChild(this.container);
+  }
+
+  /**
+   * 禁用 Phaser canvas 的输入，让点击事件能够穿透到 iframe
+   */
+  private disablePhaserInput(): void {
+    // 获取 Phaser canvas 元素
+    const canvas = document.querySelector('canvas');
+    if (canvas) {
+      // 禁用 canvas 的 pointer-events
+      canvas.style.pointerEvents = 'none';
+      console.log('LoginModalIframe: Disabled Phaser canvas pointer-events');
+    }
+
+    // 同时禁用 Phaser 游戏容器的 pointer-events
+    const gameContainer = document.getElementById('game-container');
+    if (gameContainer) {
+      gameContainer.style.pointerEvents = 'none';
+      console.log('LoginModalIframe: Disabled game-container pointer-events');
+    }
+  }
+
+  /**
+   * 恢复 Phaser canvas 的输入
+   */
+  private enablePhaserInput(): void {
+    // 恢复 canvas 的 pointer-events
+    const canvas = document.querySelector('canvas');
+    if (canvas) {
+      canvas.style.pointerEvents = 'auto';
+      console.log('LoginModalIframe: Enabled Phaser canvas pointer-events');
+    }
+
+    // 恢复游戏容器的 pointer-events
+    const gameContainer = document.getElementById('game-container');
+    if (gameContainer) {
+      gameContainer.style.pointerEvents = 'auto';
+      console.log('LoginModalIframe: Enabled game-container pointer-events');
+    }
   }
 
   /**
@@ -184,9 +228,9 @@ export class LoginModalIframe {
   }
 
   /**
-   * 销毁
+   * 清理（不恢复 Phaser 输入）
    */
-  destroy(): void {
+  private cleanup(): void {
     // 移除消息监听
     if (this.messageHandler) {
       window.removeEventListener('message', this.messageHandler);
@@ -200,6 +244,18 @@ export class LoginModalIframe {
     }
 
     this.iframe = null;
+  }
+
+  /**
+   * 销毁
+   */
+  destroy(): void {
+    // 恢复 Phaser canvas 的输入
+    this.enablePhaserInput();
+
+    // 清理资源
+    this.cleanup();
+
     this.callbacks.onClose();
   }
 }

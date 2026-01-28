@@ -7,6 +7,10 @@ import Phaser from 'phaser';
 import { SCENE_KEYS, GAME_WIDTH, GAME_HEIGHT } from '@/config/constants';
 import { BaseScene } from '@/scenes/BaseScene';
 import { LoginModalIframe } from '@/ui/modals/LoginModalIframe';
+import { stateManager } from '@/services/managers/StateManager';
+import { gameAPI } from '@/services/api';
+import { gameSocket } from '@/services/websocket';
+import { toastManager } from '@/ui/toast/ToastManager';
 
 // 粒子配置
 interface Particle {
@@ -31,6 +35,15 @@ interface ResponsiveSize {
 }
 
 export default class LoginScene extends BaseScene {
+  // 安全区padding常量
+  private static readonly SAFE_PADDING = {
+    TOP_MIN: 20,        // 顶部最小padding
+    BOTTOM_MIN: 20,     // 底部最小padding
+    LOGO_TOP: 40,       // Logo距离顶部安全区的距离
+    TITLE_TOP: 20,      // 标题距离Logo的距离
+    BUTTON_BOTTOM: 40   // 按钮距离底部安全区的距离
+  };
+
   // 状态
   private isLoggedIn: boolean = false;
   private gameState: any = null;
@@ -68,6 +81,9 @@ export default class LoginScene extends BaseScene {
     this.initSafeAreaSystem();
     this.createUI();
 
+    // 初始化ToastManager
+    toastManager.init(this);
+
     const width = this.cameras.main.width;
     const height = this.cameras.main.height;
 
@@ -89,8 +105,20 @@ export default class LoginScene extends BaseScene {
     // 标题
     this.createTitle(width, height);
 
-    // 按钮（画布渲染）
-    this.createCanvasButtons(width, height);
+    // 检查本地token
+    const token = stateManager.getToken();
+    if (token) {
+      // 有token，直接显示"点击任意处开始游戏"，隐藏按钮
+      this.createCanvasButtons(width, height);
+      // 隐藏按钮
+      if (this.loginButton) this.loginButton.setVisible(false);
+      if (this.registerButton) this.registerButton.setVisible(false);
+      // 显示"点击任意处开始游戏"
+      this.showClickToStart();
+    } else {
+      // 没有token，显示登录/注册按钮
+      this.createCanvasButtons(width, height);
+    }
 
     // 版本信息
     this.createVersionInfo(width, height);
@@ -114,24 +142,31 @@ export default class LoginScene extends BaseScene {
     const scaleX = safeRect.width / GAME_WIDTH;
     const scaleY = safeRect.height / GAME_HEIGHT;
     const scale = Math.min(scaleX, scaleY);
-    const minScale = 0.5;
+    // 提高最小缩放比例，确保在小屏幕上也有合适的尺寸
+    const minScale = 0.6;
     const effectiveScale = Math.max(scale, minScale);
 
-    const clampFontSize = (baseSize: number) => Math.max(14, Math.round(baseSize * effectiveScale));
+    // 提高字体大小的最小值和基础值
+    const clampFontSize = (baseSize: number, minSize: number = 16) => 
+      Math.max(minSize, Math.round(baseSize * effectiveScale));
 
-    // 按钮尺寸：屏幕两端各空出16px，最大280px
-    const BUTTON_MARGIN = 16;
-    const MAX_BUTTON_WIDTH = 280;
-    const buttonWidth = Math.min(MAX_BUTTON_WIDTH, (safeRect.width - BUTTON_MARGIN * 3) / 2);
+    // 按钮尺寸：纵向排列，按钮可以更宽（几乎占满安全区宽度）
+    const BUTTON_MARGIN = 40; // 左右各留40px边距
+    const MAX_BUTTON_WIDTH = 400; // 纵向排列时按钮可以更宽
+    const buttonWidth = Math.min(MAX_BUTTON_WIDTH, safeRect.width - BUTTON_MARGIN * 2);
 
     this.sizes = {
       scale: effectiveScale,
-      titleFontSize: Math.max(36, Math.round(72 * effectiveScale)),
-      subtitleFontSize: clampFontSize(24),
-      buttonFontSize: clampFontSize(22),
+      // 标题字体：提高基础值和最小值
+      titleFontSize: Math.max(48, Math.round(90 * effectiveScale)), // 从72增加到90，最小值从36增加到48
+      // 副标题字体：提高基础值和最小值
+      subtitleFontSize: clampFontSize(28, 18), // 从24增加到28，最小值从14增加到18
+      // 按钮字体：进一步提高基础值和最小值
+      buttonFontSize: clampFontSize(30, 20), // 从26增加到30，最小值从18增加到20
       buttonWidth: buttonWidth,
-      buttonHeight: Math.max(50, Math.round(60 * effectiveScale)),
-      buttonSpacing: Math.max(16, Math.round(24 * effectiveScale))
+      // 按钮高度：进一步提高基础值和最小值
+      buttonHeight: Math.max(70, Math.round(85 * effectiveScale)), // 从75增加到85，最小值从60增加到70
+      buttonSpacing: Math.max(24, Math.round(32 * effectiveScale)) // 纵向排列时的垂直间距，从28增加到32，最小值从20增加到24
     };
 
     console.log('LoginScene: responsive sizes calculated', {
@@ -341,8 +376,11 @@ export default class LoginScene extends BaseScene {
     const center = this.getSafeAreaCenter();
     const safeRect = this.safeAreaManager?.getFinalSafeRect() ?? { y: 0, height };
 
-    // Logo位置在安全区顶部
-    const logoY = safeRect.y + 60 * this.sizes.scale;
+    // Logo位置：安全区顶部 + 最小padding
+    const logoY = safeRect.y + Math.max(
+      LoginScene.SAFE_PADDING.TOP_MIN,
+      LoginScene.SAFE_PADDING.LOGO_TOP * this.sizes.scale
+    );
 
     this.logoContainer = this.add.container(center.x, logoY);
     this.logoContainer.setDepth(8);
@@ -412,8 +450,16 @@ export default class LoginScene extends BaseScene {
     const center = this.getSafeAreaCenter();
     const safeRect = this.safeAreaManager?.getFinalSafeRect() ?? { y: 0, height };
 
-    // 标题位置（在Logo下方）
-    const titleY = safeRect.y + 150 * this.sizes.scale + this.sizes.titleFontSize;
+    // 获取Logo的底部位置（如果存在）
+    const logoBottom = this.logoContainer 
+      ? this.logoContainer.y + (55 * this.sizes.scale) // Logo外圈半径
+      : safeRect.y + LoginScene.SAFE_PADDING.LOGO_TOP * this.sizes.scale;
+    
+    // 标题位置：Logo下方 + 间距
+    const titleY = logoBottom + Math.max(
+      LoginScene.SAFE_PADDING.TITLE_TOP * this.sizes.scale,
+      20
+    );
 
     // 标题发光效果
     this.titleGlow = this.add.text(center.x, titleY, '问道长生', {
@@ -499,15 +545,33 @@ export default class LoginScene extends BaseScene {
    */
   private createCanvasButtons(width: number, height: number): void {
     const center = this.getSafeAreaCenter();
+    const safeRect = this.safeAreaManager?.getFinalSafeRect() ?? { 
+      y: 0, 
+      height: this.cameras.main.height 
+    };
     const { buttonWidth, buttonHeight, buttonSpacing, buttonFontSize } = this.sizes;
 
-    // 按钮区域Y位置
-    const buttonAreaY = center.y + 60 * this.sizes.scale;
+    // 计算按钮区域Y位置，确保不超出底部安全区
+    const safeBottom = safeRect.y + safeRect.height;
+    const buttonBottomPadding = Math.max(
+      LoginScene.SAFE_PADDING.BOTTOM_MIN,
+      LoginScene.SAFE_PADDING.BUTTON_BOTTOM * this.sizes.scale
+    );
+    
+    // 纵向排列：两个按钮的总高度 + 间距
+    const totalButtonsHeight = buttonHeight * 2 + buttonSpacing;
+    const maxButtonAreaY = safeBottom - buttonBottomPadding - totalButtonsHeight / 2;
+    
+    // 使用安全区中心点，但限制在安全范围内
+    const buttonAreaCenterY = Math.min(
+      center.y + 60 * this.sizes.scale,
+      maxButtonAreaY
+    );
 
-    // 登录按钮
-    const loginX = center.x - buttonWidth / 2 - buttonSpacing / 2;
+    // 登录按钮（上方）
+    const loginY = buttonAreaCenterY - buttonHeight / 2 - buttonSpacing / 2;
     this.loginButton = this.createStylishButton(
-      loginX, buttonAreaY,
+      center.x, loginY,
       buttonWidth, buttonHeight,
       '登 录',
       buttonFontSize,
@@ -516,10 +580,10 @@ export default class LoginScene extends BaseScene {
     );
     this.loginButton.setDepth(10);
 
-    // 注册按钮
-    const registerX = center.x + buttonWidth / 2 + buttonSpacing / 2;
+    // 注册按钮（下方）
+    const registerY = buttonAreaCenterY + buttonHeight / 2 + buttonSpacing / 2;
     this.registerButton = this.createStylishButton(
-      registerX, buttonAreaY,
+      center.x, registerY,
       buttonWidth, buttonHeight,
       '注 册',
       buttonFontSize,
@@ -528,8 +592,8 @@ export default class LoginScene extends BaseScene {
     );
     this.registerButton.setDepth(10);
 
-    // "点击任意处开始游戏" 文字（初始隐藏）
-    this.createClickToStartText(center.x, buttonAreaY);
+    // "点击任意处开始游戏" 文字（初始隐藏，放在按钮下方）
+    this.createClickToStartText(center.x, registerY + buttonHeight / 2 + 30 * this.sizes.scale);
   }
 
   /**
@@ -640,7 +704,8 @@ export default class LoginScene extends BaseScene {
    * 创建"点击任意处开始游戏"文字
    */
   private createClickToStartText(x: number, y: number): void {
-    const fontSize = Math.max(20, Math.round(28 * this.sizes.scale));
+    // 增大字体：基础值从28增加到36，最小值从20增加到24
+    const fontSize = Math.max(24, Math.round(36 * this.sizes.scale));
 
     // 发光效果
     this.clickToStartGlow = this.add.text(x, y, '点击任意处开始游戏', {
@@ -705,6 +770,9 @@ export default class LoginScene extends BaseScene {
 
     // 显示点击开始文字
     if (this.clickToStartText && this.clickToStartGlow) {
+      // 确保可见（登录成功后可能曾被 showLoginButtons 设为不可见）
+      this.clickToStartText.setVisible(true);
+      this.clickToStartGlow.setVisible(true);
       this.clickToStartText.setAlpha(0);
       this.clickToStartGlow.setAlpha(0);
 
@@ -742,36 +810,125 @@ export default class LoginScene extends BaseScene {
       });
     }
 
-    // 设置全屏点击
+    // 设置全屏点击（移除旧的监听器，添加新的）
+    this.input.removeAllListeners('pointerdown');
     this.input.once('pointerdown', () => {
       this.startGame();
     });
 
     // 键盘支持
+    this.input.keyboard?.removeAllListeners('keydown');
     this.input.keyboard?.once('keydown', () => {
       this.startGame();
     });
   }
 
   /**
-   * 开始游戏
+   * 显示登录/注册按钮（隐藏"点击任意处开始游戏"）
    */
-  private startGame(): void {
-    // 播放退出动画
-    this.tweens.add({
-      targets: [this.logoContainer, this.titleText, this.titleGlow, this.subtitleText, this.clickToStartText, this.clickToStartGlow],
-      alpha: 0,
-      y: `-=${30 * this.sizes.scale}`,
-      duration: 400,
-      ease: 'Power2',
-      onComplete: () => {
-        this.navigateToNextScene();
-      }
-    });
+  private showLoginButtons(): void {
+    // 隐藏"点击任意处开始游戏"文字
+    if (this.clickToStartText) {
+      this.clickToStartText.setVisible(false);
+      this.clickToStartText.setAlpha(0);
+    }
+    if (this.clickToStartGlow) {
+      this.clickToStartGlow.setVisible(false);
+      this.clickToStartGlow.setAlpha(0);
+    }
+
+    // 显示登录/注册按钮
+    if (this.loginButton) {
+      this.loginButton.setVisible(true);
+      this.loginButton.setAlpha(0);
+      this.loginButton.setScale(0.8);
+      this.tweens.add({
+        targets: this.loginButton,
+        alpha: 1,
+        scaleX: 1,
+        scaleY: 1,
+        duration: 300,
+        ease: 'Back.easeOut'
+      });
+    }
+    if (this.registerButton) {
+      this.registerButton.setVisible(true);
+      this.registerButton.setAlpha(0);
+      this.registerButton.setScale(0.8);
+      this.tweens.add({
+        targets: this.registerButton,
+        alpha: 1,
+        scaleX: 1,
+        scaleY: 1,
+        duration: 300,
+        delay: 100,
+        ease: 'Back.easeOut'
+      });
+    }
   }
 
   /**
-   * 打开登录弹窗（使用后端返回的完整HTML页面）
+   * 开始游戏（验证token并导航）
+   */
+  private async startGame(): Promise<void> {
+    // 检查是否有token
+    const token = stateManager.getToken();
+    
+    if (!token) {
+      // 没有token，显示登录/注册按钮
+      this.showLoginButtons();
+      return;
+    }
+
+    try {
+      // 验证token并获取游戏状态
+      console.log('Validating token...');
+      
+      // 连接WebSocket
+      gameSocket.connect(token);
+      
+      // 获取游戏状态（这会验证token）
+      const gameState = await gameAPI.getState();
+      stateManager.setGameState(gameState);
+      
+      console.log('Token validated, gameState:', gameState);
+      
+      // 保存游戏状态
+      this.gameState = gameState;
+      this.isLoggedIn = true;
+      
+      // 播放退出动画并导航
+      this.tweens.add({
+        targets: [this.logoContainer, this.titleText, this.titleGlow, this.subtitleText, this.clickToStartText, this.clickToStartGlow],
+        alpha: 0,
+        y: `-=${30 * this.sizes.scale}`,
+        duration: 400,
+        ease: 'Power2',
+        onComplete: () => {
+          this.navigateToNextScene();
+        }
+      });
+    } catch (error: any) {
+      // Token无效或过期
+      console.error('Token validation failed:', error);
+      
+      // 显示错误提示
+      const errorMessage = error.response?.data?.error || 
+                          error.response?.data?.message || 
+                          error.message || 
+                          '登录已过期，请重新登录';
+      toastManager.toast(errorMessage, { level: 'error', durationMs: 3000 });
+      
+      // 清除token和用户信息
+      stateManager.logout();
+      
+      // 显示登录/注册按钮
+      this.showLoginButtons();
+    }
+  }
+
+  /**
+   * 打开登录弹窗（使用iframe加载后端返回的完整HTML页面）
    */
   private async openLoginModal(isLogin: boolean): Promise<void> {
     if (this.loginModal) return;
@@ -809,7 +966,11 @@ export default class LoginScene extends BaseScene {
    */
   private createVersionInfo(width: number, height: number): void {
     const safeRect = this.safeAreaManager?.getFinalSafeRect() ?? { y: 0, height };
-    const bottomY = safeRect.y + safeRect.height - 30 * this.sizes.scale;
+    const bottomPadding = Math.max(
+      LoginScene.SAFE_PADDING.BOTTOM_MIN,
+      30 * this.sizes.scale
+    );
+    const bottomY = safeRect.y + safeRect.height - bottomPadding;
 
     const versionText = this.add.text(width / 2, bottomY, 'Phaser 3 Client v1.0.0', {
       fontSize: `${Math.max(14, Math.round(16 * this.sizes.scale))}px`,
