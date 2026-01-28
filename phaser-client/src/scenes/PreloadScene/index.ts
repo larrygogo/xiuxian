@@ -32,47 +32,12 @@ export default class PreloadScene extends BaseScene {
 
   /**
    * 检查认证状态并导航
+   * 现在总是跳转到LoginScene，由LoginScene负责token检测和验证
    */
   private async checkAuthAndNavigate(): Promise<void> {
-    const { stateManager } = await import('@/services/managers/StateManager');
-    const { gameSocket } = await import('@/services/websocket');
-    const { gameAPI } = await import('@/services/api');
-
-    const token = stateManager.getToken();
-
-    if (!token) {
-      // 没有token，跳转到登录
-      this.scene.start(SCENE_KEYS.LOGIN);
-      return;
-    }
-
-    try {
-      // 有token，尝试获取游戏状态
-      console.log('Validating token and fetching game state...');
-
-      // 连接WebSocket
-      gameSocket.connect(token);
-
-      // 获取游戏状态
-      const gameState = await gameAPI.getState();
-      stateManager.setGameState(gameState);
-
-      // 根据是否有角色决定跳转
-      if (gameState.name) {
-        // 有角色，跳转到主界面
-        console.log('Character found, navigating to MainScene');
-        this.scene.start(SCENE_KEYS.MAIN);
-      } else {
-        // 没有角色，跳转到角色创建
-        console.log('No character found, navigating to CharacterCreateScene');
-        this.scene.start(SCENE_KEYS.CHARACTER_CREATE);
-      }
-    } catch (error) {
-      // Token无效或网络错误，清除状态并跳转到登录
-      console.error('Failed to validate token:', error);
-      stateManager.logout();
-      this.scene.start(SCENE_KEYS.LOGIN);
-    }
+    // 总是跳转到LoginScene，让LoginScene处理token检测和验证
+    console.log('PreloadScene: navigating to LoginScene');
+    this.scene.start(SCENE_KEYS.LOGIN);
   }
 
   private createLoadingBar() {

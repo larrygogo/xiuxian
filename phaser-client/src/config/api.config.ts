@@ -27,6 +27,8 @@ export const API_ENDPOINTS = {
   AUTH_LOGIN: '/api/auth/login',
   AUTH_LOGIN_FORM: '/api/auth/login-form',
   AUTH_REGISTER_FORM: '/api/auth/register-form',
+  AUTH_LOGIN_PAGE: '/api/auth/login-page',
+  AUTH_REGISTER_PAGE: '/api/auth/register-page',
 
   // 游戏状态
   GAME_STATE: '/api/game/state',

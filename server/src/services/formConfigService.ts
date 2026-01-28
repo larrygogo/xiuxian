@@ -109,7 +109,8 @@ export function getLoginFormHTML(): string {
       border: 1px solid rgba(106, 90, 205, 0.4);
       transform: translateY(20px) scale(0.95);
       transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-      overflow: hidden;
+      overflow: visible; /* 改为 visible，确保关闭按钮不被裁剪 */
+      z-index: 1;
     }
 
     .login-modal::before {
@@ -121,6 +122,7 @@ export function getLoginFormHTML(): string {
       height: 100%;
       background: linear-gradient(90deg, transparent, rgba(147, 112, 219, 0.05), transparent);
       animation: shimmer 3s infinite;
+      pointer-events: none; /* 让点击事件穿透，不拦截按钮和输入框的点击 */
     }
 
     @keyframes shimmer {
@@ -134,24 +136,40 @@ export function getLoginFormHTML(): string {
 
     .modal-close {
       position: absolute;
-      top: 16px;
-      right: 16px;
-      width: 32px;
-      height: 32px;
+      top: 12px;
+      right: 12px;
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      min-height: 44px;
       border: none;
       background: rgba(255, 255, 255, 0.1);
       color: #8a7aaa;
-      font-size: 24px;
-      line-height: 28px;
+      font-size: 28px;
+      line-height: 44px;
+      text-align: center;
       border-radius: 50%;
       cursor: pointer;
       transition: all 0.2s ease;
+      z-index: 100001; /* 确保在最上层 */
+      /* 增大点击区域 */
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      /* 确保可点击 */
+      pointer-events: auto;
+      -webkit-tap-highlight-color: transparent;
     }
 
     .modal-close:hover {
-      background: rgba(255, 100, 100, 0.2);
+      background: rgba(255, 100, 100, 0.3);
       color: #ff6b6b;
-      transform: rotate(90deg);
+      transform: rotate(90deg) scale(1.1);
+    }
+
+    .modal-close:active {
+      transform: rotate(90deg) scale(0.95);
     }
 
     .modal-header {
@@ -279,6 +297,7 @@ export function getLoginFormHTML(): string {
       height: 100%;
       background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
       transition: left 0.5s ease;
+      pointer-events: none; /* 让点击事件穿透到按钮本身 */
     }
 
     .submit-btn:hover:not(:disabled) {
@@ -381,6 +400,8 @@ export function getLoginFormHTML(): string {
       color: #6a5acd;
       opacity: 0.4;
       animation: twinkle 2s ease-in-out infinite;
+      pointer-events: none; /* 装饰元素不拦截点击 */
+      z-index: 1; /* 确保在关闭按钮下方 */
     }
 
     .corner-deco.top-left {
@@ -391,7 +412,7 @@ export function getLoginFormHTML(): string {
 
     .corner-deco.top-right {
       top: 12px;
-      right: 12px;
+      right: 60px; /* 避开关闭按钮区域 */
       animation-delay: 0.5s;
     }
 
