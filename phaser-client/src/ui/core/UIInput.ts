@@ -187,7 +187,12 @@ export class UIInput extends UIContainer {
    */
   private destroyDOMInput(): void {
     if (this.domInput) {
-      document.body.removeChild(this.domInput);
+      const parent = this.domInput.parentElement;
+      if (parent && parent.contains(this.domInput)) {
+        parent.removeChild(this.domInput);
+      } else if (typeof this.domInput.remove === 'function') {
+        this.domInput.remove();
+      }
       this.domInput = undefined;
     }
   }

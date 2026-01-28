@@ -3,8 +3,8 @@
  */
 
 // 游戏尺寸（竖屏模式 9:16）
-export const GAME_WIDTH = 720;
-export const GAME_HEIGHT = 1280;
+export const GAME_WIDTH = 1080;
+export const GAME_HEIGHT = 1920;
 
 // 背包配置
 export const INVENTORY_SIZE = 20;
@@ -21,6 +21,65 @@ export const MIN_TOUCH_SIZE = 44; // 最小触摸区域（像素）
 export const DRAG_THRESHOLD = 10; // 拖拽阈值（像素）
 export const LONG_PRESS_TIME = 500; // 长按时间（毫秒）
 export const DOUBLE_TAP_TIME = 300; // 双击时间（毫秒）
+
+// 安全区配置（配合ENVELOP缩放模式使用）
+// @deprecated 已废弃，请使用 SAFE_AREA_DESIGN（动态计算）
+export const SAFE_AREA = {
+  top: 150,      // 顶部安全边距（状态栏、刘海屏等）
+  bottom: 150,  // 底部安全边距（底部操作栏、Home indicator等）
+  left: 60,     // 左侧安全边距
+  right: 60     // 右侧安全边距
+};
+
+// 设计稿参考安全区（百分比形式，用于动态计算）
+export const SAFE_AREA_DESIGN = {
+  top: 80 / 1920,      // 7.8% of design height
+  bottom: 150 / 1920,   // 7.8% of design height
+  left: 60 / 1080,      // 5.6% of design width
+  right: 60 / 1080      // 5.6% of design width
+};
+
+// 最小安全区尺寸（像素）
+export const MIN_SAFE_AREA = {
+  width: 300,   // 最小可用宽度
+  height: 500   // 最小可用高度
+};
+
+// 外部边距配置
+export const EXTERNAL_PADDING = {
+  enabled: false,
+  minDisplayWidth: 540,   // 低于此宽度时添加外部边距
+  minDisplayHeight: 960,  // 低于此高度时添加外部边距
+  backgroundColor: '#000000'
+};
+
+// 分辨率策略配置（Cocos 设计分辨率 + 策略）
+export const RESOLUTION_POLICY = {
+  mode: 'AUTO' as const, // AUTO | SHOW_ALL | NO_BORDER | FIXED_WIDTH | FIXED_HEIGHT
+  epsilon: 0.05          // 宽高比接近设计比时的容差
+};
+
+// 调试配置
+export const DEBUG = {
+  SHOW_SAFE_AREA: false,  // 是否显示安全区边界（开发时使用）
+  SAFE_AREA_COLOR: 0x00ff00,  // 安全区边界颜色（绿色）
+  SAFE_AREA_ALPHA: 0.3   // 安全区边界透明度
+};
+
+// 顶部状态栏配置
+export const TOP_STATUS_BAR = {
+  ANCHOR: 'top-left' as const,  // 锚点位置: 'top-left' | 'top-center' | 'top-right'
+  OFFSET_X: 10,                 // X轴偏移
+  OFFSET_Y: 10                  // Y轴偏移
+};
+
+// 底部操作栏配置
+export const BOTTOM_BAR = {
+  HEIGHT: 160,           // 底部操作栏高度
+  BUTTON_SIZE: 100,      // 按钮尺寸
+  BUTTON_SPACING: 120,   // 按钮间距
+  PADDING_BOTTOM: -20     // 距离屏幕底部的内边距
+};
 
 // 颜色常量
 export const COLORS = {
@@ -47,7 +106,8 @@ export const SCENE_KEYS = {
   CHARACTER_CREATE: 'CharacterCreateScene',
   MAIN: 'MainScene',
   BATTLE: 'BattleScene',
-  UI: 'UIScene'
+  UI: 'UIScene',
+  TEST: 'TestScene'
 };
 
 // 资源Key

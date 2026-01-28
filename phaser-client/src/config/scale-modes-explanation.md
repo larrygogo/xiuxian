@@ -4,6 +4,10 @@
 
 当游戏的宽高比（9:16）与屏幕宽高比不匹配时，使用 `FIT` 模式会保持游戏的原始宽高比，在屏幕上留下黑边以避免变形。
 
+## 当前分辨率
+
+基准分辨率：**1080 x 1920** (9:16 竖屏)
+
 ## 可选的缩放模式
 
 ### 1. **FIT** - 保持宽高比，有黑边 ❌
@@ -75,16 +79,8 @@ mode: Phaser.Scale.RESIZE
 scale: {
   mode: Phaser.Scale.ENVELOP,
   autoCenter: Phaser.Scale.CENTER_BOTH,
-  width: 720,
-  height: 1280,
-  min: {
-    width: 360,
-    height: 640
-  },
-  max: {
-    width: 1080,
-    height: 1920
-  }
+  width: 1080,
+  height: 1920
 }
 ```
 
@@ -92,9 +88,8 @@ scale: {
 
 - **mode**: `ENVELOP` - 覆盖整个屏幕，无黑边
 - **autoCenter**: 自动居中
-- **width/height**: 基准分辨率 720x1280（9:16）
-- **min**: 最小支持的分辨率（防止在小屏幕上过度缩小）
-- **max**: 最大支持的分辨率（防止在大屏幕上过度放大）
+- **width/height**: 基准分辨率 1080x1920（9:16，全高清）
+- **分辨率策略**：由 `RESOLUTION_POLICY` 决定 SHOW_ALL / NO_BORDER / FIXED_WIDTH / FIXED_HEIGHT
 
 ### 为什么选择 ENVELOP？
 
@@ -103,13 +98,24 @@ scale: {
 3. **移动端友好**: 适合竖屏手机游戏
 4. **沉浸感强**: 全屏体验更好
 
+### 分辨率策略与UI布局
+
+缩放模式负责“画布怎么缩放”，分辨率策略负责“可视区域如何确定”。
+建议按以下思路使用：
+
+- **窄屏/超长屏**：FIXED_WIDTH，保持宽度统一，垂直方向扩展
+- **平板/宽屏**：FIXED_HEIGHT，保持高度一致，水平方向扩展
+- **接近设计比**：SHOW_ALL，完整显示设计稿
+- **沉浸模式**：NO_BORDER，允许裁剪
+
 ### 可能遇到的问题
 
 #### Q: 部分内容被裁剪了怎么办？
 
 A: 确保重要的UI元素在安全区域内。建议：
-- 顶部和底部留至少50px的安全边距
-- 左右留至少20px的安全边距
+- 顶部留至少 150px 的安全边距（状态栏、刘海屏）
+- 底部留至少 120px 的安全边距（Home indicator、手势区）
+- 左右留至少 32px 的安全边距
 - 不要将关键按钮放在屏幕最边缘
 
 #### Q: 如果我想要完全不裁剪任何内容？
@@ -135,7 +141,7 @@ A: 使用 `WIDTH_CONTROLS_HEIGHT` 模式，并在场景中动态调整UI布局�
 scale: {
   mode: Phaser.Scale.WIDTH_CONTROLS_HEIGHT,
   autoCenter: Phaser.Scale.CENTER_BOTH,
-  width: 720
+  width: 1080
 }
 ```
 

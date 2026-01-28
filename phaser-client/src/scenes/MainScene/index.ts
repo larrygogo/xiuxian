@@ -290,7 +290,6 @@ export default class MainScene extends BaseScene {
 
 
 
-
     logBgGraphics.setDepth(10);
 
     // 标题

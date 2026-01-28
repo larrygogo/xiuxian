@@ -9,19 +9,37 @@ import { UIProgressBar } from '@/ui/core/UIProgressBar';
 import { UIText } from '@/ui/core/UIText';
 import { needQi } from '@/utils/progression';
 import type { GameState } from '@/types/game.types';
+import type { SafeArea } from '@/utils/ResponsiveHelper';
+import { SafeAreaManager } from '@/ui/safearea/SafeAreaManager';
+import { Anchor, legacyAnchorToEnum } from '@/ui/layout/Anchors';
+import { LayoutUtil } from '@/ui/layout/LayoutUtil';
+
+/**
+ * 锚点位置（字符串形式，向后兼容）
+ */
+export type AnchorPosition =
+  | 'top-left'      // 左上角
+  | 'top-center'    // 顶部居中
+  | 'top-right';    // 右上角
 
 export interface TopStatusBarConfig {
   scene: Phaser.Scene;
-  x?: number;
-  y?: number;
-  width: number;
   gameState: GameState;
+  safeArea?: SafeArea;              // (旧API) 使用SafeArea对象
+  safeAreaManager?: SafeAreaManager; // (新API) 使用SafeAreaManager（推荐）
+  anchor?: AnchorPosition | Anchor;  // 锚点位置，默认 'top-left'
+  offsetX?: number;                 // X轴偏移（基于锚点），默认 10
+  offsetY?: number;                 // Y轴偏移（基于锚点），默认 10
 }
 
 export class TopStatusBar extends UIContainer {
   private gameState: GameState;
-  private screenWidth: number;
-  
+  private safeArea?: SafeArea;
+  private safeAreaManager?: SafeAreaManager;
+  private anchor: Anchor;
+  private offsetX: number;
+  private offsetY: number;
+
   // UI元素
   private hpBar?: UIProgressBar;
   private mpBar?: UIProgressBar;
@@ -30,16 +48,142 @@ export class TopStatusBar extends UIContainer {
   private spiritStoneText?: UIText;
   private avatarImage?: Phaser.GameObjects.Image;
 
+  // 内容尺寸（用于锚点计算）
+  private contentWidth: number = 320;  // 头像(120) + 间距(20) + 进度条(160) + 边距(20)
+  private contentHeight: number = 140; // 头像(120) + 上下边距(20)
+
   constructor(config: TopStatusBarConfig) {
-    const paddingTop = 84 / 2;
-    const paddingLeft = 52 / 2;
-    super(config.scene, config.x ?? paddingLeft, config.y ?? paddingTop);
-    
+    // 验证配置
+    if (!config.safeArea && !config.safeAreaManager) {
+      throw new Error('TopStatusBar: either safeArea or safeAreaManager must be provided');
+    }
+
+    // 处理锚点（支持字符串和枚举）
+    const anchorInput = config.anchor || 'top-left';
+    const anchor = typeof anchorInput === 'string'
+      ? legacyAnchorToEnum(anchorInput as AnchorPosition)
+      : anchorInput;
+    const offsetX = config.offsetX ?? 10;
+    const offsetY = config.offsetY ?? 10;
+
+    // 获取当前的SafeArea
+    const safeArea = config.safeAreaManager
+      ? config.safeAreaManager.getFinalSafeRect()
+      : config.safeArea!;
+
+    // 计算位置
+    const position = TopStatusBar.calculatePosition(
+      safeArea,
+      anchor,
+      offsetX,
+      offsetY
+    );
+
+    super(config.scene, position.x, position.y);
+
     this.gameState = config.gameState;
-    this.screenWidth = config.width;
-    
+    this.safeArea = config.safeArea;
+    this.safeAreaManager = config.safeAreaManager;
+    this.anchor = anchor;
+    this.offsetX = offsetX;
+    this.offsetY = offsetY;
+
     this.setDepth(10);
+
+    // 应用UI缩放因子（RESIZE模式下缩小UI到正确尺寸）
+    if (this.safeAreaManager) {
+      const uiScale = this.safeAreaManager.getUIScale();
+      this.setScale(uiScale);
+      console.log('TopStatusBar: applying UI scale', uiScale);
+    }
+
     this.createContent();
+
+    // 如果使用SafeAreaManager，监听安全区变化事件
+    if (this.safeAreaManager) {
+      this.safeAreaManager.on('safeAreaChanged', this.onSafeAreaChanged, this);
+      console.log('TopStatusBar: listening to safeAreaChanged events');
+    }
+  }
+
+  /**
+   * 验证元素是否完全在安全区内
+   */
+  private validateElementInSafeArea(
+    elementName: string,
+    bounds: { x: number; y: number; width: number; height: number }
+  ): boolean {
+    // 获取当前安全区
+    const safeRect = this.safeAreaManager
+      ? this.safeAreaManager.getFinalSafeRect()
+      : this.safeArea;
+
+    if (!safeRect) {
+      console.warn('⚠️ No safe area available for validation');
+      return true; // Skip validation if no safe area
+    }
+
+    const { x, y, width, height } = bounds;
+    const right = x + width;
+    const bottom = y + height;
+
+    // 兼容SafeArea和Rect格式
+    // SafeArea: { left, top, right, bottom, width, height }
+    // Rect: { x, y, width, height }
+    const left = 'left' in safeRect ? safeRect.left : safeRect.x;
+    const top = 'top' in safeRect ? safeRect.top : safeRect.y;
+    const safeRight = 'right' in safeRect ? safeRect.right : (safeRect.x + safeRect.width);
+    const safeBottom = 'bottom' in safeRect ? safeRect.bottom : (safeRect.y + safeRect.height);
+
+    const isValid =
+      x >= left &&
+      y >= top &&
+      right <= safeRight &&
+      bottom <= safeBottom;
+
+    if (!isValid) {
+      console.warn(
+        `⚠️ ${elementName} 超出安全区！`,
+        {
+          element: { x, y, right, bottom, width, height },
+          safeArea: safeRect,
+          overflow: {
+            left: Math.max(0, left - x),
+            top: Math.max(0, top - y),
+            right: Math.max(0, right - safeRight),
+            bottom: Math.max(0, bottom - safeBottom)
+          }
+        }
+      );
+    }
+
+    return isValid;
+  }
+
+  /**
+   * 根据锚点和安全区计算位置
+   */
+  private static calculatePosition(
+    safeArea: SafeArea | any,
+    anchor: Anchor,
+    offsetX: number,
+    offsetY: number
+  ): { x: number; y: number } {
+    // 将SafeArea转换为Rect格式（兼容新旧API）
+    const rect = {
+      x: safeArea.left || safeArea.x || 0,
+      y: safeArea.top || safeArea.y || 0,
+      width: safeArea.width || 0,
+      height: safeArea.height || 0
+    };
+
+    // 使用LayoutUtil计算位置
+    const anchorPoint = LayoutUtil.getAnchorPoint(rect, anchor);
+
+    return {
+      x: anchorPoint.x + offsetX,
+      y: anchorPoint.y + offsetY
+    };
   }
 
   /**
@@ -54,13 +198,16 @@ export class TopStatusBar extends UIContainer {
     const barHeight = 20;
     const barSpacing = 8;
 
+    // 安全边距：确保内容不会太靠近边缘
+    const SAFE_PADDING = 10;
+
     // 计算容器尺寸（根据内容自适应）
     const infoX = avatarWidth + 20; // 头像右侧间距
     const barWidth = 160; // 进度条宽度
 
     // 头像区域（左侧）
-    const avatarX = 10;
-    const avatarY = 10;
+    const avatarX = SAFE_PADDING;
+    const avatarY = SAFE_PADDING;
 
     // 头像背景（圆角矩形，黑色边框）
     const avatarBg = this.scene.add.graphics();
@@ -167,29 +314,71 @@ export class TopStatusBar extends UIContainer {
     });
     this.add(this.expBar);
 
-    // 灵石显示（右上角）
-    const paddingLeft = 52 / 2;
-    const paddingTop = 84 / 2;
+    // 灵石显示（右上角，使用安全区）
+    // 确保文本完全在安全区内，距离右边缘至少SAFE_PADDING像素
+    const currentSafeRect = this.safeAreaManager
+      ? this.safeAreaManager.getFinalSafeRect()
+      : (this.safeArea || { x: 0, y: 0, width: 1080, height: 1920 });
+    const spiritStonePadding = SAFE_PADDING;
+    const safeRight = 'right' in currentSafeRect ? currentSafeRect.right : (currentSafeRect.x + currentSafeRect.width);
+    const safeTop = 'top' in currentSafeRect ? currentSafeRect.top : currentSafeRect.y;
+    const spiritStoneX = safeRight - spiritStonePadding;
+    const spiritStoneY = safeTop + 16;
+
     this.spiritStoneText = new UIText(
       this.scene,
-      this.screenWidth - paddingLeft,
-      paddingTop + 6,
+      spiritStoneX,
+      spiritStoneY,
       `💎 ${this.gameState.lingshi || 0}`,
       { fontSize: '16px', color: '#d1a14b', fontStyle: 'bold' }
     );
-    this.spiritStoneText.setOrigin(1, 0);
+    this.spiritStoneText.setOrigin(1, 0); // 右上角对齐
     this.spiritStoneText.setDepth(10);
+
+    // 验证灵石文本是否在安全区内
+    this.validateElementInSafeArea('灵石文本', {
+      x: spiritStoneX - (this.spiritStoneText.width || 100), // 估算左边界
+      y: spiritStoneY,
+      width: this.spiritStoneText.width || 100,
+      height: this.spiritStoneText.height || 20
+    });
+
+    // 验证头像是否在安全区内
+    this.validateElementInSafeArea('头像', {
+      x: this.x + avatarX,
+      y: this.y + avatarY,
+      width: avatarWidth,
+      height: avatarHeight
+    });
+
+    // 验证进度条区域是否在安全区内
+    this.validateElementInSafeArea('状态栏内容', {
+      x: this.x + avatarX,
+      y: this.y + avatarY,
+      width: infoX + barWidth + SAFE_PADDING,
+      height: avatarHeight + SAFE_PADDING * 2
+    });
+
+    // 更新内容尺寸
+    this.contentWidth = avatarWidth + 20 + barWidth + SAFE_PADDING * 2;
+    this.contentHeight = avatarHeight + SAFE_PADDING * 2;
+
+    console.log(`TopStatusBar created at (${this.x}, ${this.y})`, {
+      contentSize: { width: this.contentWidth, height: this.contentHeight },
+      anchor: this.anchor,
+      offset: { x: this.offsetX, y: this.offsetY }
+    });
   }
 
   /**
-   * 更新状态栏
+   * 更新状态栏数据
    */
   update(gameState: GameState): void {
     this.gameState = gameState;
 
     // 更新进度条
-    this.hpBar?.setValue(gameState.hp / gameState.maxHp);
-    this.mpBar?.setValue(gameState.mp / gameState.maxMp);
+    if (this.hpBar) this.hpBar.setValue(gameState.hp / gameState.maxHp);
+    if (this.mpBar) this.mpBar.setValue(gameState.mp / gameState.maxMp);
     const qiNeeded = needQi(gameState);
     this.expBar?.setValue(gameState.qi / qiNeeded);
 
@@ -199,19 +388,118 @@ export class TopStatusBar extends UIContainer {
   }
 
   /**
+   * 安全区变化事件处理（仅在使用SafeAreaManager时触发）
+   */
+  private onSafeAreaChanged(): void {
+    if (!this.safeAreaManager) return;
+
+    const safeRect = this.safeAreaManager.getFinalSafeRect();
+    this.updatePositionFromRect(safeRect);
+  }
+
+  /**
+   * 更新位置（当安全区变化时调用）
+   * 支持旧API（SafeArea）和新API（Rect）
+   */
+  updatePosition(safeArea: SafeArea): void {
+    this.safeArea = safeArea;
+    this.updatePositionFromRect(safeArea);
+  }
+
+  /**
+   * 从矩形更新位置（内部方法）
+   */
+  private updatePositionFromRect(safeRect: SafeArea | any): void {
+    // 重新计算位置
+    const position = TopStatusBar.calculatePosition(
+      safeRect,
+      this.anchor,
+      this.offsetX,
+      this.offsetY
+    );
+
+    // 更新容器位置
+    this.setPosition(position.x, position.y);
+
+    const SAFE_PADDING = 10;
+
+    // 更新灵石文本位置（因为它不在容器内，需要单独更新）
+    if (this.spiritStoneText) {
+      const currentSafeRect = this.safeAreaManager
+        ? this.safeAreaManager.getFinalSafeRect()
+        : safeRect;
+      const spiritStoneX = (currentSafeRect.x + currentSafeRect.width) - SAFE_PADDING;
+      const spiritStoneY = currentSafeRect.y + 16;
+      this.spiritStoneText.setPosition(spiritStoneX, spiritStoneY);
+
+      // 验证更新后的位置
+      this.validateElementInSafeArea('灵石文本 (更新后)', {
+        x: spiritStoneX - (this.spiritStoneText.width || 100),
+        y: spiritStoneY,
+        width: this.spiritStoneText.width || 100,
+        height: this.spiritStoneText.height || 20
+      });
+    }
+
+    // 更新头像位置（因为它也不在容器内）
+    if (this.avatarImage) {
+      const avatarWidth = 120;
+      const avatarHeight = 120;
+      const avatarX = SAFE_PADDING;
+      const avatarY = SAFE_PADDING;
+      const avatarImageX = position.x + avatarX + avatarWidth / 2;
+      const avatarImageY = position.y + avatarY + avatarHeight / 2;
+      this.avatarImage.setPosition(avatarImageX, avatarImageY);
+
+      // 验证头像位置
+      this.validateElementInSafeArea('头像 (更新后)', {
+        x: position.x + avatarX,
+        y: position.y + avatarY,
+        width: avatarWidth,
+        height: avatarHeight
+      });
+
+      // 更新遮罩位置
+      const mask = this.avatarImage.mask as Phaser.Display.Masks.GeometryMask;
+      if (mask && mask.geometryMask) {
+        const borderWidth = 2;
+        const avatarImageSize = avatarWidth - borderWidth * 2;
+        const avatarBorderRadius = 12;
+        const maskGraphics = this.scene.make.graphics({});
+        maskGraphics.fillStyle(0xffffff);
+        maskGraphics.fillRoundedRect(
+          position.x + avatarX + borderWidth,
+          position.y + avatarY + borderWidth,
+          avatarImageSize,
+          avatarImageSize,
+          avatarBorderRadius - borderWidth
+        );
+        this.avatarImage.setMask(maskGraphics.createGeometryMask());
+      }
+    }
+
+    console.log(`TopStatusBar position updated to (${position.x}, ${position.y})`);
+  }
+
+  /**
    * 销毁组件
    */
   destroy(fromScene?: boolean): void {
+    // 停止监听事件
+    if (this.safeAreaManager) {
+      this.safeAreaManager.off('safeAreaChanged', this.onSafeAreaChanged, this);
+    }
+
     // 销毁头像图片（如果存在）
     if (this.avatarImage) {
       this.avatarImage.destroy();
     }
-    
+
     // 销毁灵石文本（如果存在，因为它不在容器内）
     if (this.spiritStoneText) {
       this.spiritStoneText.destroy();
     }
-    
+
     super.destroy(fromScene);
   }
 }
