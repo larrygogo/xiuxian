@@ -1,8 +1,8 @@
 [
   {
     "mapId": "map_beginner_1",
-    "name": "新手村外",
-    "description": "新手村外的安全区域，这里是修仙之路的起点。虽然怪物较弱，但对于初入修仙的修士来说，这里是最适合的历练场所。",
+    "name": "清溪镇外",
+    "description": "清溪镇外的安全区域，这里是修仙之路的起点。虽然怪物较弱，但对于初入修仙的修士来说，这里是最适合的历练场所。",
     "levelRange": [1, 5],
     "monsterPool": [
       { "monsterId": "mob_wolf", "weight": 60, "levelRange": [1, 4] },

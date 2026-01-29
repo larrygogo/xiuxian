@@ -17,6 +17,15 @@ export interface UIPanelConfig {
   storageKey?: string; // localStorage中保存位置的key
 }
 
+// UI按钮背景图配置
+export interface UIButtonBackgroundImageConfig {
+  key: string;              // 图片资源key
+  width?: number;           // 显示宽度（可选，不设置则使用原始尺寸）
+  height?: number;          // 显示高度（可选，不设置则使用原始尺寸）
+  offsetX?: number;         // X偏移量，默认0
+  offsetY?: number;         // Y偏移量，默认0
+}
+
 // UI按钮配置
 export interface UIButtonConfig {
   scene: Phaser.Scene;
@@ -27,6 +36,7 @@ export interface UIButtonConfig {
   text?: string;
   icon?: string;
   textStyle?: Phaser.Types.GameObjects.Text.TextStyle;
+  backgroundImage?: UIButtonBackgroundImageConfig;  // 背景图配置
   onClick?: () => void;
   onPointerOver?: () => void;
   onPointerOut?: () => void;

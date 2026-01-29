@@ -1,6 +1,14 @@
 import { io, type Socket } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000';
+const getSocketUrl = () => {
+  if (import.meta.env.VITE_SOCKET_URL) {
+    return import.meta.env.VITE_SOCKET_URL;
+  }
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+  return `http://${hostname}:3000`;
+};
+
+const SOCKET_URL = getSocketUrl();
 const BATTLE_NAMESPACE = '/battle';
 
 let battleSocket: Socket | null = null;

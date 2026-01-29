@@ -216,8 +216,11 @@ export class ItemSlot extends UIContainer {
       iconEmoji = '💎';
     }
 
+    const size = this.config.size || 60;
+    const iconFontSize = Math.max(16, Math.floor(size * 0.5));
+
     const icon = this.scene.add.text(0, 0, iconEmoji, {
-      fontSize: '32px'
+      fontSize: `${iconFontSize}px`
     });
     icon.setOrigin(0.5);
     this.iconContainer.add(icon);
@@ -226,16 +229,16 @@ export class ItemSlot extends UIContainer {
     if (isConsumable(this._item) || isMaterial(this._item)) {
       const stackable = this._item as Consumable | Material;
       if (stackable.stackSize > 1) {
-        const size = this.config.size || 60;
+        const stackFontSize = Math.max(10, Math.floor(size * 0.2));
         this.stackText = this.scene.add.text(
           size / 2 - 4,
           size / 2 - 4,
           stackable.stackSize.toString(),
           {
-            fontSize: '14px',
+            fontSize: `${stackFontSize}px`,
             color: '#ffffff',
             backgroundColor: '#000000',
-            padding: { x: 4, y: 2 }
+            padding: { x: 3, y: 1 }
           }
         );
         this.stackText.setOrigin(1, 1);
@@ -245,16 +248,16 @@ export class ItemSlot extends UIContainer {
 
     // 显示装备等级
     if (isEquipment(this._item)) {
-      const size = this.config.size || 60;
+      const levelFontSize = Math.max(8, Math.floor(size * 0.18));
       this.levelText = this.scene.add.text(
         -size / 2 + 4,
         -size / 2 + 4,
         `Lv.${this._item.level}`,
         {
-          fontSize: '12px',
+          fontSize: `${levelFontSize}px`,
           color: '#f39c12',
           backgroundColor: '#000000',
-          padding: { x: 3, y: 1 }
+          padding: { x: 2, y: 1 }
         }
       );
       this.add(this.levelText);
@@ -284,5 +287,24 @@ export class ItemSlot extends UIContainer {
       size,
       size
     );
+  }
+
+  /**
+   * 设置槽位大小
+   */
+  setSlotSize(size: number): void {
+    this.config.size = size;
+
+    // 更新背景大小
+    this.background.setSize(size, size);
+
+    // 更新交互区域
+    this.setInteractive(
+      new Phaser.Geom.Rectangle(-size / 2, -size / 2, size, size),
+      Phaser.Geom.Rectangle.Contains
+    );
+
+    // 更新显示（重新定位堆叠数量和等级文本）
+    this.updateDisplay();
   }
 }

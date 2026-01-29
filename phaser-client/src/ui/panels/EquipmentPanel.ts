@@ -125,8 +125,8 @@ export class EquipmentPanel extends UIPanel {
         slotType: 'equipment',
         slotName,
         dragDropSystem: this.dragDropSystem,
-        onClick: (item) => this.handleSlotClick(item, slotName),
-        onDoubleClick: (item) => this.handleSlotDoubleClick(item, slotName)
+        onClick: (item) => this.handleSlotClick(item as Equipment | null, slotName),
+        onDoubleClick: (item) => this.handleSlotDoubleClick(item as Equipment | null, slotName)
       });
 
       // 设置装备

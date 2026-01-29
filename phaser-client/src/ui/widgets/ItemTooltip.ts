@@ -107,8 +107,9 @@ export class ItemTooltip extends UIContainer {
   /**
    * 隐藏提示框
    */
-  hide(): void {
+  hide(): this {
     this.setVisible(false);
+    return this;
   }
 
   /**

@@ -85,9 +85,9 @@ export default class CharacterCreateScene extends BaseScene {
 
       const text = this.add.text(x, y, symbol, {
         fontSize: '24px',
-        color: '#34495e',
-        alpha: 0.3
+        color: '#34495e'
       });
+      text.setAlpha(0.3);
 
       // 缓慢旋转动画
       this.tweens.add({

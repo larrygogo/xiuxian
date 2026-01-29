@@ -81,8 +81,7 @@ export class PanelManager extends Phaser.Events.EventEmitter {
     if (!this.scene) return;
 
     if (!this.inventoryPanel) {
-      const safeAreaManager = this.getSafeAreaManagerFn?.();
-      this.inventoryPanel = new InventoryPanel(this.scene, safeAreaManager);
+      this.inventoryPanel = new InventoryPanel(this.scene);
     }
     this.inventoryPanel.show();
     this.emit('panel:opened', 'inventory');
@@ -109,8 +108,7 @@ export class PanelManager extends Phaser.Events.EventEmitter {
     if (!this.scene) return;
 
     if (!this.sceneSelectionPanel) {
-      const safeAreaManager = this.getSafeAreaManagerFn?.();
-      this.sceneSelectionPanel = new SceneSelectionPanel(this.scene, onSceneSelected, safeAreaManager);
+      this.sceneSelectionPanel = new SceneSelectionPanel(this.scene, onSceneSelected);
     }
     this.sceneSelectionPanel.show();
     this.emit('panel:opened', 'sceneSelection');

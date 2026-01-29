@@ -1,9 +1,10 @@
 /**
  * 背包面板
+ * 使用 FullScreenModal 基础组件
  * 显示20个物品槽位，支持拖拽和使用物品
  */
 
-import { UIPanel } from '@/ui/core/UIPanel';
+import { FullScreenModal } from '@/ui/core/FullScreenModal';
 import { UIText } from '@/ui/core/UIText';
 import { UIButton } from '@/ui/core/UIButton';
 import { ItemSlot } from '@/ui/widgets/ItemSlot';
@@ -14,12 +15,11 @@ import { stateManager } from '@/services/managers/StateManager';
 import { gameAPI } from '@/services/api';
 import { toastManager } from '@/ui/toast/ToastManager';
 import { isEquipment, isConsumable } from '@/types/item.types';
-import type { Item, Equipment, Consumable } from '@/types/item.types';
+import type { Item } from '@/types/item.types';
 import type { GameState } from '@/types/game.types';
 import { COLORS } from '@/config/constants';
-import type { SafeAreaManager } from '@/ui/safearea/SafeAreaManager';
 
-export class InventoryPanel extends UIPanel {
+export class InventoryPanel extends FullScreenModal {
   private gameState: GameState;
   private dragDropSystem: DragDropSystem;
   private itemSlots: ItemSlot[] = [];
@@ -29,29 +29,23 @@ export class InventoryPanel extends UIPanel {
   private itemCard?: ItemCard;
   private tooltip: ItemTooltip;
   private cardOverlay?: Phaser.GameObjects.Rectangle;
-  private panelOverlay?: Phaser.GameObjects.Rectangle;
-  private safeAreaManager?: SafeAreaManager;
 
-  constructor(scene: Phaser.Scene, safeAreaManager?: SafeAreaManager) {
-    // 使用安全区或相机尺寸
-    const safeRect = safeAreaManager?.getFinalSafeRect();
-    const width = safeRect?.width ?? scene.cameras.main.width;
-    const height = safeRect?.height ?? scene.cameras.main.height;
-    const centerX = safeRect ? safeRect.x + safeRect.width / 2 : scene.cameras.main.width / 2;
-    const centerY = safeRect ? safeRect.y + safeRect.height / 2 : scene.cameras.main.height / 2;
+  // 布局常量
+  private readonly cols = 5;
+  private readonly rows = 4;
+  private readonly spacingRatio = 0.12; // 间距为槽位大小的比例
+  private slotSize = 100; // 动态计算
+  private slotSpacing = 12; // 动态计算
 
+  constructor(scene: Phaser.Scene) {
     super({
       scene,
-      x: centerX,
-      y: centerY,
-      width: width,
-      height: height,
-      title: '仙囊',
-      closable: false,
-      draggable: false
+      title: '储物袋',
+      onClose: () => {
+        this.tooltip.hide();
+        this.closeItemCard();
+      }
     });
-
-    this.safeAreaManager = safeAreaManager;
 
     const state = stateManager.getGameState();
     if (!state) {
@@ -65,113 +59,102 @@ export class InventoryPanel extends UIPanel {
       this.handleDrop(source, target);
     });
 
-    // 创建tooltip
+    // 创建 tooltip
     this.tooltip = new ItemTooltip(scene);
     scene.add.existing(this.tooltip);
 
-    // 创建面板遮罩层（阻止点击穿透到后面的元素）
-    this.panelOverlay = scene.add.rectangle(
-      width / 2,
-      height / 2,
-      width,
-      height,
-      0x000000,
-      0.5
-    );
-    this.panelOverlay.setDepth(50); // 在主场景UI之上，在面板之下
-    this.panelOverlay.setInteractive();
-    this.panelOverlay.setVisible(false);
-
-    // 隐藏标题栏（不需要显示导航条）
-    this.titleBar.setVisible(false);
-    this.titleText.setVisible(false);
-
-    this.createContent();
-
-    // 初始化时隐藏
-    this.hide();
+    // 创建背包内容
+    this.createInventoryContent();
   }
 
   /**
-   * 创建面板内容
+   * 创建背包内容
    */
-  private createContent(): void {
-    const width = this.scene.cameras.main.width;
-    const height = this.scene.cameras.main.height;
-    const centerX = 0;
-    const topY = -height / 2 + 20; // 从顶部开始，padding 20
+  private createInventoryContent(): void {
+    const scrollContainer = this.getScrollContainer();
+    const scrollWidth = this.getScrollAreaWidth();
 
-    // 标题"储物袋"（左上角 padding 20 20）
-    const titleText = new UIText(
-      this.scene,
-      -width / 2 + 20,
-      topY,
-      '储物袋',
-      { fontSize: '24px', color: '#ecf0f1', fontStyle: 'bold' }
-    );
-    titleText.setOrigin(0, 0);
-    this.contentContainer.add(titleText);
+    // 灵石显示（头部右侧插槽）
+    this.createLingshiDisplay();
 
-    // 灵石显示（右上角）
-    // 计算背景尺寸：容纳4位数字+图标+汉字 "💎 9999灵"
-    const lingshiBgWidth = 150; // 宽度
-    const lingshiBgHeight = 36; // 高度
-    const lingshiBgX = width / 2 - 20 - lingshiBgWidth; // 右上角 padding 20
-    const lingshiBgY = topY;
+    // 创建物品槽位
+    this.createItemSlots(scrollContainer, scrollWidth);
 
-    // 创建圆角背景（黑色）
+    // 计算内容总高度并设置
+    const totalHeight = this.rows * (this.slotSize + this.slotSpacing) + 20;
+    this.setContentHeight(totalHeight);
+  }
+
+  /**
+   * 创建灵石显示（头部右侧插槽）
+   */
+  private createLingshiDisplay(): void {
+    const container = this.getHeaderExtraContainer();
+    const lingshiBgWidth = 220;
+    const lingshiBgHeight = 48;
+
+    // 创建圆角背景（从右向左布局）
     this.lingshiBg = this.scene.add.graphics();
     this.lingshiBg.fillStyle(0x000000, 0.8);
-    this.lingshiBg.fillRoundedRect(
-      lingshiBgX,
-      lingshiBgY,
-      lingshiBgWidth,
-      lingshiBgHeight,
-      8 // 圆角半径
-    );
-    this.contentContainer.add(this.lingshiBg);
+    this.lingshiBg.fillRoundedRect(-lingshiBgWidth, 0, lingshiBgWidth, lingshiBgHeight, 16);
+    container.add(this.lingshiBg);
 
-    // 💎图标（左侧）
+    // 💎图标
     this.lingshiIcon = new UIText(
       this.scene,
-      lingshiBgX + 10, // 左边距10像素
-      lingshiBgY + lingshiBgHeight / 2,
+      -lingshiBgWidth + 10,
+      lingshiBgHeight / 2,
       '💎',
-      { fontSize: '18px', color: '#f1c40f', fontStyle: 'bold' }
+      { fontSize: '36px', color: '#f1c40f', fontStyle: 'bold' }
     );
-    this.lingshiIcon.setOrigin(0, 0.5); // 左对齐，垂直居中
-    this.contentContainer.add(this.lingshiIcon);
+    this.lingshiIcon.setOrigin(0, 0.5);
+    container.add(this.lingshiIcon);
 
-    // 灵石数值（右对齐）
+    // 灵石数值
     this.lingshiText = new UIText(
       this.scene,
-      lingshiBgX + lingshiBgWidth - 10, // 右边距10像素
-      lingshiBgY + lingshiBgHeight / 2,
-      `${this.gameState.lingshi}灵`,
-      { fontSize: '18px', color: '#f1c40f', fontStyle: 'bold' }
+      -20,
+      lingshiBgHeight / 2,
+      `${this.gameState.lingshi} 灵`,
+      { fontSize: '36px', color: '#f1c40f', fontStyle: 'bold' }
     );
-    this.lingshiText.setOrigin(1, 0.5); // 右对齐，垂直居中
-    this.contentContainer.add(this.lingshiText);
+    this.lingshiText.setOrigin(1, 0.5);
+    container.add(this.lingshiText);
+  }
 
-    // 创建20个物品槽位（5列x4行）- 增大尺寸适应全屏
-    const slotSize = 100; // 从70增加到100
-    const slotSpacing = 15; // 从5增加到15
-    const cols = 5;
-    const rows = 4;
-    const startX = centerX - (cols * (slotSize + slotSpacing) - slotSpacing) / 2;
-    const startY = topY + 60; // 标题下方留60像素间距
+  /**
+   * 计算槽位尺寸
+   */
+  private calculateSlotSize(scrollWidth: number): void {
+    // 动态计算槽位大小以铺满宽度
+    // scrollWidth = cols * slotSize + (cols - 1) * spacing
+    // spacing = slotSize * spacingRatio
+    // scrollWidth = cols * slotSize + (cols - 1) * slotSize * spacingRatio
+    // scrollWidth = slotSize * (cols + (cols - 1) * spacingRatio)
+    this.slotSize = scrollWidth / (this.cols + (this.cols - 1) * this.spacingRatio);
+    this.slotSpacing = this.slotSize * this.spacingRatio;
+  }
 
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        const index = row * cols + col;
-        const x = startX + col * (slotSize + slotSpacing) + slotSize / 2;
-        const y = startY + row * (slotSize + slotSpacing) + slotSize / 2;
+  /**
+   * 创建物品槽位
+   */
+  private createItemSlots(container: Phaser.GameObjects.Container, scrollWidth: number): void {
+    this.calculateSlotSize(scrollWidth);
+
+    const startX = -scrollWidth / 2;
+    const startY = 0;
+
+    for (let row = 0; row < this.rows; row++) {
+      for (let col = 0; col < this.cols; col++) {
+        const index = row * this.cols + col;
+        const x = startX + col * (this.slotSize + this.slotSpacing) + this.slotSize / 2;
+        const y = startY + row * (this.slotSize + this.slotSpacing) + this.slotSize / 2;
 
         const slot = new ItemSlot({
           scene: this.scene,
           x,
           y,
-          size: slotSize,
+          size: this.slotSize,
           slotIndex: index,
           slotType: 'inventory',
           dragDropSystem: this.dragDropSystem,
@@ -185,15 +168,17 @@ export class InventoryPanel extends UIPanel {
           slot.setItem(item);
         }
 
-        // 添加悬停事件（显示tooltip）
+        // 添加悬停事件
         slot.on('pointerover', (pointer: Phaser.Input.Pointer) => {
-          if (item) {
-            this.tooltip.showForItem(item, pointer.x, pointer.y);
+          const slotItem = this.gameState.inventory[index];
+          if (slotItem) {
+            this.tooltip.showForItem(slotItem, pointer.x, pointer.y);
           }
         });
 
         slot.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-          if (item) {
+          const slotItem = this.gameState.inventory[index];
+          if (slotItem) {
             this.tooltip.updatePosition(pointer.x, pointer.y);
           }
         });
@@ -202,7 +187,7 @@ export class InventoryPanel extends UIPanel {
           this.tooltip.hide();
         });
 
-        this.contentContainer.add(slot);
+        container.add(slot);
         this.itemSlots.push(slot);
 
         // 注册为放置区域
@@ -213,45 +198,27 @@ export class InventoryPanel extends UIPanel {
         });
       }
     }
-
-    // 关闭按钮（底部）
-    const closeButton = new UIButton({
-      scene: this.scene,
-      x: centerX,
-      y: height / 2 - 100, // 底部位置
-      width: 120,
-      height: 50,
-      text: '关闭',
-      textStyle: { fontSize: '18px' },
-      onClick: () => this.hide()
-    });
-    closeButton.setColor(COLORS.dark);
-    this.contentContainer.add(closeButton);
   }
 
   /**
    * 槽位点击事件
    */
-  private handleSlotClick(item: Item | null, index: number): void {
+  private handleSlotClick(item: Item | null, _index: number): void {
     if (!item) return;
-
-    // 显示物品卡片
     this.showItemCard(item);
   }
 
   /**
-   * 槽位双击事件（快捷使用/装备）
+   * 槽位双击事件
    */
-  private async handleSlotDoubleClick(item: Item | null, index: number): Promise<void> {
+  private async handleSlotDoubleClick(item: Item | null, _index: number): Promise<void> {
     if (!item) return;
 
     this.tooltip.hide();
 
     if (isEquipment(item)) {
-      // 装备
       await this.equipItem(item.id);
     } else if (isConsumable(item)) {
-      // 使用消耗品
       await this.useItem(item.id);
     }
   }
@@ -260,7 +227,6 @@ export class InventoryPanel extends UIPanel {
    * 显示物品卡片
    */
   private showItemCard(item: Item): void {
-    // 移除旧卡片和遮罩
     this.closeItemCard();
 
     const width = this.scene.cameras.main.width;
@@ -268,22 +234,15 @@ export class InventoryPanel extends UIPanel {
 
     // 创建全屏遮罩
     this.cardOverlay = this.scene.add.rectangle(
-      width / 2,
-      height / 2,
-      width,
-      height,
-      0x000000,
-      0.7
+      width / 2, height / 2,
+      width, height,
+      0x000000, 0.7
     );
-    this.cardOverlay.setDepth(1000); // 确保在面板之上
+    this.cardOverlay.setDepth(1000);
     this.cardOverlay.setInteractive();
+    this.cardOverlay.on('pointerdown', () => this.closeItemCard());
 
-    // 点击遮罩关闭物品卡片
-    this.cardOverlay.on('pointerdown', () => {
-      this.closeItemCard();
-    });
-
-    // 创建新卡片（显示在屏幕中央）
+    // 创建物品卡片
     this.itemCard = new ItemCard({
       scene: this.scene,
       x: width / 2,
@@ -291,8 +250,7 @@ export class InventoryPanel extends UIPanel {
       width: 350,
       item
     });
-    this.itemCard.setDepth(1001); // 确保在遮罩之上
-
+    this.itemCard.setDepth(1001);
     this.scene.add.existing(this.itemCard);
 
     // 添加关闭按钮
@@ -304,9 +262,7 @@ export class InventoryPanel extends UIPanel {
       height: 40,
       text: '×',
       textStyle: { fontSize: '24px' },
-      onClick: () => {
-        this.closeItemCard();
-      }
+      onClick: () => this.closeItemCard()
     });
     closeBtn.setColor(COLORS.danger);
     this.itemCard.add(closeBtn);
@@ -331,16 +287,13 @@ export class InventoryPanel extends UIPanel {
    */
   private handleDrop(source: DragSource, target: DropTarget | null): void {
     if (!target) {
-      // 拖出背包，可能是丢弃操作
       console.log('Item dragged out of inventory');
       return;
     }
 
     if (source.sourceType === 'inventory' && target.targetType === 'inventory') {
-      // 背包内移动
       this.moveItem(source.sourceIndex, target.targetIndex);
     } else if (source.sourceType === 'inventory' && target.targetType === 'equipment') {
-      // 从背包拖到装备栏
       this.equipItem(source.item.id);
     }
   }
@@ -354,14 +307,11 @@ export class InventoryPanel extends UIPanel {
     const fromItem = this.gameState.inventory[fromIndex];
     const toItem = this.gameState.inventory[toIndex];
 
-    // 检查是否可以合并
     if (fromItem && toItem &&
       fromItem.templateId === toItem.templateId &&
       (isConsumable(fromItem) || (fromItem as any).stackSize !== undefined)) {
-      // 尝试合并
       await this.mergeItems(fromItem.id, toItem.id);
     } else {
-      // 重排背包
       const newOrder = [...this.gameState.inventory];
       [newOrder[fromIndex], newOrder[toIndex]] = [newOrder[toIndex], newOrder[fromIndex]];
       const itemIds = newOrder.map(item => item?.id || null);
@@ -409,18 +359,55 @@ export class InventoryPanel extends UIPanel {
   }
 
   /**
+   * 安全区变化时更新布局
+   */
+  protected override onSafeAreaChanged(): void {
+    super.onSafeAreaChanged();
+    this.updateSlotLayout();
+  }
+
+  /**
+   * 更新槽位布局
+   */
+  private updateSlotLayout(): void {
+    const scrollWidth = this.getScrollAreaWidth();
+    this.calculateSlotSize(scrollWidth);
+
+    const startX = -scrollWidth / 2;
+    const startY = 0;
+
+    for (let row = 0; row < this.rows; row++) {
+      for (let col = 0; col < this.cols; col++) {
+        const index = row * this.cols + col;
+        const x = startX + col * (this.slotSize + this.slotSpacing) + this.slotSize / 2;
+        const y = startY + row * (this.slotSize + this.slotSpacing) + this.slotSize / 2;
+
+        const slot = this.itemSlots[index];
+        if (slot) {
+          slot.setPosition(x, y);
+          slot.setSlotSize(this.slotSize);
+        }
+      }
+    }
+
+    // 更新内容高度
+    const totalHeight = this.rows * (this.slotSize + this.slotSpacing) + 20;
+    this.setContentHeight(totalHeight);
+  }
+
+  /**
    * 更新显示
    */
   update(gameState: GameState): void {
     this.gameState = gameState;
 
-    // 更新灵石（只更新数值，图标不变）
+    // 更新灵石
     this.lingshiText?.setText(`${gameState.lingshi}灵`);
 
     // 更新所有槽位
     for (let i = 0; i < 20; i++) {
       const item = gameState.inventory[i];
-      this.itemSlots[i].setItem(item || null);
+      this.itemSlots[i]?.setItem(item || null);
     }
   }
 
@@ -429,8 +416,6 @@ export class InventoryPanel extends UIPanel {
    */
   show(): this {
     super.show();
-    // 显示遮罩层
-    this.panelOverlay?.setVisible(true);
     // 更新到最新状态
     const state = stateManager.getGameState();
     if (state) {
@@ -444,10 +429,7 @@ export class InventoryPanel extends UIPanel {
    */
   hide(): this {
     super.hide();
-    // 隐藏遮罩层
-    this.panelOverlay?.setVisible(false);
-    // 隐藏tooltip和卡片
-    this.tooltip.hide();
+    this.tooltip?.hide();
     this.closeItemCard();
     return this;
   }
@@ -455,14 +437,10 @@ export class InventoryPanel extends UIPanel {
   /**
    * 销毁
    */
-  destroy(): void {
+  destroy(fromScene?: boolean): void {
     this.dragDropSystem.destroy();
     this.tooltip.destroy();
     this.closeItemCard();
-    if (this.panelOverlay) {
-      this.panelOverlay.destroy();
-      this.panelOverlay = undefined;
-    }
-    super.destroy();
+    super.destroy(fromScene);
   }
 }

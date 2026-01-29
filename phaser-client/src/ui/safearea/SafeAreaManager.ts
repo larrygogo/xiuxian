@@ -58,8 +58,8 @@ export class SafeAreaManager extends Phaser.Events.EventEmitter {
       safeMarginPercent: {
         top: 150 / 1920, // 7.8%
         bottom: 150 / 1920, // 7.8%
-        left: 60 / 1080, // 5.6%
-        right: 60 / 1080 // 5.6%
+        left: 16 / 1080, // 5.6%
+        right: 16 / 1080 // 5.6%
       },
       minSafeArea: {
         width: 300,

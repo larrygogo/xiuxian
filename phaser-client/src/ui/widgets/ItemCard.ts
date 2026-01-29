@@ -19,7 +19,7 @@ export interface ItemCardConfig {
 
 export class ItemCard extends UIContainer {
   private config: ItemCardConfig;
-  private background: Phaser.GameObjects.Rectangle;
+  private background!: Phaser.GameObjects.Rectangle;
 
   constructor(config: ItemCardConfig) {
     super(config.scene, config.x, config.y);

@@ -56,7 +56,9 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
   },
   render: {
     pixelArt: false,
-    antialias: true
+    antialias: true,
+    // 使用设备像素比以获得更清晰的显示
+    resolution: window.devicePixelRatio || 1
   },
   // TODO: 集成rexUI插件
   // plugins: {

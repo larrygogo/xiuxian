@@ -47,7 +47,7 @@ export class BattlefieldGrid extends UIContainer {
   private playerLabel!: Phaser.GameObjects.Text;
 
   // 状态
-  private state: BattlefieldGridState = {
+  private _state: BattlefieldGridState = {
     players: [],
     monsters: [],
     targetingEnabled: true,
@@ -204,8 +204,8 @@ export class BattlefieldGrid extends UIContainer {
   /**
    * 更新状态
    */
-  setState(state: Partial<BattlefieldGridState>): this {
-    this.state = { ...this.state, ...state };
+  updateState(state: Partial<BattlefieldGridState>): this {
+    this._state = { ...this._state, ...state };
     this.updateDisplay();
     return this;
   }
@@ -223,7 +223,7 @@ export class BattlefieldGrid extends UIContainer {
       targetScope,
       selfId,
       submittedPlayerIds
-    } = this.state;
+    } = this._state;
 
     // 更新怪物卡片
     this.monsterCards.forEach((card, index) => {
@@ -264,7 +264,7 @@ export class BattlefieldGrid extends UIContainer {
     isPlayer: boolean,
     selectedCommand: string | null | undefined,
     targetingEnabled: boolean | undefined,
-    targetScope: TargetScope,
+    targetScope: TargetScope | undefined,
     selfId: string | null | undefined
   ): boolean {
     if (!combatant) return false;
@@ -330,10 +330,10 @@ export class BattlefieldGrid extends UIContainer {
    * 根据ID查找战斗单位
    */
   findCombatantById(id: string): Combatant | null {
-    const player = this.state.players.find(p => p.id === id);
+    const player = this._state.players.find(p => p.id === id);
     if (player) return player;
 
-    const monster = this.state.monsters.find(m => m.id === id);
+    const monster = this._state.monsters.find(m => m.id === id);
     if (monster) return monster;
 
     return null;

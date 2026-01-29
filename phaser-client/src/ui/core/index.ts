@@ -8,3 +8,5 @@ export { UIButton } from './UIButton';
 export { UIText } from './UIText';
 export { UIInput } from './UIInput';
 export { UIProgressBar } from './UIProgressBar';
+export { FullScreenModal } from './FullScreenModal';
+export type { FullScreenModalConfig } from './FullScreenModal';

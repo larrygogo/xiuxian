@@ -55,6 +55,14 @@ export default class MainScene extends BaseScene {
     this.load.image('buttonCompass', 'assets/images/ui/button-compass.png');
     this.load.image('buttonCharacter', 'assets/images/ui/button-character.png');
     this.load.image('buttonSettings', 'assets/images/ui/button-settings.png');
+    this.load.image('inkSplash', 'assets/images/ui/ink-splash.png');
+    this.load.image('buttonBack', 'assets/images/ui/button-back.png');
+
+    // 加载场景选择卡片背景图
+    this.load.image('scene_map_beginner_1', 'assets/images/scenes/scene_map_beginner_1.png');
+    this.load.image('scene_map_forest_1', 'assets/images/scenes/scene_map_forest_1.png');
+    this.load.image('scene_map_mountain_1', 'assets/images/scenes/scene_map_mountain_1.png');
+    this.load.image('scene_map_dungeon_1', 'assets/images/scenes/scene_map_dungeon_1.png');
   }
 
   create() {

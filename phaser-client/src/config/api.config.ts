@@ -4,17 +4,21 @@
 
 // 获取环境变量，使用Vite的import.meta.env
 const getApiUrl = () => {
-  if (typeof import.meta !== 'undefined' && import.meta.env) {
-    return import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
   }
-  return 'http://localhost:3000';
+  // 使用当前主机地址，支持 IP 访问
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+  return `http://${hostname}:3000`;
 };
 
 const getSocketUrl = () => {
-  if (typeof import.meta !== 'undefined' && import.meta.env) {
-    return import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000';
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SOCKET_URL) {
+    return import.meta.env.VITE_SOCKET_URL;
   }
-  return 'http://localhost:3000';
+  // 使用当前主机地址，支持 IP 访问
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+  return `http://${hostname}:3000`;
 };
 
 export const API_BASE_URL = getApiUrl();

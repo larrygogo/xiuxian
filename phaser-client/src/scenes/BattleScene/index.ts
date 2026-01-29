@@ -433,7 +433,7 @@ export default class BattleScene extends BaseScene {
     // 显示奖励
     const userId = stateManager.getUser()?.id;
     if (payload.rewards && userId) {
-      const playerReward = payload.rewards.find(r => r.userId === userId);
+      const playerReward = payload.rewards.find(r => String(r.userId) === userId);
       if (playerReward && playerReward.success) {
         const rewardMessages: string[] = [];
         if (playerReward.qi > 0) {
@@ -507,7 +507,7 @@ export default class BattleScene extends BaseScene {
     }
 
     // 更新提交状态
-    this.commandPanel.setState({ submitting: true });
+    this.commandPanel.updateState({ submitting: true });
 
     try {
       const response = await battleAPI.submitCommand(
@@ -543,7 +543,7 @@ export default class BattleScene extends BaseScene {
         this.updateUI();
       }
     } finally {
-      this.commandPanel.setState({ submitting: false });
+      this.commandPanel.updateState({ submitting: false });
     }
   }
 
@@ -595,7 +595,7 @@ export default class BattleScene extends BaseScene {
   private updateCountdown(): void {
     if (!this.snapshot) return;
 
-    this.countdownBar.setState({
+    this.countdownBar.updateState({
       countdown: this.countdown,
       turnNumber: this.snapshot.turnNumber,
       submittedCount: this.submittedPlayerIds.length,
@@ -637,7 +637,7 @@ export default class BattleScene extends BaseScene {
     const userId = stateManager.getUser()?.id;
     if (!userId || !this.snapshot) return null;
 
-    const player = this.snapshot.players.find(p => p.userId === userId);
+    const player = this.snapshot.players.find(p => String(p.userId) === userId);
     return player?.id ?? null;
   }
 
@@ -668,7 +668,7 @@ export default class BattleScene extends BaseScene {
     const submittedCombatantIds = this.getSubmittedCombatantIds();
 
     // 更新战场网格
-    this.battlefieldGrid.setState({
+    this.battlefieldGrid.updateState({
       players: this.snapshot.players,
       monsters: this.snapshot.monsters,
       selectedCommand: this.selectedCommand,
@@ -680,7 +680,7 @@ export default class BattleScene extends BaseScene {
     });
 
     // 更新倒计时
-    this.countdownBar.setState({
+    this.countdownBar.updateState({
       turnNumber: this.snapshot.turnNumber,
       countdown: this.countdown,
       submittedCount: this.submittedPlayerIds.length,
@@ -692,7 +692,7 @@ export default class BattleScene extends BaseScene {
       ? this.battlefieldGrid.getCombatantName(this.selectedTarget)
       : null;
 
-    this.commandPanel.setState({
+    this.commandPanel.updateState({
       phase: this.snapshot.phase,
       commandSubmitted: this.commandSubmitted,
       selectedCommand: this.selectedCommand,

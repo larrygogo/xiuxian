@@ -39,14 +39,14 @@ export class TopStatusBar extends UIContainer {
   private avatarImage?: Phaser.GameObjects.Image;
 
   // 内容尺寸（用于锚点计算）
-  private contentWidth: number = 320;  // 头像(120) + 间距(20) + 进度条(160) + 边距(20)
-  private contentHeight: number = 140; // 头像(120) + 上下边距(20)
+  private contentWidth: number = 480;  // 头像(180) + 间距(24) + 进度条(240) + 边距(36)
+  private contentHeight: number = 210; // 头像(180) + 上下边距(30)
 
   constructor(config: TopStatusBarConfig) {
     // 处理锚点（仅支持枚举）
     const anchor = config.anchor || Anchor.TOP_LEFT;
-    const offsetX = config.offsetX ?? 10;
-    const offsetY = config.offsetY ?? 10;
+    const offsetX = config.offsetX ?? 0;
+    const offsetY = config.offsetY ?? 0;
 
     // 获取当前的SafeArea
     const safeAreaManager = config.scene.getSafeAreaManager();
@@ -148,20 +148,20 @@ export class TopStatusBar extends UIContainer {
    * 创建内容
    */
   private createContent(): void {
-    // 头像框尺寸：120x120 正方形
-    const avatarWidth = 120;
-    const avatarHeight = 120;
-    const avatarBorderRadius = 12;
-    const barBorderRadius = 6;
-    const barHeight = 20;
-    const barSpacing = 8;
+    // 头像框尺寸：180x180 正方形
+    const avatarWidth = 160;
+    const avatarHeight = 160;
+    const avatarBorderRadius = 32;
+    const barBorderRadius = 8;
+    const barHeight = 24;
+    const barSpacing = 6;
 
     // 安全边距：确保内容不会太靠近边缘
-    const SAFE_PADDING = 10;
+    const SAFE_PADDING = 0;
 
     // 计算容器尺寸（根据内容自适应）
-    const infoX = avatarWidth + 20; // 头像右侧间距
-    const barWidth = 160; // 进度条宽度
+    const infoX = avatarWidth + 16; // 头像右侧间距
+    const barWidth = 240; // 进度条宽度
 
     // 头像区域（左侧）
     const avatarX = SAFE_PADDING;
@@ -171,7 +171,7 @@ export class TopStatusBar extends UIContainer {
     const avatarBg = this.scene.add.graphics();
     avatarBg.fillStyle(0xffffff, 1); // 白色背景
     avatarBg.fillRoundedRect(avatarX, avatarY, avatarWidth, avatarHeight, avatarBorderRadius);
-    avatarBg.lineStyle(2, 0x000000, 1); // 黑色边框
+    avatarBg.lineStyle(3, 0x000000, 3); // 黑色边框
     avatarBg.strokeRoundedRect(avatarX, avatarY, avatarWidth, avatarHeight, avatarBorderRadius);
     this.add(avatarBg);
 
@@ -200,8 +200,8 @@ export class TopStatusBar extends UIContainer {
     this.avatarImage.setDepth(11); // 确保在背景之上
 
     // 右侧信息区
-    const nameY = avatarY + 4;
-    const firstBarY = nameY + 28; // 角色名下方开始
+    const nameY = avatarY + 6;
+    const firstBarY = nameY + 56; // 角色名下方开始
 
     // 角色名称（白色文字+黑色描边）
     this.nameText = new UIText(
@@ -210,11 +210,11 @@ export class TopStatusBar extends UIContainer {
       nameY,
       this.gameState.name || '无名修士',
       {
-        fontSize: '18px',
+        fontSize: '36px',
         color: '#ffffff',
         fontStyle: 'bold',
         stroke: '#000000',
-        strokeThickness: 2
+        strokeThickness: 3
       }
     );
     this.nameText.setOrigin(0, 0);
@@ -231,7 +231,7 @@ export class TopStatusBar extends UIContainer {
       barColor: 0x8b0000, // 深红色
       backgroundColor: 0xffe4e1, // 浅粉红背景
       borderColor: 0x000000, // 黑色边框
-      borderWidth: 2,
+      borderWidth: 3,
       borderRadius: barBorderRadius,
       value: hpValue
     });
@@ -248,7 +248,7 @@ export class TopStatusBar extends UIContainer {
       barColor: 0x00008b, // 深蓝色
       backgroundColor: 0xe0e0ff, // 浅蓝背景
       borderColor: 0x000000, // 黑色边框
-      borderWidth: 2,
+      borderWidth: 3,
       borderRadius: barBorderRadius,
       value: mpValue
     });
@@ -266,7 +266,7 @@ export class TopStatusBar extends UIContainer {
       barColor: 0x006400, // 深绿色
       backgroundColor: 0xe0ffe0, // 浅绿背景
       borderColor: 0x000000, // 黑色边框
-      borderWidth: 2,
+      borderWidth: 3,
       borderRadius: barBorderRadius,
       value: qiValue
     });
@@ -279,14 +279,14 @@ export class TopStatusBar extends UIContainer {
     const safeRight = currentSafeRect.x + currentSafeRect.width;
     const safeTop = currentSafeRect.y;
     const spiritStoneX = safeRight - spiritStonePadding;
-    const spiritStoneY = safeTop + 16;
+    const spiritStoneY = safeTop + 20;
 
     this.spiritStoneText = new UIText(
       this.scene,
       spiritStoneX,
       spiritStoneY,
       `💎 ${this.gameState.lingshi || 0}`,
-      { fontSize: '16px', color: '#d1a14b', fontStyle: 'bold' }
+      { fontSize: '24px', color: '#d1a14b', fontStyle: 'bold' }
     );
     this.spiritStoneText.setOrigin(1, 0); // 右上角对齐
     this.spiritStoneText.setDepth(10);
@@ -366,12 +366,12 @@ export class TopStatusBar extends UIContainer {
     // 更新容器位置
     this.setPosition(position.x, position.y);
 
-    const SAFE_PADDING = 10;
+    const SAFE_PADDING = 0;
 
     // 更新灵石文本位置（因为它不在容器内，需要单独更新）
     if (this.spiritStoneText) {
       const spiritStoneX = (safeRect.x + safeRect.width) - SAFE_PADDING;
-      const spiritStoneY = safeRect.y + 16;
+      const spiritStoneY = safeRect.y + 20;
       this.spiritStoneText.setPosition(spiritStoneX, spiritStoneY);
 
       // 验证更新后的位置
@@ -385,8 +385,8 @@ export class TopStatusBar extends UIContainer {
 
     // 更新头像位置（因为它也不在容器内）
     if (this.avatarImage) {
-      const avatarWidth = 120;
-      const avatarHeight = 120;
+      const avatarWidth = 160;
+      const avatarHeight = 160;
       const avatarX = SAFE_PADDING;
       const avatarY = SAFE_PADDING;
       const avatarImageX = position.x + avatarX + avatarWidth / 2;
@@ -406,7 +406,7 @@ export class TopStatusBar extends UIContainer {
       if (mask && mask.geometryMask) {
         const borderWidth = 2;
         const avatarImageSize = avatarWidth - borderWidth * 2;
-        const avatarBorderRadius = 12;
+        const avatarBorderRadius = 16;
         const maskGraphics = this.scene.make.graphics({});
         maskGraphics.fillStyle(0xffffff);
         maskGraphics.fillRoundedRect(

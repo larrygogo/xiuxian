@@ -1,21 +1,17 @@
 /**
  * 场景选择面板
+ * 使用 FullScreenModal 基础组件
  * 用于选择探索/战斗场景
- *
- * 布局结构（三个区域）：
- * 1. 顶部标题区域 - 显示当前等级
- * 2. 中间滚动区域 - 场景卡片列表，使用遮罩裁剪溢出内容
- * 3. 底部返回按钮 - 位于安全区左下角
  */
 
-import { UIPanel } from '@/ui/core/UIPanel';
+import { FullScreenModal } from '@/ui/core/FullScreenModal';
 import { UIText } from '@/ui/core/UIText';
 import { UIButton } from '@/ui/core/UIButton';
+import { SceneCard } from '@/ui/widgets/SceneCard';
 import { stateManager } from '@/services/managers/StateManager';
 import { battleAPI } from '@/services/api';
 import type { GameState } from '@/types/game.types';
 import { COLORS } from '@/config/constants';
-import type { SafeAreaManager } from '@/ui/safearea/SafeAreaManager';
 
 /** 场景项（与后端 mapId 一致，用于创建房间） */
 export interface BattleScene {
@@ -28,48 +24,26 @@ export interface BattleScene {
   difficulty: 'easy' | 'normal' | 'hard' | 'extreme';
 }
 
-/** 滚动区域的布局信息 */
-interface ScrollAreaLayout {
-  x: number;      // 滚动区域中心X（相对于面板中心）
-  y: number;      // 滚动区域中心Y（相对于面板中心）
-  width: number;  // 滚动区域宽度
-  height: number; // 滚动区域高度
-  top: number;    // 滚动区域顶部Y（相对于面板中心）
-}
-
-export class SceneSelectionPanel extends UIPanel {
+export class SceneSelectionPanel extends FullScreenModal {
   private gameState: GameState;
   private scenes: BattleScene[] = [];
+  private sceneCards: SceneCard[] = [];
   private onSceneSelected?: (sceneId: string) => void;
-  private safeAreaManager?: SafeAreaManager;
   private loadingText: UIText | null = null;
-  private sceneListContainer: Phaser.GameObjects.Container | null = null;
-  private backButton: UIButton | null = null;
-  private scrollMask: Phaser.GameObjects.Graphics | null = null;
-  private scrollMaskShape: Phaser.Display.Masks.GeometryMask | null = null;
+  private levelText?: UIText;
 
-  // 滚动相关
-  private scrollY: number = 0;
-  private maxScrollY: number = 0;
-  private scrollAreaLayout: ScrollAreaLayout | null = null;
-  private readonly cardHeight = 180;
-  private readonly cardSpacing = 10;
-  private readonly titleAreaHeight = 80;  // 标题区域高度
-  private readonly buttonAreaHeight = 100; // 返回按钮区域高度
+  // 布局常量
+  private readonly cardHeight = 280;
+  private readonly cardSpacing = 20;
 
-  constructor(scene: Phaser.Scene, onSceneSelected?: (sceneId: string) => void, safeAreaManager?: SafeAreaManager) {
+  constructor(scene: Phaser.Scene, onSceneSelected?: (sceneId: string) => void) {
     super({
       scene,
-      x: scene.cameras.main.width / 2,
-      y: scene.cameras.main.height / 2,
-      width: scene.cameras.main.width,
-      height: scene.cameras.main.height,
-      title: '选择历练场景',
-      draggable: false,
-      closable: false
+      title: '清溪镇',
+      onClose: () => {
+        // 关闭时的清理工作
+      }
     });
-
-    this.safeAreaManager = safeAreaManager;
 
     const state = stateManager.getGameState();
     if (!state) {
@@ -78,343 +52,57 @@ export class SceneSelectionPanel extends UIPanel {
     this.gameState = state;
     this.onSceneSelected = onSceneSelected;
 
-    // 修改背景为不透明
-    this.background.setAlpha(1.0);
+    // 创建头部等级显示
+    this.createLevelDisplay();
 
-    // 隐藏标题栏（导航条）
-    this.titleBar.setVisible(false);
-    this.titleText.setVisible(false);
-
-    this.createLayout();
-
-    // 监听安全区变化事件
-    const sam = this.getSafeAreaManager();
-    if (sam) {
-      sam.on('safeAreaChanged', this.onSafeAreaChanged, this);
-    }
-
-    // 初始化时隐藏
-    this.hide();
-  }
-
-  /**
-   * 获取安全区管理器（优先使用构造函数传入的，否则从场景获取）
-   */
-  private getSafeAreaManager(): SafeAreaManager | null {
-    if (this.safeAreaManager) {
-      return this.safeAreaManager;
-    }
-    if (typeof (this.scene as any).getSafeAreaManager === 'function') {
-      return (this.scene as any).getSafeAreaManager();
-    }
-    return null;
-  }
-
-  /**
-   * 安全区变化时重新计算布局
-   */
-  private onSafeAreaChanged(): void {
-    // 重新计算布局
-    this.scrollAreaLayout = this.calculateScrollAreaLayout();
-
-    if (!this.scrollAreaLayout) return;
-
-    const { x, width, height, top } = this.scrollAreaLayout;
-    const screenWidth = this.scene.cameras.main.width;
-    const panelCenterX = screenWidth / 2;
-    const panelCenterY = this.scene.cameras.main.height / 2;
-
-    // 更新场景列表容器位置
-    if (this.sceneListContainer) {
-      this.sceneListContainer.setPosition(x, top - this.scrollY);
-    }
-
-    // 更新遮罩位置和大小
-    if (this.scrollMask) {
-      this.scrollMask.clear();
-      this.scrollMask.fillStyle(0xffffff);
-      const maskX = panelCenterX + x - width / 2;
-      const maskY = panelCenterY + top;
-      this.scrollMask.fillRect(maskX, maskY, width, height);
-    }
-
-    // 更新卡片宽度（需要重新创建卡片）
-    if (this.scenes.length > 0 && this.sceneListContainer) {
-      this.createSceneCards();
-    }
-
-    // 更新返回按钮位置
-    this.updateBackButtonPosition();
-  }
-
-  /**
-   * 更新返回按钮位置
-   */
-  private updateBackButtonPosition(): void {
-    if (!this.backButton) return;
-
-    const safeAreaManager = this.getSafeAreaManager();
-    const panelCenterX = this.scene.cameras.main.width / 2;
-    const panelCenterY = this.scene.cameras.main.height / 2;
-
-    const buttonWidth = 140;
-    const buttonHeight = 60;
-    const offset = 20;
-
-    let buttonX: number;
-    let buttonY: number;
-
-    if (safeAreaManager) {
-      const safeRect = safeAreaManager.getFinalSafeRect();
-      const screenX = safeRect.x + offset + buttonWidth / 2;
-      const screenY = safeRect.y + safeRect.height - offset - buttonHeight / 2;
-      buttonX = screenX - panelCenterX;
-      buttonY = screenY - panelCenterY;
-    } else {
-      const screenHeight = this.scene.cameras.main.height;
-      buttonX = offset + buttonWidth / 2 - panelCenterX;
-      buttonY = screenHeight / 2 - offset - buttonHeight / 2 - panelCenterY;
-    }
-
-    this.backButton.setPosition(buttonX, buttonY);
-  }
-
-  /**
-   * 计算滚动区域布局
-   */
-  private calculateScrollAreaLayout(): ScrollAreaLayout {
-    const screenWidth = this.scene.cameras.main.width;
-    const screenHeight = this.scene.cameras.main.height;
-    const panelCenterX = screenWidth / 2;
-    const panelCenterY = screenHeight / 2;
-    const safeAreaManager = this.getSafeAreaManager();
-
-    let scrollX: number;
-    let scrollWidth: number;
-    let scrollTop: number;
-    let scrollHeight: number;
-
-    if (safeAreaManager) {
-      const safeRect = safeAreaManager.getFinalSafeRect();
-      // 滚动区域宽度 = 安全区宽度 - 左右边距
-      scrollWidth = safeRect.width - 40;
-      // 滚动区域中心X = 安全区中心X（相对于面板中心）
-      // 安全区中心的屏幕坐标 = safeRect.x + safeRect.width / 2
-      // 转换为相对于面板中心的坐标
-      scrollX = (safeRect.x + safeRect.width / 2) - panelCenterX;
-      // 滚动区域顶部 = 安全区顶部 + 标题区域高度
-      scrollTop = safeRect.y + this.titleAreaHeight - panelCenterY;
-      // 滚动区域高度 = 安全区高度 - 标题区域 - 按钮区域
-      scrollHeight = safeRect.height - this.titleAreaHeight - this.buttonAreaHeight;
-    } else {
-      scrollX = 0;
-      scrollWidth = Math.min(900, screenWidth - 60);
-      scrollTop = -screenHeight / 2 + this.titleAreaHeight + 20;
-      scrollHeight = screenHeight - this.titleAreaHeight - this.buttonAreaHeight - 40;
-    }
-
-    return {
-      x: scrollX,
-      y: scrollTop + scrollHeight / 2,
-      width: scrollWidth,
-      height: scrollHeight,
-      top: scrollTop
-    };
-  }
-
-  /**
-   * 创建三区域布局
-   */
-  private createLayout(): void {
-    // 计算滚动区域布局
-    this.scrollAreaLayout = this.calculateScrollAreaLayout();
-
-    // 1. 创建顶部标题区域
-    this.createTitleArea();
-
-    // 2. 创建中间滚动区域（带遮罩）
-    this.createScrollArea();
-
-    // 3. 创建底部返回按钮
-    this.createBackButton();
+    // 创建加载提示
+    this.createLoadingText();
 
     // 加载场景数据
     this.loadScenes();
   }
 
   /**
-   * 创建顶部标题区域
+   * 创建等级显示（头部右侧插槽）
    */
-  private createTitleArea(): void {
-    const screenHeight = this.scene.cameras.main.height;
-    const panelCenterY = screenHeight / 2;
-    const safeAreaManager = this.getSafeAreaManager();
+  private createLevelDisplay(): void {
+    const container = this.getHeaderExtraContainer();
+    const levelBgWidth = 200;
+    const levelBgHeight = 48;
 
-    let topY: number;
-    if (safeAreaManager) {
-      const safeRect = safeAreaManager.getFinalSafeRect();
-      topY = safeRect.y + 40 - panelCenterY;
-    } else {
-      topY = -screenHeight / 2 + 60;
-    }
+    // 创建圆角背景（从右向左布局）
+    const levelBg = this.scene.add.graphics();
+    levelBg.fillStyle(0x000000, 0.8);
+    levelBg.fillRoundedRect(-levelBgWidth, 0, levelBgWidth, levelBgHeight, 16);
+    container.add(levelBg);
 
-    // 等级提示
-    const levelHint = new UIText(
+    // 等级文本
+    this.levelText = new UIText(
       this.scene,
-      0,
-      topY,
+      -20,
+      levelBgHeight / 2,
       `当前等级: Lv.${this.gameState.level}`,
-      { fontSize: '24px', color: '#f39c12', fontStyle: 'bold' }
+      { fontSize: '28px', color: '#f39c12', fontStyle: 'bold' }
     );
-    levelHint.setOrigin(0.5);
-    this.contentContainer.add(levelHint);
+    this.levelText.setOrigin(1, 0.5);
+    container.add(this.levelText);
+  }
 
-    // 加载中提示
+  /**
+   * 创建加载提示
+   */
+  private createLoadingText(): void {
+    const scrollContainer = this.getScrollContainer();
+
     this.loadingText = new UIText(
       this.scene,
       0,
-      topY + 40,
+      100,
       '加载场景列表...',
-      { fontSize: '20px', color: '#95a5a6' }
+      { fontSize: '24px', color: '#95a5a6' }
     );
     this.loadingText.setOrigin(0.5);
-    this.contentContainer.add(this.loadingText);
-  }
-
-  /**
-   * 创建中间滚动区域（带遮罩裁剪溢出内容）
-   */
-  private createScrollArea(): void {
-    if (!this.scrollAreaLayout) return;
-
-    const { x, y, width, height, top } = this.scrollAreaLayout;
-    const screenWidth = this.scene.cameras.main.width;
-    const panelCenterX = screenWidth / 2;
-    const panelCenterY = this.scene.cameras.main.height / 2;
-
-    // 创建场景列表容器
-    this.sceneListContainer = this.scene.add.container(x, top);
-    this.contentContainer.add(this.sceneListContainer);
-
-    // 创建遮罩图形（用于裁剪溢出内容）
-    // 遮罩需要使用屏幕绝对坐标
-    this.scrollMask = this.scene.add.graphics();
-    this.scrollMask.fillStyle(0xffffff);
-    // 计算遮罩的屏幕绝对坐标
-    const maskX = panelCenterX + x - width / 2;
-    const maskY = panelCenterY + top;
-    this.scrollMask.fillRect(maskX, maskY, width, height);
-    // 隐藏遮罩图形（仅用于裁剪，不应显示）
-    this.scrollMask.setVisible(false);
-
-    // 创建几何遮罩并应用到场景列表容器
-    this.scrollMaskShape = this.scrollMask.createGeometryMask();
-    this.sceneListContainer.setMask(this.scrollMaskShape);
-
-    // 使用场景的全局输入监听滚轮事件，不阻挡卡片按钮点击
-    this.scene.input.on('wheel', this.handleWheel, this);
-
-    // 触摸滚动：在 sceneListContainer 上监听，不阻挡按钮点击
-    // 使用场景的全局输入，根据坐标判断是否在滚动区域内
-    this.scene.input.on('pointerdown', this.handlePointerDown, this);
-    this.scene.input.on('pointermove', this.handlePointerMove, this);
-  }
-
-  // 滚动相关的临时变量
-  private scrollStartY: number = 0;
-  private scrollStartScrollY: number = 0;
-  private isScrolling: boolean = false;
-
-  /**
-   * 处理滚轮事件
-   */
-  private handleWheel = (_pointer: Phaser.Input.Pointer, _gameObjects: any[], _deltaX: number, deltaY: number): void => {
-    if (!this.visible) return;
-    this.scroll(deltaY * 0.5);
-  };
-
-  /**
-   * 处理触摸/鼠标按下
-   */
-  private handlePointerDown = (pointer: Phaser.Input.Pointer): void => {
-    if (!this.visible || !this.scrollAreaLayout) return;
-
-    // 检查是否在滚动区域内
-    const screenWidth = this.scene.cameras.main.width;
-    const screenHeight = this.scene.cameras.main.height;
-    const panelCenterX = screenWidth / 2;
-    const panelCenterY = screenHeight / 2;
-
-    const { x, width, height, top } = this.scrollAreaLayout;
-    const areaLeft = panelCenterX + x - width / 2;
-    const areaRight = panelCenterX + x + width / 2;
-    const areaTop = panelCenterY + top;
-    const areaBottom = areaTop + height;
-
-    if (pointer.x >= areaLeft && pointer.x <= areaRight &&
-        pointer.y >= areaTop && pointer.y <= areaBottom) {
-      this.scrollStartY = pointer.y;
-      this.scrollStartScrollY = this.scrollY;
-      this.isScrolling = true;
-    }
-  };
-
-  /**
-   * 处理触摸/鼠标移动
-   */
-  private handlePointerMove = (pointer: Phaser.Input.Pointer): void => {
-    if (!this.visible || !this.isScrolling || !pointer.isDown) {
-      this.isScrolling = false;
-      return;
-    }
-
-    const deltaY = this.scrollStartY - pointer.y;
-    // 只有移动超过一定距离才视为滚动
-    if (Math.abs(deltaY) > 5) {
-      this.scrollTo(this.scrollStartScrollY + deltaY);
-    }
-  };
-
-  /**
-   * 创建左下角返回按钮（使用安全区定位）
-   */
-  private createBackButton(): void {
-    const safeAreaManager = this.getSafeAreaManager();
-    const panelCenterX = this.scene.cameras.main.width / 2;
-    const panelCenterY = this.scene.cameras.main.height / 2;
-
-    const buttonWidth = 140;
-    const buttonHeight = 60;
-    const offset = 20;
-
-    let buttonX: number;
-    let buttonY: number;
-
-    if (safeAreaManager) {
-      const safeRect = safeAreaManager.getFinalSafeRect();
-      // 按钮中心位置
-      const screenX = safeRect.x + offset + buttonWidth / 2;
-      const screenY = safeRect.y + safeRect.height - offset - buttonHeight / 2;
-      buttonX = screenX - panelCenterX;
-      buttonY = screenY - panelCenterY;
-    } else {
-      const screenHeight = this.scene.cameras.main.height;
-      buttonX = offset + buttonWidth / 2 - panelCenterX;
-      buttonY = screenHeight / 2 - offset - buttonHeight / 2 - panelCenterY;
-    }
-
-    this.backButton = new UIButton({
-      scene: this.scene,
-      x: buttonX,
-      y: buttonY,
-      width: buttonWidth,
-      height: buttonHeight,
-      text: '返回',
-      textStyle: { fontSize: '22px' },
-      onClick: () => this.hide()
-    });
-    this.backButton.setColor(COLORS.dark);
-    this.contentContainer.add(this.backButton);
+    scrollContainer.add(this.loadingText);
   }
 
   /**
@@ -464,124 +152,56 @@ export class SceneSelectionPanel extends UIPanel {
    * 创建场景卡片列表
    */
   private createSceneCards(): void {
-    if (!this.sceneListContainer || !this.scrollAreaLayout) return;
-    this.sceneListContainer.removeAll(true);
+    const scrollContainer = this.getScrollContainer();
+    const scrollWidth = this.getScrollAreaWidth();
 
-    const cardWidth = this.scrollAreaLayout.width;
+    // 清空现有内容和卡片引用
+    scrollContainer.removeAll(true);
+    this.sceneCards = [];
+
     let yOffset = 0;
 
     this.scenes.forEach((scene) => {
-      const card = this.createSceneCard(scene, yOffset, cardWidth);
-      this.sceneListContainer!.add(card);
+      const card = this.createSceneCard(scene, yOffset, scrollWidth);
+      scrollContainer.add(card);
+      this.sceneCards.push(card);
       yOffset += this.cardHeight + this.cardSpacing;
     });
 
-    // 计算最大滚动距离
+    // 设置内容高度
     const totalContentHeight = yOffset;
-    const viewHeight = this.scrollAreaLayout.height;
-    this.maxScrollY = Math.max(0, totalContentHeight - viewHeight);
+    this.setContentHeight(totalContentHeight);
   }
 
   /**
    * 创建单个场景卡片
    */
-  private createSceneCard(scene: BattleScene, yOffset: number, width: number): Phaser.GameObjects.Container {
-    const container = this.scene.add.container(0, yOffset + this.cardHeight / 2);
+  private createSceneCard(battleScene: BattleScene, yOffset: number, width: number): SceneCard {
+    const canExplore = this.gameState.level >= battleScene.minLevel;
+    const bgColor = this.getDifficultyColor(battleScene.difficulty);
+    const difficultyText = this.getDifficultyText(battleScene.difficulty);
 
-    // 背景
-    const bgColor = this.getDifficultyColor(scene.difficulty);
-    const bg = this.scene.add.rectangle(0, 0, width, this.cardHeight, bgColor, 0.3);
-    bg.setStrokeStyle(2, bgColor);
-    container.add(bg);
+    // 构建背景图片 key（格式：scene_场景id）
+    const backgroundImageKey = `scene_${battleScene.id}`;
 
-    // 场景名称
-    const nameText = new UIText(
-      this.scene,
-      -width / 2 + 20,
-      -this.cardHeight / 2 + 20,
-      scene.name,
-      { fontSize: '26px', color: '#ecf0f1', fontStyle: 'bold' }
-    );
-    nameText.setOrigin(0, 0);
-    container.add(nameText);
-
-    // 难度标签
-    const difficultyText = this.getDifficultyText(scene.difficulty);
-    const difficultyLabel = new UIText(
-      this.scene,
-      width / 2 - 30,
-      -this.cardHeight / 2 + 20,
-      difficultyText,
-      { fontSize: '22px', color: this.getDifficultyTextColor(scene.difficulty) }
-    );
-    difficultyLabel.setOrigin(1, 0);
-    container.add(difficultyLabel);
-
-    // 等级范围
-    const levelRange = new UIText(
-      this.scene,
-      -width / 2 + 20,
-      -this.cardHeight / 2 + 60,
-      `推荐等级: ${scene.minLevel}-${scene.maxLevel}`,
-      { fontSize: '20px', color: '#95a5a6' }
-    );
-    levelRange.setOrigin(0, 0);
-    container.add(levelRange);
-
-    // 描述
-    const desc = new UIText(
-      this.scene,
-      -width / 2 + 20,
-      -this.cardHeight / 2 + 95,
-      scene.description,
-      { fontSize: '18px', color: '#bdc3c7', wordWrap: { width: width - 40 } }
-    );
-    desc.setOrigin(0, 0);
-    container.add(desc);
-
-    // 进入按钮
-    const canExplore = this.gameState.level >= scene.minLevel;
-    const buttonWidth = 140;
-    const buttonHeight = 50;
-    const exploreButton = new UIButton({
+    const card = new SceneCard({
       scene: this.scene,
-      x: width / 2 - buttonWidth / 2 - 30,
-      y: this.cardHeight / 2 - 30,
-      width: buttonWidth,
-      height: buttonHeight,
-      text: '进入',
-      textStyle: { fontSize: '20px' },
-      onClick: () => this.handleSceneSelect(scene)
+      x: 0,
+      y: yOffset + this.cardHeight / 2,
+      width: width,
+      height: this.cardHeight,
+      title: battleScene.name,
+      subtitle: `${difficultyText} · Lv.${battleScene.minLevel}-${battleScene.maxLevel}`,
+      description: battleScene.description,
+      backgroundImage: backgroundImageKey,
+      backgroundColor: bgColor,
+      borderColor: bgColor,
+      disabled: !canExplore,
+      disabledText: `需要等级 ${battleScene.minLevel}`,
+      onClick: () => this.handleSceneSelect(battleScene)
     });
 
-    if (canExplore) {
-      exploreButton.setColor(COLORS.primary);
-    } else {
-      exploreButton.setColor(0x7f8c8d);
-      exploreButton.setEnabled(false);
-    }
-
-    container.add(exploreButton);
-
-    return container;
-  }
-
-  /**
-   * 滚动
-   */
-  private scroll(delta: number): void {
-    this.scrollTo(this.scrollY + delta);
-  }
-
-  /**
-   * 滚动到指定位置
-   */
-  private scrollTo(y: number): void {
-    this.scrollY = Phaser.Math.Clamp(y, 0, this.maxScrollY);
-    if (this.sceneListContainer && this.scrollAreaLayout) {
-      // 列表容器的Y位置 = 滚动区域顶部 - 滚动偏移
-      this.sceneListContainer.setY(this.scrollAreaLayout.top - this.scrollY);
-    }
+    return card;
   }
 
   /**
@@ -598,10 +218,9 @@ export class SceneSelectionPanel extends UIPanel {
     const dialogWidth = 400;
     const dialogHeight = 200;
 
-    const safeAreaManager = this.getSafeAreaManager();
-    const safeRect = safeAreaManager?.getFinalSafeRect();
-    const centerX = safeRect ? safeRect.x + safeRect.width / 2 : this.scene.cameras.main.width / 2;
-    const centerY = safeRect ? safeRect.y + safeRect.height / 2 : this.scene.cameras.main.height / 2;
+    const safeRect = this.getSafeRect();
+    const centerX = safeRect.x + safeRect.width / 2;
+    const centerY = safeRect.y + safeRect.height / 2;
 
     // 遮罩
     const overlay = this.scene.add.rectangle(
@@ -703,19 +322,6 @@ export class SceneSelectionPanel extends UIPanel {
   }
 
   /**
-   * 获取难度文本颜色
-   */
-  private getDifficultyTextColor(difficulty: string): string {
-    switch (difficulty) {
-      case 'easy': return '#2ecc71';
-      case 'normal': return '#3498db';
-      case 'hard': return '#f39c12';
-      case 'extreme': return '#e74c3c';
-      default: return '#95a5a6';
-    }
-  }
-
-  /**
    * 获取难度文本
    */
   private getDifficultyText(difficulty: string): string {
@@ -729,47 +335,51 @@ export class SceneSelectionPanel extends UIPanel {
   }
 
   /**
+   * 安全区变化时更新布局
+   */
+  protected override onSafeAreaChanged(): void {
+    super.onSafeAreaChanged();
+    // 更新卡片尺寸以适应新的宽度
+    this.updateCardLayout();
+  }
+
+  /**
+   * 更新卡片布局
+   */
+  private updateCardLayout(): void {
+    const scrollWidth = this.getScrollAreaWidth();
+    let yOffset = 0;
+
+    this.sceneCards.forEach((card) => {
+      card.setPosition(0, yOffset + this.cardHeight / 2);
+      card.setCardSize(scrollWidth, this.cardHeight);
+      yOffset += this.cardHeight + this.cardSpacing;
+    });
+
+    // 更新内容高度
+    if (this.sceneCards.length > 0) {
+      this.setContentHeight(yOffset);
+    }
+  }
+
+  /**
+   * 更新状态
+   */
+  update(gameState: GameState): void {
+    this.gameState = gameState;
+    this.levelText?.setText(`当前等级: Lv.${gameState.level}`);
+  }
+
+  /**
    * 显示面板
    */
   show(): this {
     super.show();
-    // 遮罩图形始终保持隐藏（仅用于裁剪，GeometryMask 不需要源图形可见）
+    // 更新到最新状态
+    const state = stateManager.getGameState();
+    if (state) {
+      this.update(state);
+    }
     return this;
-  }
-
-  /**
-   * 隐藏面板
-   */
-  hide(): this {
-    super.hide();
-    // 重置滚动状态
-    this.isScrolling = false;
-    return this;
-  }
-
-  /**
-   * 销毁面板时清理遮罩和事件监听
-   */
-  destroy(): void {
-    // 取消安全区变化事件监听
-    const sam = this.getSafeAreaManager();
-    if (sam) {
-      sam.off('safeAreaChanged', this.onSafeAreaChanged, this);
-    }
-
-    // 取消场景输入事件监听
-    this.scene.input.off('wheel', this.handleWheel, this);
-    this.scene.input.off('pointerdown', this.handlePointerDown, this);
-    this.scene.input.off('pointermove', this.handlePointerMove, this);
-
-    if (this.scrollMask) {
-      this.scrollMask.destroy();
-      this.scrollMask = null;
-    }
-    if (this.scrollMaskShape) {
-      this.scrollMaskShape.destroy();
-      this.scrollMaskShape = null;
-    }
-    super.destroy();
   }
 }

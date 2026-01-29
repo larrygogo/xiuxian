@@ -23,18 +23,41 @@ type AuthedSocket = Socket & {
 const app = express();
 const server = http.createServer(app);
 
+const allowedPorts = [5173, 5174];
 
-const allowedOrigins = new Set(
-  [process.env.CLIENT_URL, "http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174", "http://localhost:5175", "http://127.0.0.1:5175", "http://localhost:5176", "http://127.0.0.1:5176"].filter(
-    (value): value is string => Boolean(value)
-  )
-);
+// 生成允许的来源列表
+const generateAllowedOrigins = (): Set<string> => {
+  const origins: string[] = [];
+
+  // 添加环境变量中的 CLIENT_URL
+  if (process.env.CLIENT_URL) {
+    origins.push(process.env.CLIENT_URL);
+  }
+
+  // 允许 localhost 和常见本地地址
+  const localHosts = ['localhost', '127.0.0.1', '0.0.0.0'];
+  for (const host of localHosts) {
+    for (const port of allowedPorts) {
+      origins.push(`http://${host}:${port}`);
+    }
+  }
+
+  return new Set(origins);
+};
+
+const allowedOrigins = generateAllowedOrigins();
 
 const isOriginAllowed = (origin?: string): boolean => {
   if (!origin) {
     return true;
   }
-  return allowedOrigins.has(origin);
+  // 允许已知来源
+  if (allowedOrigins.has(origin)) {
+    return true;
+  }
+  // 允许局域网 IP 访问（192.168.x.x, 10.x.x.x, 172.16-31.x.x）
+  const localNetworkPattern = /^http:\/\/(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+):(5173|5174)$/;
+  return localNetworkPattern.test(origin);
 };
 
 // 配置 CORS（WebSocket）
@@ -208,9 +231,9 @@ async function startServer(): Promise<void> {
     // 初始化数据库
     await initDatabase();
 
-    // 启动 HTTP 服务器
-    server.listen(PORT, () => {
-      console.log(`服务器运行在 http://localhost:${PORT}`);
+    // 启动 HTTP 服务器（绑定到 0.0.0.0 允许 IP 访问）
+    server.listen(PORT, '0.0.0.0', () => {
+      console.log(`服务器运行在 http://0.0.0.0:${PORT}`);
       console.log("WebSocket 服务器已启动");
     });
   } catch (error) {

@@ -24,21 +24,13 @@ export const DRAG_THRESHOLD = 10; // 拖拽阈值（像素）
 export const LONG_PRESS_TIME = 500; // 长按时间（毫秒）
 export const DOUBLE_TAP_TIME = 300; // 双击时间（毫秒）
 
-// 安全区配置（配合ENVELOP缩放模式使用）
-// @deprecated 已废弃，请使用 SAFE_AREA_DESIGN（动态计算）
-export const SAFE_AREA = {
-  top: 150,      // 顶部安全边距（状态栏、刘海屏等）
-  bottom: 150,  // 底部安全边距（底部操作栏、Home indicator等）
-  left: 60,     // 左侧安全边距
-  right: 60     // 右侧安全边距
-};
 
 // 设计稿参考安全区（百分比形式，用于动态计算）
 export const SAFE_AREA_DESIGN = {
   top: 80 / 1920,      // 7.8% of design height
   bottom: 150 / 1920,   // 7.8% of design height
-  left: 60 / 1080,      // 5.6% of design width
-  right: 60 / 1080      // 5.6% of design width
+  left: 32 / 1080,      // 5.6% of design width
+  right: 32 / 1080      // 5.6% of design width
 };
 
 // 最小安全区尺寸（像素）
@@ -71,8 +63,8 @@ export const DEBUG = {
 // 顶部状态栏配置
 export const TOP_STATUS_BAR = {
   ANCHOR: Anchor.TOP_LEFT,  // 锚点位置
-  OFFSET_X: 10,             // X轴偏移
-  OFFSET_Y: 10              // Y轴偏移
+  OFFSET_X: 0,             // X轴偏移
+  OFFSET_Y: 0              // Y轴偏移
 };
 
 // 底部操作栏配置

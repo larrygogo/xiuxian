@@ -465,7 +465,7 @@ export default class LoginScene extends BaseScene {
     this.titleGlow = this.add.text(center.x, titleY, '问道长生', {
       fontSize: `${this.sizes.titleFontSize}px`,
       color: '#9370db',
-      fontFamily: 'serif',
+      fontFamily: 'GameSerif, serif',
       fontStyle: 'bold'
     });
     this.titleGlow.setOrigin(0.5);
@@ -476,7 +476,7 @@ export default class LoginScene extends BaseScene {
     this.titleText = this.add.text(center.x, titleY, '问道长生', {
       fontSize: `${this.sizes.titleFontSize}px`,
       color: '#f0e6ff',
-      fontFamily: 'serif',
+      fontFamily: 'GameSerif, serif',
       fontStyle: 'bold',
       stroke: '#2a1a4a',
       strokeThickness: Math.max(2, Math.round(4 * this.sizes.scale)),
@@ -508,7 +508,7 @@ export default class LoginScene extends BaseScene {
     this.subtitleText = this.add.text(center.x, subtitleY, '- 修仙之路 从此开始 -', {
       fontSize: `${this.sizes.subtitleFontSize}px`,
       color: '#8a7aaa',
-      fontFamily: 'serif',
+      fontFamily: 'GameSerif, serif',
       fontStyle: 'italic'
     });
     this.subtitleText.setOrigin(0.5);
@@ -711,7 +711,7 @@ export default class LoginScene extends BaseScene {
     this.clickToStartGlow = this.add.text(x, y, '点击任意处开始游戏', {
       fontSize: `${fontSize}px`,
       color: '#9370db',
-      fontFamily: 'PingFang SC, Microsoft YaHei, serif',
+      fontFamily: 'PingFang SC, Microsoft YaHei, GameSerif, serif',
       fontStyle: 'bold'
     });
     this.clickToStartGlow.setOrigin(0.5);
@@ -722,7 +722,7 @@ export default class LoginScene extends BaseScene {
     this.clickToStartText = this.add.text(x, y, '点击任意处开始游戏', {
       fontSize: `${fontSize}px`,
       color: '#f0e6ff',
-      fontFamily: 'PingFang SC, Microsoft YaHei, serif',
+      fontFamily: 'PingFang SC, Microsoft YaHei, GameSerif, serif',
       fontStyle: 'bold',
       stroke: '#2a1a4a',
       strokeThickness: 2,

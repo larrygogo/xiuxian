@@ -34,7 +34,7 @@ export class CountdownBar extends UIContainer {
   private submitText!: Phaser.GameObjects.Text;
 
   // 状态
-  private state: CountdownBarState = {
+  private _state: CountdownBarState = {
     turnNumber: 0,
     countdown: null,
     submittedCount: 0,
@@ -128,8 +128,8 @@ export class CountdownBar extends UIContainer {
   /**
    * 更新状态
    */
-  setState(state: Partial<CountdownBarState>): this {
-    this.state = { ...this.state, ...state };
+  updateState(state: Partial<CountdownBarState>): this {
+    this._state = { ...this._state, ...state };
     this.updateDisplay();
     return this;
   }
@@ -138,7 +138,7 @@ export class CountdownBar extends UIContainer {
    * 更新显示
    */
   private updateDisplay(): void {
-    const { turnNumber, countdown, submittedCount, totalPlayers } = this.state;
+    const { turnNumber, countdown, submittedCount, totalPlayers } = this._state;
 
     // 更新回合文本
     this.turnText.setText(`第 ${turnNumber} 回合`);
@@ -183,13 +183,13 @@ export class CountdownBar extends UIContainer {
    * 获取当前倒计时
    */
   getCountdown(): number | null {
-    return this.state.countdown;
+    return this._state.countdown;
   }
 
   /**
    * 获取回合数
    */
   getTurnNumber(): number {
-    return this.state.turnNumber;
+    return this._state.turnNumber;
   }
 }

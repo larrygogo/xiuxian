@@ -50,7 +50,7 @@ export class CommandPanel extends UIContainer {
   private exitButton!: UIButton;
 
   // 状态
-  private state: CommandPanelState = {
+  private _state: CommandPanelState = {
     phase: 'PREPARE',
     commandSubmitted: false,
     selectedCommand: null,
@@ -316,7 +316,7 @@ export class CommandPanel extends UIContainer {
    * 处理指令点击
    */
   private handleCommandClick(command: BattleUICommandType): void {
-    if (this.state.commandSubmitted || this.state.phase !== 'TURN_INPUT') return;
+    if (this._state.commandSubmitted || this._state.phase !== 'TURN_INPUT') return;
     this.onCommandSelect?.(command);
   }
 
@@ -324,15 +324,15 @@ export class CommandPanel extends UIContainer {
    * 处理提交
    */
   private handleSubmit(): void {
-    if (this.state.commandSubmitted || this.state.phase !== 'TURN_INPUT' || this.state.submitting) return;
+    if (this._state.commandSubmitted || this._state.phase !== 'TURN_INPUT' || this._state.submitting) return;
     this.onSubmit?.();
   }
 
   /**
    * 更新状态
    */
-  setState(state: Partial<CommandPanelState>): this {
-    this.state = { ...this.state, ...state };
+  updateState(state: Partial<CommandPanelState>): this {
+    this._state = { ...this._state, ...state };
     this.updateDisplay();
     return this;
   }
@@ -351,7 +351,7 @@ export class CommandPanel extends UIContainer {
       selectedItemId,
       itemTargetScope,
       submitting
-    } = this.state;
+    } = this._state;
 
     // 显示/隐藏已提交状态
     this.submittedContainer.setVisible(commandSubmitted);
@@ -392,9 +392,9 @@ export class CommandPanel extends UIContainer {
    * 更新提示
    */
   private updateHint(): void {
-    const { selectedCommand, selectedTarget, selectedTargetName, itemTargetScope, selectedItemId } = this.state;
+    const { selectedCommand, selectedTarget, selectedTargetName, itemTargetScope, selectedItemId } = this._state;
 
-    this.hintContainer.setVisible(!this.state.commandSubmitted && this.state.phase === 'TURN_INPUT');
+    this.hintContainer.setVisible(!this._state.commandSubmitted && this._state.phase === 'TURN_INPUT');
 
     if (!selectedCommand) {
       this.hintText.setText('请选择操作');
@@ -422,7 +422,7 @@ export class CommandPanel extends UIContainer {
     if (selectedTarget && selectedTargetName) {
       this.targetInfoText.setText(`已选择目标：${selectedTargetName}`);
     } else if (selectedCommand === 'item' && selectedItemId) {
-      const item = this.state.consumables.find(c => c.id === selectedItemId);
+      const item = this._state.consumables.find(c => c.id === selectedItemId);
       if (item) {
         this.targetInfoText.setText(`已选择物品：${item.name}`);
       } else {
@@ -455,14 +455,14 @@ export class CommandPanel extends UIContainer {
    * 更新物品选择
    */
   private updateItemSelect(): void {
-    const { selectedCommand, consumables, selectedItemId } = this.state;
+    const { selectedCommand, consumables, selectedItemId } = this._state;
 
     // 清除旧按钮
     this.itemButtons.forEach(btn => btn.destroy());
     this.itemButtons = [];
 
     // 只在选择物品指令时显示
-    this.itemSelectContainer.setVisible(selectedCommand === 'item' && !this.state.commandSubmitted);
+    this.itemSelectContainer.setVisible(selectedCommand === 'item' && !this._state.commandSubmitted);
 
     if (selectedCommand !== 'item') return;
 
@@ -514,7 +514,7 @@ export class CommandPanel extends UIContainer {
    * 更新阶段信息
    */
   private updatePhaseInfo(): void {
-    const { phase, commandSubmitted } = this.state;
+    const { phase, commandSubmitted } = this._state;
 
     if (phase === 'TURN_INPUT' || phase === 'ENDED' || commandSubmitted) {
       this.phaseInfoText.setText('');
@@ -537,7 +537,7 @@ export class CommandPanel extends UIContainer {
    * 判断是否可以提交
    */
   private canSubmit(): boolean {
-    const { phase, commandSubmitted, selectedCommand, selectedTarget, selectedItemId } = this.state;
+    const { phase, commandSubmitted, selectedCommand, selectedTarget, selectedItemId } = this._state;
 
     if (phase !== 'TURN_INPUT') return false;
     if (commandSubmitted) return false;
@@ -588,13 +588,13 @@ export class CommandPanel extends UIContainer {
    * 获取当前选中的指令
    */
   getSelectedCommand(): BattleUICommandType | null {
-    return this.state.selectedCommand;
+    return this._state.selectedCommand;
   }
 
   /**
    * 获取当前选中的物品ID
    */
   getSelectedItemId(): string | null {
-    return this.state.selectedItemId;
+    return this._state.selectedItemId;
   }
 }
