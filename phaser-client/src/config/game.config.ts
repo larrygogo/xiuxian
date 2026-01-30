@@ -6,7 +6,6 @@ import CharacterCreateScene from '@/scenes/CharacterCreateScene';
 import MainScene from '@/scenes/MainScene';
 import BattleScene from '@/scenes/BattleScene';
 import UIScene from '@/scenes/UIScene';
-import TestScene from '@/scenes/TestScene';
 import { GAME_WIDTH, GAME_HEIGHT } from './constants';
 
 /**
@@ -56,18 +55,6 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
   },
   render: {
     pixelArt: false,
-    antialias: true,
-    // 使用设备像素比以获得更清晰的显示
-    resolution: window.devicePixelRatio || 1
-  },
-  // TODO: 集成rexUI插件
-  // plugins: {
-  //   scene: [
-  //     {
-  //       key: 'rexUI',
-  //       plugin: require('phaser3-rex-plugins').UIPlugin,
-  //       mapping: 'rexUI'
-  //     }
-  //   ]
-  // }
+    antialias: true
+  }
 };

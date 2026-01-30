@@ -201,27 +201,34 @@ export class SceneCard extends UIContainer {
   }
 
   /**
-   * 更新背景图片遮罩位置（使用世界坐标）
+   * 更新背景图片遮罩位置（使用世界坐标，考虑缩放）
    */
   private updateBackgroundMask(): void {
     if (!this.backgroundMaskGraphics || !this.background) return;
 
     const { width, height } = this.config;
 
-    // 获取卡片在世界坐标中的位置
+    // 获取卡片在世界坐标中的位置和缩放
     const worldMatrix = this.getWorldTransformMatrix();
     const worldX = worldMatrix.tx;
     const worldY = worldMatrix.ty;
+    const scaleX = worldMatrix.scaleX;
+    const scaleY = worldMatrix.scaleY;
 
-    // 重绘遮罩在世界坐标位置
+    // 计算缩放后的尺寸
+    const scaledWidth = width * scaleX;
+    const scaledHeight = height * scaleY;
+    const scaledRadius = this.borderRadius * Math.min(scaleX, scaleY);
+
+    // 重绘遮罩在世界坐标位置（考虑缩放）
     this.backgroundMaskGraphics.clear();
     this.backgroundMaskGraphics.fillStyle(0xffffff);
     this.backgroundMaskGraphics.fillRoundedRect(
-      worldX - width / 2,
-      worldY - height / 2,
-      width,
-      height,
-      this.borderRadius
+      worldX - scaledWidth / 2,
+      worldY - scaledHeight / 2,
+      scaledWidth,
+      scaledHeight,
+      scaledRadius
     );
   }
 
@@ -293,6 +300,19 @@ export class SceneCard extends UIContainer {
           onComplete: () => {
             this.config.onClick?.();
           }
+        });
+      }
+    });
+
+    // 手指/鼠标移出时恢复缩放
+    hitArea.on('pointerout', () => {
+      if (!this.isDisabled && this.interactionReady) {
+        this.scene.tweens.add({
+          targets: this,
+          scaleX: 1,
+          scaleY: 1,
+          duration: 50,
+          ease: 'Power2'
         });
       }
     });

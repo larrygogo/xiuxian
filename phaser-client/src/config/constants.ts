@@ -69,9 +69,10 @@ export const TOP_STATUS_BAR = {
 
 // 底部操作栏配置
 export const BOTTOM_BAR = {
+  WIDTH: 1380,           // 底部操作栏宽度
   HEIGHT: 160,           // 底部操作栏高度
-  BUTTON_SIZE: 100,      // 按钮尺寸
-  BUTTON_SPACING: 120,   // 按钮间距
+  BUTTON_SIZE: 150,      // 按钮尺寸
+  BUTTON_SPACING: 200,   // 按钮间距
   PADDING_BOTTOM: -20     // 距离屏幕底部的内边距
 };
 
@@ -100,8 +101,7 @@ export const SCENE_KEYS = {
   CHARACTER_CREATE: 'CharacterCreateScene',
   MAIN: 'MainScene',
   BATTLE: 'BattleScene',
-  UI: 'UIScene',
-  TEST: 'TestScene'
+  UI: 'UIScene'
 };
 
 // 资源Key

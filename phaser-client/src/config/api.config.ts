@@ -29,8 +29,6 @@ export const API_ENDPOINTS = {
   // 认证
   AUTH_REGISTER: '/api/auth/register',
   AUTH_LOGIN: '/api/auth/login',
-  AUTH_LOGIN_FORM: '/api/auth/login-form',
-  AUTH_REGISTER_FORM: '/api/auth/register-form',
   AUTH_LOGIN_PAGE: '/api/auth/login-page',
   AUTH_REGISTER_PAGE: '/api/auth/register-page',
 

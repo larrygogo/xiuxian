@@ -15,7 +15,7 @@ const loadGameFonts = async (): Promise<void> => {
   }
 };
 
-let game: Phaser.Game;
+let game: Phaser.Game | undefined;
 
 const startGame = async (): Promise<void> => {
   await loadGameFonts();
@@ -35,4 +35,4 @@ const startGame = async (): Promise<void> => {
 void startGame();
 
 // 导出游戏实例，供其他模块使用（如需要）
-export default game;
+export { game };

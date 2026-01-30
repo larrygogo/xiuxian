@@ -218,9 +218,12 @@ export default class MainScene extends BaseScene {
     const platform = this.add.image(0, 0, 'bottomPlatform');
     platform.setOrigin(0.5, 1);
     platform.setDepth(10);
+    // 设置平台宽度，高度按比例缩放
+    const platformScale = BOTTOM_BAR.WIDTH / platform.width;
+    platform.setScale(platformScale);
     this.bottomActionBar.add(platform);
 
-    const platformHeight = platform.displayHeight || platform.height;
+    const platformHeight = platform.displayHeight;
 
     // 按钮位置和尺寸（根据缩放调整）
     const buttonY = -platformHeight / 2 - 40;
