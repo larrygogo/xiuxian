@@ -10,3 +10,5 @@ export { UIInput } from './UIInput';
 export { UIProgressBar } from './UIProgressBar';
 export { FullScreenModal } from './FullScreenModal';
 export type { FullScreenModalConfig } from './FullScreenModal';
+export { BaseModal } from './BaseModal';
+export type { BaseModalConfig } from './BaseModal';
