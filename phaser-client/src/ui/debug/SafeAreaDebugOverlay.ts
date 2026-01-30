@@ -271,7 +271,7 @@ export class SafeAreaDebugOverlay extends Phaser.GameObjects.Container {
     position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
   ): void {
     const label = this.scene.add.text(0, 0, '', {
-      fontSize: '12px',
+      fontSize: '20px',
       color: `#${color.toString(16).padStart(6, '0')}`,
       backgroundColor: '#000000',
       padding: { x: 4, y: 2 }

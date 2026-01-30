@@ -88,7 +88,7 @@ export class BattlefieldGrid extends UIContainer {
       -areaHeight / 2 + 5,
       '敌方',
       {
-        fontSize: '14px',
+        fontSize: '22px',
         color: '#e74c3c',
         fontFamily: 'Arial, sans-serif'
       }
@@ -106,7 +106,7 @@ export class BattlefieldGrid extends UIContainer {
       -areaHeight / 2 + 5,
       '我方',
       {
-        fontSize: '14px',
+        fontSize: '22px',
         color: '#3498db',
         fontFamily: 'Arial, sans-serif'
       }

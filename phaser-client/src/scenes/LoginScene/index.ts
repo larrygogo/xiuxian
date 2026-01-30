@@ -323,7 +323,7 @@ export default class LoginScene extends BaseScene {
       const symbol = symbols[Math.floor(Math.random() * symbols.length)];
       const x = Math.random() * width;
       const y = Math.random() * height;
-      const size = Math.max(16, Math.round((Math.random() * 24 + 16) * this.sizes.scale));
+      const size = Math.max(20, Math.round((Math.random() * 26 + 20) * this.sizes.scale));
 
       const text = this.add.text(x, y, symbol, {
         fontSize: `${size}px`,
@@ -973,7 +973,7 @@ export default class LoginScene extends BaseScene {
     const bottomY = safeRect.y + safeRect.height - bottomPadding;
 
     const versionText = this.add.text(width / 2, bottomY, 'Phaser 3 Client v1.0.0', {
-      fontSize: `${Math.max(14, Math.round(16 * this.sizes.scale))}px`,
+      fontSize: `${Math.max(20, Math.round(22 * this.sizes.scale))}px`,
       color: '#505070'
     });
     versionText.setOrigin(0.5);

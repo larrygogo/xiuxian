@@ -123,10 +123,10 @@ export class CharacterPanel extends UIPanel {
     // HP/MP 状态
     const hpText = new UIText(
       this.scene,
-      centerX - 80,
+      centerX - 90,
       yOffset - 160,
       `生命: ${this.gameState.hp}/${this.gameState.maxHp}`,
-      { fontSize: '14px', color: '#e74c3c' }
+      { fontSize: '22px', color: '#e74c3c' }
     );
     hpText.setOrigin(0.5);
     this.contentContainer.add(hpText);
@@ -134,10 +134,10 @@ export class CharacterPanel extends UIPanel {
 
     const mpText = new UIText(
       this.scene,
-      centerX + 80,
+      centerX + 90,
       yOffset - 160,
       `法力: ${this.gameState.mp}/${this.gameState.maxMp}`,
-      { fontSize: '14px', color: '#3498db' }
+      { fontSize: '22px', color: '#3498db' }
     );
     mpText.setOrigin(0.5);
     this.contentContainer.add(mpText);
@@ -148,11 +148,11 @@ export class CharacterPanel extends UIPanel {
     const healBtn = new UIButton({
       scene: this.scene,
       x: centerX,
-      y: yOffset - 130,
-      width: 80,
-      height: 30,
+      y: yOffset - 125,
+      width: 100,
+      height: 36,
       text: '疗伤',
-      textStyle: { fontSize: '14px' },
+      textStyle: { fontSize: '22px' },
       onClick: () => this.handleHeal()
     });
     healBtn.setColor(canHeal ? COLORS.success : 0x7f8c8d);
@@ -188,10 +188,10 @@ export class CharacterPanel extends UIPanel {
       leftX,
       yOffset,
       '【基础属性】',
-      { fontSize: '18px', color: '#3498db', fontStyle: 'bold' }
+      { fontSize: '26px', color: '#3498db', fontStyle: 'bold' }
     );
     this.contentContainer.add(title);
-    yOffset += spacing;
+    yOffset += spacing + 5;
 
     const attributes = [
       { key: 'str', label: '力道', desc: '(物理伤害)' },
@@ -211,17 +211,17 @@ export class CharacterPanel extends UIPanel {
         leftX + 20,
         yOffset,
         `${attr.label}:`,
-        { fontSize: '16px', color: '#ecf0f1' }
+        { fontSize: '22px', color: '#ecf0f1' }
       );
       this.contentContainer.add(nameText);
 
       // 属性值
       const valueText = new UIText(
         this.scene,
-        leftX + 120,
+        leftX + 130,
         yOffset,
         value.toString(),
-        { fontSize: '16px', color: '#2ecc71', fontStyle: 'bold' }
+        { fontSize: '22px', color: '#2ecc71', fontStyle: 'bold' }
       );
       this.contentContainer.add(valueText);
       this.attributeTexts.set(attr.key, valueText);
@@ -229,10 +229,10 @@ export class CharacterPanel extends UIPanel {
       // 描述
       const descText = new UIText(
         this.scene,
-        leftX + 170,
+        leftX + 185,
         yOffset,
         attr.desc,
-        { fontSize: '12px', color: '#95a5a6' }
+        { fontSize: '20px', color: '#95a5a6' }
       );
       this.contentContainer.add(descText);
 
@@ -255,10 +255,10 @@ export class CharacterPanel extends UIPanel {
       leftX,
       yOffset,
       '【战斗属性】',
-      { fontSize: '18px', color: '#e74c3c', fontStyle: 'bold' }
+      { fontSize: '26px', color: '#e74c3c', fontStyle: 'bold' }
     );
     this.contentContainer.add(title);
-    yOffset += spacing;
+    yOffset += spacing + 5;
 
     const combatAttrs = [
       { key: 'hit', label: '命中' },
@@ -288,16 +288,16 @@ export class CharacterPanel extends UIPanel {
         leftX + 20,
         y1,
         `${attr.label}:`,
-        { fontSize: '14px', color: '#ecf0f1' }
+        { fontSize: '22px', color: '#ecf0f1' }
       );
       this.contentContainer.add(nameText);
 
       const valueText = new UIText(
         this.scene,
-        leftX + 140,
+        leftX + 155,
         y1,
         value.toString(),
-        { fontSize: '14px', color: '#f39c12' }
+        { fontSize: '22px', color: '#f39c12' }
       );
       this.contentContainer.add(valueText);
       this.combatTexts.set(attr.key, valueText);
@@ -313,19 +313,19 @@ export class CharacterPanel extends UIPanel {
 
       const nameText = new UIText(
         this.scene,
-        leftX + 20 + 200,
+        leftX + 20 + 210,
         y2,
         `${attr.label}:`,
-        { fontSize: '14px', color: '#ecf0f1' }
+        { fontSize: '22px', color: '#ecf0f1' }
       );
       this.contentContainer.add(nameText);
 
       const valueText = new UIText(
         this.scene,
-        leftX + 140 + 200,
+        leftX + 155 + 210,
         y2,
         value.toString(),
-        { fontSize: '14px', color: '#f39c12' }
+        { fontSize: '22px', color: '#f39c12' }
       );
       this.contentContainer.add(valueText);
       this.combatTexts.set(attr.key, valueText);
@@ -350,7 +350,7 @@ export class CharacterPanel extends UIPanel {
       centerX,
       yOffset,
       `灵气: ${this.gameState.qi} / ${qiNeeded}`,
-      { fontSize: '16px', color: '#9b59b6' }
+      { fontSize: '24px', color: '#9b59b6' }
     );
     this.expText.setOrigin(0.5);
     this.contentContainer.add(this.expText);
@@ -360,11 +360,11 @@ export class CharacterPanel extends UIPanel {
     const levelUpBtn = new UIButton({
       scene: this.scene,
       x: centerX,
-      y: yOffset + 35,
-      width: 140,
-      height: 40,
+      y: yOffset + 40,
+      width: 160,
+      height: 45,
       text: '突破境界',
-      textStyle: { fontSize: '18px' },
+      textStyle: { fontSize: '24px' },
       onClick: () => this.handleLevelUp()
     });
     levelUpBtn.setColor(canLevelUp ? COLORS.warning : 0x7f8c8d);
@@ -398,24 +398,24 @@ export class CharacterPanel extends UIPanel {
       rightX,
       topY + 20,
       `剩余: ${this.remainingPoints}`,
-      { fontSize: '16px', color: '#f1c40f', fontStyle: 'bold' }
+      { fontSize: '24px', color: '#f1c40f', fontStyle: 'bold' }
     );
     this.contentContainer.add(this.statPointsText);
 
     // 为每个基础属性添加 +/- 按钮
     const attributes = ['str', 'agi', 'vit', 'int', 'spi'];
     attributes.forEach((attr, index) => {
-      const yPos = topY + 60 + index * 35;
+      const yPos = topY + 65 + index * 40;
 
       // + 按钮
       const plusBtn = new UIButton({
         scene: this.scene,
         x: rightX - 30,
         y: yPos,
-        width: 30,
-        height: 30,
+        width: 36,
+        height: 36,
         text: '+',
-        textStyle: { fontSize: '20px' },
+        textStyle: { fontSize: '24px' },
         onClick: () => this.addStat(attr)
       });
       plusBtn.setColor(COLORS.success);
@@ -424,12 +424,12 @@ export class CharacterPanel extends UIPanel {
       // - 按钮
       const minusBtn = new UIButton({
         scene: this.scene,
-        x: rightX + 10,
+        x: rightX + 15,
         y: yPos,
-        width: 30,
-        height: 30,
+        width: 36,
+        height: 36,
         text: '-',
-        textStyle: { fontSize: '20px' },
+        textStyle: { fontSize: '24px' },
         onClick: () => this.removeStat(attr)
       });
       minusBtn.setColor(COLORS.danger);
@@ -443,11 +443,11 @@ export class CharacterPanel extends UIPanel {
     this.confirmButton = new UIButton({
       scene: this.scene,
       x: rightX,
-      y: topY + 260,
-      width: 100,
-      height: 40,
+      y: topY + 280,
+      width: 120,
+      height: 45,
       text: '确认',
-      textStyle: { fontSize: '18px' },
+      textStyle: { fontSize: '24px' },
       onClick: () => this.confirmStatAllocation()
     });
     this.confirmButton.setColor(COLORS.primary);

@@ -84,7 +84,7 @@ export default class CharacterCreateScene extends BaseScene {
       const symbol = symbols[Phaser.Math.Between(0, symbols.length - 1)];
 
       const text = this.add.text(x, y, symbol, {
-        fontSize: '24px',
+        fontSize: '26px',
         color: '#34495e'
       });
       text.setAlpha(0.3);
@@ -119,7 +119,7 @@ export default class CharacterCreateScene extends BaseScene {
       160,
       '请为你的角色赋予一个响亮的仙号\n仙号将伴随你的修仙之路',
       {
-        fontSize: '18px',
+        fontSize: '24px',
         color: '#95a5a6',
         fontFamily: 'Arial, sans-serif',
         align: 'center'
@@ -158,7 +158,7 @@ export default class CharacterCreateScene extends BaseScene {
 
     // 提示文字
     const hint = this.add.text(centerX, centerY + 120, '无名修士', {
-      fontSize: '24px',
+      fontSize: '26px',
       color: '#7f8c8d',
       fontFamily: 'Arial, sans-serif'
     });
@@ -178,7 +178,7 @@ export default class CharacterCreateScene extends BaseScene {
       centerX - 20,
       centerY,
       '仙号:',
-      { fontSize: '20px', color: '#ecf0f1' }
+      { fontSize: '26px', color: '#ecf0f1' }
     );
     label.setOrigin(1, 0.5); // 右对齐
 
@@ -209,7 +209,7 @@ export default class CharacterCreateScene extends BaseScene {
       width: 180,
       height: 50,
       text: '开始修仙',
-      textStyle: { fontSize: '22px' },
+      textStyle: { fontSize: '26px' },
       onClick: () => this.handleCreate()
     });
     this.startButton.setColor(COLORS.success);
@@ -225,7 +225,7 @@ export default class CharacterCreateScene extends BaseScene {
       height - 80,
       '',
       {
-        fontSize: '16px',
+        fontSize: '22px',
         color: '#e74c3c',
         align: 'center'
       }
@@ -343,7 +343,7 @@ export default class CharacterCreateScene extends BaseScene {
       height / 2,
       '角色创建成功！\n准备进入修仙世界...',
       {
-        fontSize: '28px',
+        fontSize: '30px',
         color: '#2ecc71',
         fontFamily: 'Arial, sans-serif',
         align: 'center'

@@ -82,7 +82,7 @@ export class EventLogPanel extends UIPanel {
       0, 0,
       '暂无事件',
       {
-        fontSize: '13px',
+        fontSize: '20px',
         color: '#666666',
         fontFamily: 'Arial, sans-serif'
       }
@@ -242,7 +242,7 @@ export class EventLogPanel extends UIPanel {
         0, currentY,
         event,
         {
-          fontSize: '12px',
+          fontSize: '20px',
           color: isNew ? '#f39c12' : '#cccccc',
           fontFamily: 'Arial, sans-serif',
           wordWrap: { width: this.maxWidth }
@@ -253,10 +253,10 @@ export class EventLogPanel extends UIPanel {
       // 新事件显示"新"标签
       if (isNew) {
         const badge = this.scene.add.text(
-          -20, currentY,
+          -25, currentY,
           '新',
           {
-            fontSize: '10px',
+            fontSize: '20px',
             color: '#e74c3c',
             fontFamily: 'Arial, sans-serif'
           }

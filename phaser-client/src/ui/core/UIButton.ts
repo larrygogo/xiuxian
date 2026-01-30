@@ -63,7 +63,7 @@ export class UIButton extends UIContainer {
     // 文本
     if (config.text) {
       this.label = this.scene.add.text(0, 0, config.text, {
-        fontSize: '16px',
+        fontSize: '24px',
         color: '#000000',
         ...config.textStyle
       });

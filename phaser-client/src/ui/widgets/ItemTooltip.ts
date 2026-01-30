@@ -34,7 +34,7 @@ export class ItemTooltip extends UIContainer {
       5,
       5,
       '',
-      { fontSize: '14px', color: '#ffffff', fontStyle: 'bold' }
+      { fontSize: '22px', color: '#ffffff', fontStyle: 'bold' }
     );
     this.nameText.setOrigin(0, 0);
     this.add(this.nameText);
@@ -43,9 +43,9 @@ export class ItemTooltip extends UIContainer {
     this.infoText = new UIText(
       this.scene,
       5,
-      25,
+      30,
       '',
-      { fontSize: '12px', color: '#cccccc' }
+      { fontSize: '20px', color: '#cccccc' }
     );
     this.infoText.setOrigin(0, 0);
     this.add(this.infoText);
