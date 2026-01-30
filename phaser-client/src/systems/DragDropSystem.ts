@@ -98,7 +98,7 @@ export class DragDropSystem {
     // 如果是堆叠物品，显示数量
     if ('stackSize' in item && (item as any).stackSize > 1) {
       const stackText = this.scene.add.text(20, 20, `${(item as any).stackSize}`, {
-        fontSize: '14px',
+        fontSize: '20px',
         color: '#ffffff',
         backgroundColor: '#000000',
         padding: { x: 4, y: 2 }

@@ -114,7 +114,7 @@ export default class BattleScene extends BaseScene {
       0,
       '战斗界面',
       {
-        fontSize: '20px',
+        fontSize: '26px',
         color: '#ffffff',
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold'
@@ -129,7 +129,7 @@ export default class BattleScene extends BaseScene {
       0,
       '连接中...',
       {
-        fontSize: '14px',
+        fontSize: '22px',
         color: '#f39c12',
         fontFamily: 'Arial, sans-serif'
       }

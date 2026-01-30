@@ -87,7 +87,7 @@ export class EquipmentPanel extends UIPanel {
       width: 100,
       height: 40,
       text: '关闭',
-      textStyle: { fontSize: '16px' },
+      textStyle: { fontSize: '24px' },
       onClick: () => this.hide()
     });
     closeButton.setColor(COLORS.dark);
@@ -109,9 +109,9 @@ export class EquipmentPanel extends UIPanel {
       const label = new UIText(
         this.scene,
         pos.x,
-        pos.y - slotSize / 2 - 15,
+        pos.y - slotSize / 2 - 18,
         SLOT_NAMES[slotName],
-        { fontSize: '14px', color: '#ecf0f1' }
+        { fontSize: '20px', color: '#ecf0f1' }
       );
       label.setOrigin(0.5);
       this.contentContainer.add(label);
@@ -160,7 +160,7 @@ export class EquipmentPanel extends UIPanel {
       centerX,
       topY + 20,
       '总属性加成',
-      { fontSize: '16px', color: '#3498db', fontStyle: 'bold' }
+      { fontSize: '24px', color: '#3498db', fontStyle: 'bold' }
     );
     title.setOrigin(0.5);
     this.contentContainer.add(title);
@@ -171,9 +171,9 @@ export class EquipmentPanel extends UIPanel {
     this.statsText = new UIText(
       this.scene,
       centerX,
-      topY + 50,
+      topY + 55,
       statsText,
-      { fontSize: '12px', color: '#ecf0f1', align: 'left' }
+      { fontSize: '20px', color: '#ecf0f1', align: 'left' }
     );
     this.statsText.setOrigin(0.5, 0);
     this.contentContainer.add(this.statsText);
@@ -287,9 +287,9 @@ export class EquipmentPanel extends UIPanel {
       x: 0,
       y: 160,
       width: 100,
-      height: 35,
+      height: 40,
       text: '卸下',
-      textStyle: { fontSize: '16px' },
+      textStyle: { fontSize: '22px' },
       onClick: async () => {
         if (item.slot) {
           await this.unequipItem(item.slot);
@@ -308,10 +308,10 @@ export class EquipmentPanel extends UIPanel {
       scene: this.scene,
       x: 135,
       y: -190,
-      width: 30,
-      height: 30,
+      width: 36,
+      height: 36,
       text: '×',
-      textStyle: { fontSize: '20px' },
+      textStyle: { fontSize: '24px' },
       onClick: () => {
         if (this.itemCard) {
           this.itemCard.destroy();

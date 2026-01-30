@@ -88,7 +88,7 @@ export class CountdownBar extends UIContainer {
       5,
       '第 0 回合',
       {
-        fontSize: '14px',
+        fontSize: '22px',
         color: '#ffffff',
         fontFamily: 'Arial, sans-serif'
       }
@@ -102,7 +102,7 @@ export class CountdownBar extends UIContainer {
       5,
       '等待中...',
       {
-        fontSize: '14px',
+        fontSize: '22px',
         color: '#ffffff',
         fontFamily: 'Arial, sans-serif'
       }
@@ -116,7 +116,7 @@ export class CountdownBar extends UIContainer {
       5,
       '0/0 已提交',
       {
-        fontSize: '12px',
+        fontSize: '20px',
         color: '#aaaaaa',
         fontFamily: 'Arial, sans-serif'
       }

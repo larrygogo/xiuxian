@@ -48,11 +48,11 @@ export class ItemCard extends UIContainer {
       -width / 2 + 10,
       yOffset - 180,
       item.name,
-      { fontSize: '20px', color: nameColor, fontStyle: 'bold' }
+      { fontSize: '26px', color: nameColor, fontStyle: 'bold' }
     );
     nameText.setOrigin(0, 0);
     this.add(nameText);
-    yOffset += 30;
+    yOffset += 35;
 
     // 类型和等级
     const typeText = this.getItemTypeText(item);
@@ -61,7 +61,7 @@ export class ItemCard extends UIContainer {
       -width / 2 + 10,
       yOffset - 180,
       `${typeText} | Lv.${item.level}`,
-      { fontSize: '14px', color: '#95a5a6' }
+      { fontSize: '22px', color: '#95a5a6' }
     );
     typeLabel.setOrigin(0, 0);
     this.add(typeLabel);
@@ -94,7 +94,7 @@ export class ItemCard extends UIContainer {
         yOffset - 180,
         item.description,
         {
-          fontSize: '13px',
+          fontSize: '20px',
           color: '#ecf0f1',
           wordWrap: { width: width - 20 }
         }
@@ -120,11 +120,11 @@ export class ItemCard extends UIContainer {
       -width / 2 + 10,
       yOffset - 180,
       `槽位: ${SLOT_NAMES[equipment.slot]}`,
-      { fontSize: '14px', color: '#ecf0f1' }
+      { fontSize: '22px', color: '#ecf0f1' }
     );
     slotText.setOrigin(0, 0);
     this.add(slotText);
-    yOffset += 25;
+    yOffset += 30;
 
     // 需求等级
     const reqLevel = new UIText(
@@ -132,11 +132,11 @@ export class ItemCard extends UIContainer {
       -width / 2 + 10,
       yOffset - 180,
       `需求等级: ${equipment.requiredLevel}`,
-      { fontSize: '14px', color: '#e74c3c' }
+      { fontSize: '22px', color: '#e74c3c' }
     );
     reqLevel.setOrigin(0, 0);
     this.add(reqLevel);
-    yOffset += 25;
+    yOffset += 30;
 
     // 基础属性加成
     if (equipment.baseStats) {
@@ -146,11 +146,11 @@ export class ItemCard extends UIContainer {
         -width / 2 + 10,
         yOffset - 180,
         '基础属性:',
-        { fontSize: '14px', color: '#3498db', fontStyle: 'bold' }
+        { fontSize: '22px', color: '#3498db', fontStyle: 'bold' }
       );
       statsTitle.setOrigin(0, 0);
       this.add(statsTitle);
-      yOffset += 20;
+      yOffset += 28;
 
       const statNames: Record<string, string> = {
         str: '力道',
@@ -167,11 +167,11 @@ export class ItemCard extends UIContainer {
             -width / 2 + 20,
             yOffset - 180,
             `${statNames[key]}: +${value}`,
-            { fontSize: '13px', color: '#2ecc71' }
+            { fontSize: '20px', color: '#2ecc71' }
           );
           statText.setOrigin(0, 0);
           this.add(statText);
-          yOffset += 20;
+          yOffset += 26;
         }
       }
     }
@@ -184,11 +184,11 @@ export class ItemCard extends UIContainer {
         -width / 2 + 10,
         yOffset - 180,
         '战斗属性:',
-        { fontSize: '14px', color: '#e74c3c', fontStyle: 'bold' }
+        { fontSize: '22px', color: '#e74c3c', fontStyle: 'bold' }
       );
       combatTitle.setOrigin(0, 0);
       this.add(combatTitle);
-      yOffset += 20;
+      yOffset += 28;
 
       const combatNames: Record<string, string> = {
         hit: '命中',
@@ -208,11 +208,11 @@ export class ItemCard extends UIContainer {
             -width / 2 + 20,
             yOffset - 180,
             `${combatNames[key]}: +${value}`,
-            { fontSize: '13px', color: '#f39c12' }
+            { fontSize: '20px', color: '#f39c12' }
           );
           statText.setOrigin(0, 0);
           this.add(statText);
-          yOffset += 20;
+          yOffset += 26;
         }
       }
     }
@@ -229,11 +229,11 @@ export class ItemCard extends UIContainer {
       -width / 2 + 10,
       yOffset - 180,
       `堆叠数量: ${consumable.stackSize}`,
-      { fontSize: '14px', color: '#ecf0f1' }
+      { fontSize: '22px', color: '#ecf0f1' }
     );
     effectText.setOrigin(0, 0);
     this.add(effectText);
-    yOffset += 25;
+    yOffset += 30;
 
     // 效果描述
     const effect = consumable.effect;
@@ -258,7 +258,7 @@ export class ItemCard extends UIContainer {
       -width / 2 + 10,
       yOffset - 180,
       `效果: ${effectDesc}`,
-      { fontSize: '13px', color: '#2ecc71', wordWrap: { width: width - 20 } }
+      { fontSize: '20px', color: '#2ecc71', wordWrap: { width: width - 20 } }
     );
     effectDescText.setOrigin(0, 0);
     this.add(effectDescText);
@@ -276,22 +276,22 @@ export class ItemCard extends UIContainer {
       -width / 2 + 10,
       yOffset - 180,
       `堆叠数量: ${material.stackSize}`,
-      { fontSize: '14px', color: '#ecf0f1' }
+      { fontSize: '22px', color: '#ecf0f1' }
     );
     stackText.setOrigin(0, 0);
     this.add(stackText);
-    yOffset += 25;
+    yOffset += 30;
 
     const materialDesc = new UIText(
       this.scene,
       -width / 2 + 10,
       yOffset - 180,
       '用于合成和锻造的材料',
-      { fontSize: '13px', color: '#95a5a6' }
+      { fontSize: '20px', color: '#95a5a6' }
     );
     materialDesc.setOrigin(0, 0);
     this.add(materialDesc);
-    yOffset += 25;
+    yOffset += 28;
 
     return yOffset;
   }

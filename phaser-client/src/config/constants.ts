@@ -153,3 +153,15 @@ export const MODAL_CONFIG = {
   ANIMATION_SHOW_DURATION: 300,
   ANIMATION_HIDE_DURATION: 200
 };
+
+// 点击涟漪效果配置
+export const RIPPLE_CONFIG = {
+  INITIAL_RADIUS: 8,
+  MAX_RADIUS: 50,
+  DURATION: 400,
+  INITIAL_ALPHA: 0.8,
+  COLOR: 0xffffff,        // 主体颜色（白色）
+  SHADOW_COLOR: 0x000000, // 阴影颜色（黑色），确保在浅色背景下可见
+  STROKE_WIDTH: 3,
+  SHADOW_WIDTH: 2         // 阴影额外宽度
+};

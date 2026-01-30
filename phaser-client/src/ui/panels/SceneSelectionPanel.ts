@@ -241,7 +241,7 @@ export class SceneSelectionPanel extends FullScreenModal {
 
     // 标题
     const title = this.scene.add.text(centerX, centerY - 60, '确认进入', {
-      fontSize: '20px',
+      fontSize: '26px',
       color: '#ecf0f1',
       fontStyle: 'bold'
     });
@@ -253,7 +253,7 @@ export class SceneSelectionPanel extends FullScreenModal {
       centerX,
       centerY - 10,
       `确定要进入【${scene.name}】吗？\n\n推荐等级: ${scene.minLevel}-${scene.maxLevel}`,
-      { fontSize: '16px', color: '#bdc3c7', align: 'center' }
+      { fontSize: '22px', color: '#bdc3c7', align: 'center' }
     );
     content.setOrigin(0.5);
     content.setDepth(1502);
@@ -261,12 +261,12 @@ export class SceneSelectionPanel extends FullScreenModal {
     // 确认按钮
     const confirmBtn = new UIButton({
       scene: this.scene,
-      x: centerX - 60,
-      y: centerY + 60,
-      width: 100,
-      height: 40,
+      x: centerX - 70,
+      y: centerY + 70,
+      width: 110,
+      height: 44,
       text: '确认',
-      textStyle: { fontSize: '16px' },
+      textStyle: { fontSize: '22px' },
       onClick: () => {
         overlay.destroy();
         dialog.destroy();
@@ -288,12 +288,12 @@ export class SceneSelectionPanel extends FullScreenModal {
     // 取消按钮
     const cancelBtn = new UIButton({
       scene: this.scene,
-      x: centerX + 60,
-      y: centerY + 60,
-      width: 100,
-      height: 40,
+      x: centerX + 70,
+      y: centerY + 70,
+      width: 110,
+      height: 44,
       text: '取消',
-      textStyle: { fontSize: '16px' },
+      textStyle: { fontSize: '22px' },
       onClick: () => {
         overlay.destroy();
         dialog.destroy();

@@ -99,7 +99,7 @@ export class CommandPanel extends UIContainer {
       -height / 2 + 25,
       '战斗指令',
       {
-        fontSize: '18px',
+        fontSize: '26px',
         color: '#ffffff',
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold'
@@ -182,7 +182,7 @@ export class CommandPanel extends UIContainer {
       0, 0,
       '',
       {
-        fontSize: '12px',
+        fontSize: '20px',
         color: '#aaaaaa',
         fontFamily: 'Arial, sans-serif',
         wordWrap: { width: width - 40 },
@@ -193,10 +193,10 @@ export class CommandPanel extends UIContainer {
     this.hintContainer.add(this.hintText);
 
     this.targetInfoText = this.scene.add.text(
-      0, 25,
+      0, 30,
       '',
       {
-        fontSize: '13px',
+        fontSize: '20px',
         color: '#2ecc71',
         fontFamily: 'Arial, sans-serif'
       }
@@ -260,10 +260,10 @@ export class CommandPanel extends UIContainer {
 
     // 文字
     const text = this.scene.add.text(
-      0, 30,
+      0, 35,
       '指令已确认',
       {
-        fontSize: '18px',
+        fontSize: '24px',
         color: '#ffffff',
         fontFamily: 'Arial, sans-serif'
       }
@@ -283,7 +283,7 @@ export class CommandPanel extends UIContainer {
       height / 2 - 25,
       '',
       {
-        fontSize: '14px',
+        fontSize: '22px',
         color: '#f39c12',
         fontFamily: 'Arial, sans-serif'
       }
@@ -483,7 +483,7 @@ export class CommandPanel extends UIContainer {
         width: buttonWidth,
         height: buttonHeight,
         text: `${item.name} x${item.stackSize}`,
-        textStyle: { fontSize: '11px' },
+        textStyle: { fontSize: '20px' },
         onClick: () => this.onItemSelect?.(item.id)
       });
 
@@ -500,7 +500,7 @@ export class CommandPanel extends UIContainer {
         0, 0,
         '没有可用的消耗品',
         {
-          fontSize: '12px',
+          fontSize: '20px',
           color: '#888888',
           fontFamily: 'Arial, sans-serif'
         }

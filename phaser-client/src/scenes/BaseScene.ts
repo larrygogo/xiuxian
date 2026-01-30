@@ -17,6 +17,7 @@ import Phaser from 'phaser';
 import { SafeAreaManager } from '@/ui/safearea/SafeAreaManager';
 import { UIRootContainer } from '@/ui/core/UIRootContainer';
 import { SafeAreaDebugOverlay } from '@/ui/debug/SafeAreaDebugOverlay';
+import { rippleManager } from '@/ui/effects/RippleManager';
 import type { ResponsiveConfig } from '@/utils/ResponsiveHelper';
 import { SAFE_AREA_DESIGN, MIN_SAFE_AREA, EXTERNAL_PADDING, RESOLUTION_POLICY } from '@/config/constants';
 
@@ -63,10 +64,21 @@ export abstract class BaseScene extends Phaser.Scene {
       console.log('BaseScene: debug overlay enabled');
     }
 
+    // 初始化涟漪效果
+    rippleManager.init(this);
+    this.input.on('pointerdown', this.handleGlobalPointerDown, this);
+
     // 监听窗口大小变化
     this.scale.on('resize', this.onResize, this);
 
     console.log('BaseScene: safe area system initialized');
+  }
+
+  /**
+   * 全局点击事件处理 - 创建涟漪效果
+   */
+  private handleGlobalPointerDown(pointer: Phaser.Input.Pointer): void {
+    rippleManager.createRipple(pointer.x, pointer.y);
   }
 
   /**
@@ -96,6 +108,12 @@ export abstract class BaseScene extends Phaser.Scene {
 
     // 停止监听resize事件
     this.scale.off('resize', this.onResize, this);
+
+    // 停止监听pointerdown事件
+    this.input.off('pointerdown', this.handleGlobalPointerDown, this);
+
+    // 销毁涟漪管理器
+    rippleManager.destroy();
 
     // 销毁调试覆盖层
     if (this.debugOverlay) {
