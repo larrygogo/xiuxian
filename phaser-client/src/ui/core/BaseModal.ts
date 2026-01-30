@@ -20,6 +20,10 @@ export interface BaseModalConfig {
   closeOnMaskClick?: boolean;
   showAnimation?: boolean;
   depth?: number;
+  /** 背景图片 key，如果提供则使用图片背景 */
+  backgroundImage?: string;
+  /** 是否显示默认矩形背景，默认 true */
+  showDefaultBackground?: boolean;
 }
 
 /**
@@ -44,6 +48,7 @@ export abstract class BaseModal extends UIContainer {
   private showTween: Phaser.Tweens.Tween | null = null;
   private hideTween: Phaser.Tweens.Tween | null = null;
   private overlayTween: Phaser.Tweens.Tween | null = null;
+  private previousTopOnly: boolean = false;
 
   constructor(config: BaseModalConfig) {
     const screenWidth = config.scene.cameras.main.width;
@@ -60,6 +65,8 @@ export abstract class BaseModal extends UIContainer {
       closeOnMaskClick: config.closeOnMaskClick ?? MODAL_CONFIG.CLOSE_ON_MASK_CLICK,
       showAnimation: config.showAnimation ?? MODAL_CONFIG.SHOW_ANIMATION,
       depth: config.depth ?? MODAL_CONFIG.DEPTH,
+      backgroundImage: config.backgroundImage ?? '',
+      showDefaultBackground: config.showDefaultBackground ?? true,
       scene: config.scene
     };
 
@@ -92,20 +99,24 @@ export abstract class BaseModal extends UIContainer {
       screenWidth * 2, // 确保覆盖整个屏幕
       screenHeight * 2,
       this.modalConfig.maskColor,
-      0 // 初始透明
+      1 // fillAlpha 设为 1，通过对象 alpha 控制可见性
     );
     this.overlay.setDepth(0);
     this.overlay.setInteractive();
 
-    if (this.modalConfig.closeOnMaskClick) {
-      this.overlay.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-        // 检查点击是否在弹窗容器外
+    // 阻止所有点击事件穿透到下层
+    this.overlay.on('pointerdown', (pointer: Phaser.Input.Pointer, localX: number, localY: number, event: Phaser.Types.Input.EventData) => {
+      // 停止事件传播，防止点击穿透
+      event.stopPropagation();
+
+      // 如果配置了点击遮罩关闭，检查是否点击在弹窗外
+      if (this.modalConfig.closeOnMaskClick) {
         const modalBounds = this.getModalBounds();
         if (!Phaser.Geom.Rectangle.Contains(modalBounds, pointer.x, pointer.y)) {
           this.hide();
         }
-      });
-    }
+      }
+    });
 
     this.add(this.overlay);
   }
@@ -129,16 +140,25 @@ export abstract class BaseModal extends UIContainer {
     this.modalContainer.setDepth(1);
     this.add(this.modalContainer);
 
-    // 创建默认背景
-    const background = this.scene.add.rectangle(
-      0, 0,
-      this.modalConfig.width,
-      this.modalConfig.height,
-      COLORS.dark,
-      0.95
-    );
-    background.setStrokeStyle(2, COLORS.light, 0.3);
-    this.modalContainer.add(background);
+    // 创建背景
+    if (this.modalConfig.backgroundImage) {
+      // 使用图片背景
+      const bgImage = this.scene.add.image(0, 0, this.modalConfig.backgroundImage);
+      // 缩放图片以适应弹窗尺寸
+      bgImage.setDisplaySize(this.modalConfig.width, this.modalConfig.height);
+      this.modalContainer.add(bgImage);
+    } else if (this.modalConfig.showDefaultBackground) {
+      // 创建默认矩形背景
+      const background = this.scene.add.rectangle(
+        0, 0,
+        this.modalConfig.width,
+        this.modalConfig.height,
+        COLORS.dark,
+        0.95
+      );
+      background.setStrokeStyle(2, COLORS.light, 0.3);
+      this.modalContainer.add(background);
+    }
   }
 
   /**
@@ -175,6 +195,10 @@ export abstract class BaseModal extends UIContainer {
 
     // 停止正在进行的动画
     this.stopTweens();
+
+    // 保存并设置 topOnly，防止点击穿透
+    this.previousTopOnly = this.scene.input.topOnly;
+    this.scene.input.topOnly = true;
 
     this.setVisible(true);
     this.setActive(true);
@@ -218,6 +242,9 @@ export abstract class BaseModal extends UIContainer {
   hide(): this {
     // 调用生命周期钩子
     this.onBeforeHide?.();
+
+    // 恢复 topOnly 设置
+    this.scene.input.topOnly = this.previousTopOnly;
 
     // 停止正在进行的动画
     this.stopTweens();
@@ -296,6 +323,8 @@ export abstract class BaseModal extends UIContainer {
    * 销毁弹窗
    */
   destroy(fromScene?: boolean): void {
+    // 恢复 topOnly 设置
+    this.scene.input.topOnly = this.previousTopOnly;
     this.stopTweens();
     this.overlay.off('pointerdown');
     super.destroy(fromScene);
