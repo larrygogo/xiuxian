@@ -114,10 +114,10 @@ class ToastManagerClass {
 
     // 创建文本先计算宽度
     const textObj = this.scene.add.text(0, 0, text, {
-      fontSize: '14px',
+      fontSize: '22px',
       color: '#ffffff',
       fontFamily: 'Arial, sans-serif',
-      wordWrap: { width: 300 }
+      wordWrap: { width: 350 }
     });
     textObj.setOrigin(0.5);
 
@@ -336,7 +336,7 @@ class ToastManagerClass {
       modalY - modalHeight / 2 + 25,
       title,
       {
-        fontSize: '16px',
+        fontSize: '26px',
         color: '#ffffff',
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold'
@@ -351,7 +351,7 @@ class ToastManagerClass {
       modalY - 10,
       body,
       {
-        fontSize: '14px',
+        fontSize: '22px',
         color: '#cccccc',
         fontFamily: 'Arial, sans-serif',
         wordWrap: { width: modalWidth - 40 },
@@ -398,7 +398,7 @@ class ToastManagerClass {
       this.modalContainer!.add(buttonBg);
 
       const buttonText = this.scene!.add.text(x, buttonY, btn.text, {
-        fontSize: '13px',
+        fontSize: '20px',
         color: '#ffffff',
         fontFamily: 'Arial, sans-serif',
         fontStyle: btn.primary ? 'bold' : 'normal'

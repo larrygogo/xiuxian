@@ -14,7 +14,7 @@ export class UIText extends Phaser.GameObjects.Text {
     style?: Phaser.Types.GameObjects.Text.TextStyle
   ) {
     const defaultStyle: Phaser.Types.GameObjects.Text.TextStyle = {
-      fontSize: '16px',
+      fontSize: '24px',
       color: '#ffffff',
       fontFamily: 'Arial, sans-serif',
       ...style

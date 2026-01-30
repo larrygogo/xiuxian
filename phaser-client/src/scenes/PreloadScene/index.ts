@@ -52,7 +52,7 @@ export default class PreloadScene extends BaseScene {
 
     // 加载文本
     const loadingText = this.add.text(width / 2, height / 2 - 50, '加载中...', {
-      fontSize: '20px',
+      fontSize: '26px',
       color: '#ffffff'
     });
     loadingText.setOrigin(0.5, 0.5);

@@ -64,7 +64,7 @@ export class BattleLogPanel extends UIContainer {
       -height / 2 + 15,
       '战斗日志',
       {
-        fontSize: '14px',
+        fontSize: '22px',
         color: '#ffffff',
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold'
@@ -177,7 +177,7 @@ export class BattleLogPanel extends UIContainer {
       0, 10,
       '暂无战斗日志',
       {
-        fontSize: '12px',
+        fontSize: '20px',
         color: '#666666',
         fontFamily: 'Arial, sans-serif'
       }
@@ -265,7 +265,7 @@ export class BattleLogPanel extends UIContainer {
         0, currentY,
         log,
         {
-          fontSize: '12px',
+          fontSize: '20px',
           color: '#cccccc',
           fontFamily: 'Arial, sans-serif',
           wordWrap: { width: maxWidth }

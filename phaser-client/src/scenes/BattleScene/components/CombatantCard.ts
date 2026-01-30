@@ -81,7 +81,7 @@ export class CombatantCard extends UIContainer {
       -height / 2 + 8,
       '',
       {
-        fontSize: '14px',
+        fontSize: '20px',
         color: '#ffffff',
         fontFamily: 'Arial, sans-serif'
       }
@@ -95,7 +95,7 @@ export class CombatantCard extends UIContainer {
       -height / 2 + 8,
       '',
       {
-        fontSize: '12px',
+        fontSize: '20px',
         color: '#aaaaaa',
         fontFamily: 'Arial, sans-serif'
       }
@@ -217,11 +217,11 @@ export class CombatantCard extends UIContainer {
         return;
     }
 
-    const badge = this.scene.add.rectangle(0, 0, 50, 20, badgeColor, 0.9);
+    const badge = this.scene.add.rectangle(0, 0, 60, 26, badgeColor, 0.9);
     badge.setStrokeStyle(1, 0xffffff, 0.5);
 
     const text = this.scene.add.text(0, 0, badgeText, {
-      fontSize: '11px',
+      fontSize: '20px',
       color: '#ffffff',
       fontFamily: 'Arial, sans-serif'
     });
@@ -344,10 +344,10 @@ export class CombatantCard extends UIContainer {
       const { width, height } = this.config;
       this.submittedBadge = this.scene.add.text(
         -width / 2 + 8,
-        height / 2 - 30,
+        height / 2 - 35,
         '✓',
         {
-          fontSize: '18px',
+          fontSize: '24px',
           color: '#2ecc71',
           fontFamily: 'Arial, sans-serif'
         }

@@ -42,7 +42,7 @@ export class UIInput extends UIContainer {
       0,
       config.placeholder || '',
       {
-        fontSize: '16px',
+        fontSize: '24px',
         color: placeholderColor,
         fontFamily: 'Arial, sans-serif',
         ...config.textStyle
@@ -160,7 +160,7 @@ export class UIInput extends UIContainer {
       top: `${screenY}px`,
       width: `${this.config.width * scaleX}px`,
       height: `${this.config.height * scaleY}px`,
-      fontSize: '16px',
+      fontSize: '24px',
       padding: '0 12px',
       border: 'none',
       outline: 'none',

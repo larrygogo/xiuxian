@@ -217,7 +217,7 @@ export class ItemSlot extends UIContainer {
     }
 
     const size = this.config.size || 60;
-    const iconFontSize = Math.max(16, Math.floor(size * 0.5));
+    const iconFontSize = Math.max(20, Math.floor(size * 0.5));
 
     const icon = this.scene.add.text(0, 0, iconEmoji, {
       fontSize: `${iconFontSize}px`
@@ -229,7 +229,7 @@ export class ItemSlot extends UIContainer {
     if (isConsumable(this._item) || isMaterial(this._item)) {
       const stackable = this._item as Consumable | Material;
       if (stackable.stackSize > 1) {
-        const stackFontSize = Math.max(10, Math.floor(size * 0.2));
+        const stackFontSize = Math.max(20, Math.floor(size * 0.25));
         this.stackText = this.scene.add.text(
           size / 2 - 4,
           size / 2 - 4,
@@ -248,7 +248,7 @@ export class ItemSlot extends UIContainer {
 
     // 显示装备等级
     if (isEquipment(this._item)) {
-      const levelFontSize = Math.max(8, Math.floor(size * 0.18));
+      const levelFontSize = Math.max(20, Math.floor(size * 0.22));
       this.levelText = this.scene.add.text(
         -size / 2 + 4,
         -size / 2 + 4,

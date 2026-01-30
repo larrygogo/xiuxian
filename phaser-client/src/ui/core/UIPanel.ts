@@ -85,7 +85,7 @@ export class UIPanel extends UIContainer {
       -this.config.height / 2 + titleBarHeight / 2,
       this.config.title,
       {
-        fontSize: '18px',
+        fontSize: '26px',
         color: '#ecf0f1',
         fontFamily: 'Arial, sans-serif'
       }
@@ -107,7 +107,7 @@ export class UIPanel extends UIContainer {
       width: 40,
       height: 30,
       text: '✕',
-      textStyle: { fontSize: '20px' },
+      textStyle: { fontSize: '26px' },
       onClick: () => this.close()
     });
     this.closeButton.setColor(COLORS.danger);
