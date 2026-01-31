@@ -141,6 +141,19 @@ export const STORAGE_KEYS = {
   PANEL_POSITIONS: 'panel-positions'
 };
 
+// 弹窗配置
+export const MODAL_CONFIG = {
+  DEFAULT_WIDTH: 400,
+  DEFAULT_HEIGHT: 300,
+  MASK_COLOR: 0x000000,
+  MASK_ALPHA: 0.7,
+  CLOSE_ON_MASK_CLICK: true,
+  SHOW_ANIMATION: true,
+  DEPTH: 1000,
+  ANIMATION_SHOW_DURATION: 300,
+  ANIMATION_HIDE_DURATION: 200
+};
+
 // 点击涟漪效果配置
 export const RIPPLE_CONFIG = {
   INITIAL_RADIUS: 8,
@@ -152,4 +165,3 @@ export const RIPPLE_CONFIG = {
   STROKE_WIDTH: 3,
   SHADOW_WIDTH: 2         // 阴影额外宽度
 };
-

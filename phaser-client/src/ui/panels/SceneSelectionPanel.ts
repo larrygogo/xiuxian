@@ -6,12 +6,11 @@
 
 import { FullScreenModal } from '@/ui/core/FullScreenModal';
 import { UIText } from '@/ui/core/UIText';
-import { UIButton } from '@/ui/core/UIButton';
 import { SceneCard } from '@/ui/widgets/SceneCard';
+import { SceneConfirmModal } from '@/ui/modals/SceneConfirmModal';
 import { stateManager } from '@/services/managers/StateManager';
 import { battleAPI } from '@/services/api';
 import type { GameState } from '@/types/game.types';
-import { COLORS } from '@/config/constants';
 
 /** 场景项（与后端 mapId 一致，用于创建房间） */
 export interface BattleScene {
@@ -215,97 +214,21 @@ export class SceneSelectionPanel extends FullScreenModal {
    * 显示确认对话框
    */
   private showConfirmDialog(scene: BattleScene): void {
-    const dialogWidth = 400;
-    const dialogHeight = 200;
-
-    const safeRect = this.getSafeRect();
-    const centerX = safeRect.x + safeRect.width / 2;
-    const centerY = safeRect.y + safeRect.height / 2;
-
-    // 遮罩
-    const overlay = this.scene.add.rectangle(
-      this.scene.cameras.main.width / 2,
-      this.scene.cameras.main.height / 2,
-      this.scene.cameras.main.width,
-      this.scene.cameras.main.height,
-      0x000000,
-      0.7
-    );
-    overlay.setDepth(1500);
-    overlay.setInteractive();
-
-    // 对话框背景
-    const dialog = this.scene.add.rectangle(centerX, centerY, dialogWidth, dialogHeight, 0x2c3e50);
-    dialog.setDepth(1501);
-    dialog.setStrokeStyle(2, 0x3498db);
-
-    // 标题
-    const title = this.scene.add.text(centerX, centerY - 60, '确认进入', {
-      fontSize: '26px',
-      color: '#ecf0f1',
-      fontStyle: 'bold'
-    });
-    title.setOrigin(0.5);
-    title.setDepth(1502);
-
-    // 内容
-    const content = this.scene.add.text(
-      centerX,
-      centerY - 10,
-      `确定要进入【${scene.name}】吗？\n\n推荐等级: ${scene.minLevel}-${scene.maxLevel}`,
-      { fontSize: '22px', color: '#bdc3c7', align: 'center' }
-    );
-    content.setOrigin(0.5);
-    content.setDepth(1502);
-
-    // 确认按钮
-    const confirmBtn = new UIButton({
+    const modal = new SceneConfirmModal({
       scene: this.scene,
-      x: centerX - 70,
-      y: centerY + 70,
-      width: 110,
-      height: 44,
-      text: '确认',
-      textStyle: { fontSize: '22px' },
-      onClick: () => {
-        overlay.destroy();
-        dialog.destroy();
-        title.destroy();
-        content.destroy();
-        confirmBtn.destroy();
-        cancelBtn.destroy();
-
+      sceneName: scene.name,
+      levelRange: `${scene.minLevel}-${scene.maxLevel}`,
+      onConfirm: () => {
         if (this.onSceneSelected) {
           this.onSceneSelected(scene.id);
         }
         this.hide();
+      },
+      onCancel: () => {
+        // 弹窗自动关闭，无需额外逻辑
       }
     });
-    confirmBtn.setColor(COLORS.success);
-    confirmBtn.setDepth(1502);
-    this.scene.add.existing(confirmBtn);
-
-    // 取消按钮
-    const cancelBtn = new UIButton({
-      scene: this.scene,
-      x: centerX + 70,
-      y: centerY + 70,
-      width: 110,
-      height: 44,
-      text: '取消',
-      textStyle: { fontSize: '22px' },
-      onClick: () => {
-        overlay.destroy();
-        dialog.destroy();
-        title.destroy();
-        content.destroy();
-        confirmBtn.destroy();
-        cancelBtn.destroy();
-      }
-    });
-    cancelBtn.setColor(COLORS.dark);
-    cancelBtn.setDepth(1502);
-    this.scene.add.existing(cancelBtn);
+    modal.show();
   }
 
   /**

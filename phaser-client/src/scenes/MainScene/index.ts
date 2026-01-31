@@ -33,6 +33,11 @@ export default class MainScene extends BaseScene {
   // 底部操作栏容器
   private bottomActionBar?: Phaser.GameObjects.Container;
 
+  // 调试：指针日志计数
+  private debugPointerLogCount: number = 0;
+  // 首次输入修复：是否已收到 pointerdown
+  private hasSeenPointerDown: boolean = false;
+
   // 游戏状态
   private gameState: GameState | null = null;
 
@@ -58,6 +63,9 @@ export default class MainScene extends BaseScene {
     this.load.image('inkSplash', 'assets/images/ui/ink-splash.png');
     this.load.image('buttonBack', 'assets/images/ui/button-back.png');
 
+    // 加载弹窗背景图
+    this.load.image('modalScrollBg', 'assets/images/ui/modal-scroll-bg.png');
+
     // 加载场景选择卡片背景图
     this.load.image('scene_map_beginner_1', 'assets/images/scenes/scene_map_beginner_1.png');
     this.load.image('scene_map_forest_1', 'assets/images/scenes/scene_map_forest_1.png');
@@ -69,6 +77,89 @@ export default class MainScene extends BaseScene {
     console.log('MainScene: create');
 
     this.initSafeAreaSystem();
+
+    // 调试：进入主界面时输入状态
+    console.log('[MainScene] before reset input state', {
+      topOnly: this.input.topOnly,
+      enabled: this.input.manager?.enabled,
+      isOver: this.input.manager?.isOver,
+      pointers: this.input.manager?.pointers?.length,
+      activePointers: this.input.manager?.pointers?.filter(p => p.isDown).length
+    });
+
+    // 进入主界面时重置指针状态，避免首击被旧状态吞掉
+    this.input.resetPointers();
+    this.input.topOnly = false;
+    this.input.enabled = true;
+    if (this.input.manager) {
+      this.input.manager.enabled = true;
+    }
+
+    // 调试：重置后的输入状态
+    console.log('[MainScene] after reset input state', {
+      topOnly: this.input.topOnly,
+      enabled: this.input.manager?.enabled,
+      isOver: this.input.manager?.isOver,
+      pointers: this.input.manager?.pointers?.length,
+      activePointers: this.input.manager?.pointers?.filter(p => p.isDown).length
+    });
+
+    // 调试：监听前几次指针事件
+    if (import.meta.env.DEV) {
+      this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+        this.hasSeenPointerDown = true;
+        if (this.debugPointerLogCount < 4) {
+          console.log('[MainScene] pointerdown', {
+            x: pointer.x,
+            y: pointer.y,
+            isDown: pointer.isDown,
+            buttons: pointer.buttons,
+            wasTouch: pointer.wasTouch
+          });
+          this.debugPointerLogCount += 1;
+        }
+      });
+      this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+        if (this.debugPointerLogCount < 4) {
+          console.log('[MainScene] pointerup', {
+            x: pointer.x,
+            y: pointer.y,
+            isDown: pointer.isDown,
+            buttons: pointer.buttons,
+            wasTouch: pointer.wasTouch
+          });
+          this.debugPointerLogCount += 1;
+        }
+      });
+    }
+
+    // 修复：如果首个输入只收到 pointerup，则对命中的交互对象补发一次 pointerdown
+    this.input.once('pointerup', (pointer: Phaser.Input.Pointer) => {
+      if (this.hasSeenPointerDown) return;
+      const over = this.input.hitTestPointer(pointer);
+      if (over.length === 0) return;
+      const top = over[0] as Phaser.GameObjects.GameObject;
+      top.emit('pointerdown', pointer, pointer.x, pointer.y, {
+        stopPropagation: () => {}
+      } as Phaser.Types.Input.EventData);
+    });
+
+    // 再延迟一帧做一次重置，避免切场景瞬间残留状态
+    this.time.delayedCall(0, () => {
+      this.input.resetPointers();
+      this.input.topOnly = false;
+      this.input.enabled = true;
+      if (this.input.manager) {
+        this.input.manager.enabled = true;
+      }
+      console.log('[MainScene] delayed reset input state', {
+        topOnly: this.input.topOnly,
+        enabled: this.input.manager?.enabled,
+        isOver: this.input.manager?.isOver,
+        pointers: this.input.manager?.pointers?.length,
+        activePointers: this.input.manager?.pointers?.filter(p => p.isDown).length
+      });
+    });
 
     const safeRect = this.safeAreaManager.getFinalSafeRect();
     const screenSize = this.safeAreaManager.getScreenSize();
@@ -102,6 +193,18 @@ export default class MainScene extends BaseScene {
 
     // 创建UI（使用新系统）
     this.createUI();
+
+    // E2E 测试：标记主界面就绪并记录首次点击
+    if (typeof window !== 'undefined') {
+      const e2eWindow = window as any;
+      if (e2eWindow.__E2E__) {
+        e2eWindow.__E2E_READY__ = true;
+        e2eWindow.__E2E_FIRST_CLICK__ = e2eWindow.__E2E_FIRST_CLICK__ ?? 0;
+        this.input.once('pointerdown', () => {
+          e2eWindow.__E2E_FIRST_CLICK__ = (e2eWindow.__E2E_FIRST_CLICK__ ?? 0) + 1;
+        });
+      }
+    }
 
     // 监听游戏状态更新
     this.setupWebSocketListeners();
@@ -238,7 +341,12 @@ export default class MainScene extends BaseScene {
     const battleSceneImage = this.add.image(firstButtonX, buttonY, 'buttonCompass');
     battleSceneImage.setDisplaySize(buttonSize, buttonSize);
     battleSceneImage.setInteractive({ useHandCursor: true });
-    battleSceneImage.on('pointerdown', () => this.openBattleSceneSelection());
+    battleSceneImage.on('pointerdown', () => {
+      if (import.meta.env.DEV) {
+        console.log('[MainScene] battleSceneButton pointerdown');
+      }
+      this.openBattleSceneSelection();
+    });
     battleSceneImage.setDepth(11);
     this.battleSceneButton = battleSceneImage;
     this.bottomActionBar.add(battleSceneImage);
@@ -247,7 +355,12 @@ export default class MainScene extends BaseScene {
     const bagImage = this.add.image(firstButtonX + buttonSpacing, buttonY, 'buttonBag');
     bagImage.setDisplaySize(buttonSize, buttonSize);
     bagImage.setInteractive({ useHandCursor: true });
-    bagImage.on('pointerdown', () => this.openBag());
+    bagImage.on('pointerdown', () => {
+      if (import.meta.env.DEV) {
+        console.log('[MainScene] bagButton pointerdown');
+      }
+      this.openBag();
+    });
     bagImage.setDepth(11);
     this.bagButton = bagImage;
     this.bottomActionBar.add(bagImage);
@@ -256,7 +369,12 @@ export default class MainScene extends BaseScene {
     const characterImage = this.add.image(firstButtonX + buttonSpacing * 2, buttonY, 'buttonCharacter');
     characterImage.setDisplaySize(buttonSize, buttonSize);
     characterImage.setInteractive({ useHandCursor: true });
-    characterImage.on('pointerdown', () => this.openCharacterPanel());
+    characterImage.on('pointerdown', () => {
+      if (import.meta.env.DEV) {
+        console.log('[MainScene] characterButton pointerdown');
+      }
+      this.openCharacterPanel();
+    });
     characterImage.setDepth(11);
     this.characterButton = characterImage;
     this.bottomActionBar.add(characterImage);
@@ -265,7 +383,12 @@ export default class MainScene extends BaseScene {
     const settingsImage = this.add.image(firstButtonX + buttonSpacing * 3, buttonY, 'buttonSettings');
     settingsImage.setDisplaySize(buttonSize, buttonSize);
     settingsImage.setInteractive({ useHandCursor: true });
-    settingsImage.on('pointerdown', () => this.openSettings());
+    settingsImage.on('pointerdown', () => {
+      if (import.meta.env.DEV) {
+        console.log('[MainScene] settingsButton pointerdown');
+      }
+      this.openSettings();
+    });
     settingsImage.setDepth(11);
     this.settingsButton = settingsImage;
     this.bottomActionBar.add(settingsImage);

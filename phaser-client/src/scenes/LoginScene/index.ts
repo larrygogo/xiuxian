@@ -84,6 +84,16 @@ export default class LoginScene extends BaseScene {
     // 初始化ToastManager
     toastManager.init(this);
 
+    // E2E 测试：跳过登录流程直接进入主界面
+    if (typeof window !== 'undefined') {
+      const e2eWindow = window as any;
+      if (e2eWindow.__E2E__ && e2eWindow.__E2E_STATE__) {
+        stateManager.setGameState(e2eWindow.__E2E_STATE__);
+        this.scene.start(SCENE_KEYS.MAIN);
+        return;
+      }
+    }
+
     const width = this.cameras.main.width;
     const height = this.cameras.main.height;
 
@@ -811,15 +821,18 @@ export default class LoginScene extends BaseScene {
     }
 
     // 设置全屏点击（移除旧的监听器，添加新的）
+    // 使用 pointerup，并延迟到下一帧切场景，避免首击事件落到 MainScene
     this.input.removeAllListeners('pointerdown');
-    this.input.once('pointerdown', () => {
-      this.startGame();
+    this.input.removeAllListeners('pointerup');
+    this.input.once('pointerup', () => {
+      this.time.delayedCall(0, () => this.startGame());
     });
 
     // 键盘支持
     this.input.keyboard?.removeAllListeners('keydown');
-    this.input.keyboard?.once('keydown', () => {
-      this.startGame();
+    this.input.keyboard?.removeAllListeners('keyup');
+    this.input.keyboard?.once('keyup', () => {
+      this.time.delayedCall(0, () => this.startGame());
     });
   }
 
@@ -1070,6 +1083,34 @@ export default class LoginScene extends BaseScene {
    * 导航到下一个场景
    */
   private navigateToNextScene(): void {
+    // 调试：输出切场景前输入状态
+    console.log('[LoginScene] navigateToNextScene input state', {
+      topOnly: this.input.topOnly,
+      enabled: this.input.manager?.enabled,
+      isOver: this.input.manager?.isOver,
+      pointers: this.input.manager?.pointers?.length,
+      activePointers: this.input.manager?.pointers?.filter(p => p.isDown).length
+    });
+
+    // 切场景前重置输入状态，避免首击被旧状态吞掉
+    this.input.resetPointers();
+    this.input.topOnly = false;
+    if (this.input.manager) {
+      this.input.manager.isOver = true;
+      this.input.manager.enabled = true;
+    }
+    this.input.removeAllListeners('pointerdown');
+    this.input.removeAllListeners('pointerup');
+
+    // 调试：输出重置后的输入状态
+    console.log('[LoginScene] after reset input state', {
+      topOnly: this.input.topOnly,
+      enabled: this.input.manager?.enabled,
+      isOver: this.input.manager?.isOver,
+      pointers: this.input.manager?.pointers?.length,
+      activePointers: this.input.manager?.pointers?.filter(p => p.isDown).length
+    });
+
     if (!this.gameState || !this.gameState.name) {
       this.scene.start(SCENE_KEYS.CHARACTER_CREATE);
     } else {
@@ -1085,6 +1126,9 @@ export default class LoginScene extends BaseScene {
     this.floatingSymbols = [];
     this.loginModal?.destroy();
     this.loginModal = undefined;
+    // 清理输入监听，避免影响后续场景点击
+    this.input.removeAllListeners('pointerdown');
+    this.input.keyboard?.removeAllListeners('keydown');
     super.shutdown();
   }
 }

@@ -60,6 +60,7 @@ export class FullScreenModal extends UIContainer {
 
   // 交互保护（防止点击穿透）
   private interactionEnabled: boolean = false;
+  private previousTopOnly: boolean = false;
 
   // 布局常量
   protected readonly titleAreaHeight = 60;
@@ -90,6 +91,14 @@ export class FullScreenModal extends UIContainer {
       config.styles?.background?.color ?? 0xf5f1e8
     );
     this.background.setAlpha(1.0);
+    this.background.setInteractive();
+    this.background.on(
+      'pointerdown',
+      (_pointer: Phaser.Input.Pointer, _localX: number, _localY: number, event: Phaser.Types.Input.EventData) => {
+        // 阻止点击穿透到下层 UI
+        event.stopPropagation();
+      }
+    );
     this.add(this.background);
 
     // 创建标题
@@ -478,6 +487,10 @@ export class FullScreenModal extends UIContainer {
   show(): this {
     super.show();
 
+    // 保存并设置 topOnly，防止点击穿透到下层 UI
+    this.previousTopOnly = this.scene.input.topOnly;
+    this.scene.input.topOnly = true;
+
     // 禁用所有交互，防止打开面板的点击事件穿透
     this.interactionEnabled = false;
     this.backButton.setEnabled(false);
@@ -497,6 +510,9 @@ export class FullScreenModal extends UIContainer {
    * 隐藏弹窗
    */
   hide(): this {
+    // 恢复 topOnly 设置
+    this.scene.input.topOnly = this.previousTopOnly;
+
     super.hide();
     this.isScrolling = false;
     this.interactionEnabled = false;
@@ -507,6 +523,9 @@ export class FullScreenModal extends UIContainer {
    * 销毁弹窗
    */
   destroy(fromScene?: boolean): void {
+    // 恢复 topOnly 设置
+    this.scene.input.topOnly = this.previousTopOnly;
+
     // 取消安全区变化监听
     if (this.safeAreaManager) {
       this.safeAreaManager.off('safeAreaChanged', this.handleSafeAreaChanged, this);
